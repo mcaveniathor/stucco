@@ -24,6 +24,8 @@ pub const HEADER_REQUEST: &str = "Stucco-Request";
 pub const HEADER_TARGET: &str = "Stucco-Target";
 /// Response header telling the runtime where to navigate.
 pub const HEADER_LOCATION: &str = "Stucco-Location";
+/// Form field carrying the CSRF token.
+pub const CSRF_FIELD: &str = "_csrf";
 /// Request header carrying the CSRF token.
 pub const HEADER_CSRF: &str = "Stucco-Csrf";
 
@@ -41,5 +43,6 @@ pub fn js_placeholders() -> &'static [(&'static str, &'static str)] {
         ("__STUCCO_HEADER_TARGET__", HEADER_TARGET),
         ("__STUCCO_HEADER_LOCATION__", HEADER_LOCATION),
         ("__STUCCO_HEADER_CSRF__", HEADER_CSRF),
+        ("__STUCCO_CSRF_FIELD__", CSRF_FIELD),
     ]
 }

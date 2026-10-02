@@ -16,8 +16,8 @@
 #![deny(missing_docs)]
 
 pub use stucco_core::{
-    Asset, AssetFile, AssetRequirements, Attrs, Behavior, Bundle, Cx, Delivery, Href, Meta, Page,
-    Raw, Render, RenderFn, RenderedFragment, Slot, behavior, check_component_css, el,
+    Asset, AssetFile, AssetRequirements, Attrs, Behavior, Bundle, Cx, Delivery, FormState, Href,
+    Meta, Page, Raw, Render, RenderFn, RenderedFragment, Slot, behavior, check_component_css, el,
     register_asset, render_fn, render_fragment, to_html,
 };
 

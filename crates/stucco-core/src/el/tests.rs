@@ -63,10 +63,49 @@ fn trusted_attr_is_the_only_way_to_set_handlers() {
 }
 
 #[test]
-fn raw_text_elements_stay_escaped() {
+fn script_and_style_text_is_raw_but_cannot_close_the_element() {
     assert_eq!(
-        to_html(&el::script().text("</script><b>")),
-        "<script>&lt;/script&gt;&lt;b&gt;</script>"
+        to_html(&el::style().text("ul > li {}")),
+        "<style>ul > li {}</style>"
+    );
+    assert_eq!(
+        to_html(&el::script().text("a < b && c</script><b>")),
+        r"<script>a < b && c<\/script><b></script>"
+    );
+}
+
+#[test]
+fn attribute_names_are_case_insensitive() {
+    assert_eq!(
+        to_html(&el::div().attr("title", "a").attr("TITLE", "b")),
+        r#"<div title="b"></div>"#
+    );
+    assert_eq!(
+        to_html(
+            &el::div()
+                .bool_attr("hidden", true)
+                .bool_attr("Hidden", false)
+        ),
+        "<div></div>"
+    );
+    assert_eq!(
+        Attrs::default()
+            .attr("ROLE", "x")
+            .reserved_conflicts(&["role"]),
+        ["role"]
+    );
+}
+
+#[test]
+fn without_removes_names_including_id_and_class() {
+    let a = Attrs::default()
+        .id("x")
+        .class("c")
+        .attr("role", "r")
+        .attr("title", "t");
+    assert_eq!(
+        to_html(&el::div().attrs(&a.without(&["id", "role"]))),
+        r#"<div class="c" title="t"></div>"#
     );
 }
 

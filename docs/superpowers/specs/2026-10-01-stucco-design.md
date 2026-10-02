@@ -180,8 +180,10 @@ el::section().class("hero").id("intro")
 
 Rules:
 
-- Text and attribute values are always escaped, including inside `<script>` and
-  `<style>`.
+- Text and attribute values are always escaped, except text inside `<script>`
+  and `<style>`, which is written as-is with `</` neutralised so the element
+  cannot be closed early; script content is code, so untrusted text must not go
+  there. Attribute names are case-insensitive (stored lowercased).
 - Attribute names: ASCII letter first, then letters, digits, `-`, `_`, `:`, `.`.
   `data(name)` and `aria(name)` names: `[a-z0-9-]+`; `aria` names are checked against
   the WAI-ARIA 1.2 attribute list in debug builds.

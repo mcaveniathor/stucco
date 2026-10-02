@@ -12,6 +12,7 @@ pub mod behavior;
 mod bundle;
 pub mod el;
 pub mod escape;
+mod form_state;
 mod fragment;
 mod hash;
 mod href;
@@ -23,6 +24,7 @@ pub use asset::{Asset, AssetRef, AssetRequirements, Behavior, is_registered, reg
 pub use attrs::Attrs;
 pub use base_css::{BASE_CSS, LAYERS_CSS, RESET_CSS, check_component_css};
 pub use bundle::{AssetFile, Bundle};
+pub use form_state::FormState;
 pub use fragment::{RenderedFragment, render_fragment};
 pub use href::Href;
 #[doc(hidden)]

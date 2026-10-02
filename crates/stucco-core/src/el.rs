@@ -68,9 +68,17 @@ impl<'a> Element<'a> {
         self
     }
 
-    /// Appends escaped text.
+    /// Appends text. It is HTML-escaped, except inside `<script>` and
+    /// `<style>`, where it is written as-is with `</` neutralised as `<\/` so
+    /// the element cannot be closed early. Script content is code: never put
+    /// untrusted text there.
     pub fn text(self, text: impl Into<String>) -> Element<'a> {
-        self.child(text.into())
+        let text = text.into();
+        if matches!(self.tag, "script" | "style") && self.custom.is_none() {
+            self.child(crate::Raw::trusted(text.replace("</", r"<\/")))
+        } else {
+            self.child(text)
+        }
     }
 
     fn tag_name(&self) -> &str {
