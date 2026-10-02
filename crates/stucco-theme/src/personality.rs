@@ -147,24 +147,26 @@ impl Finish {
     /// A tiling SVG noise image as a CSS `url()`, or `none`.
     fn image(self) -> &'static str {
         // Grey (0.5) grain whose opacity follows the noise, so the same
-        // image darkens light backgrounds and lightens dark ones.
+        // image darkens light backgrounds and lightens dark ones. The filter
+        // works in sRGB, so the grey is the 0.5 that `build` checks against
+        // (filters default to linear light, where 0.5 shows as 0.735).
         match self {
             Finish::Smooth => "none",
             Finish::Sand => concat!(
                 "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E",
-                "%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E",
+                "%3Cfilter id='f' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E",
                 "%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0.06 0 0 0 0'/%3E%3C/filter%3E",
                 "%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E\")"
             ),
             Finish::Float => concat!(
                 "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E",
-                "%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.4' numOctaves='4' stitchTiles='stitch'/%3E",
+                "%3Cfilter id='f' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.4' numOctaves='4' stitchTiles='stitch'/%3E",
                 "%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0.05 0 0 0 0'/%3E%3C/filter%3E",
                 "%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E\")"
             ),
             Finish::Knockdown => concat!(
                 "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E",
-                "%3Cfilter id='f'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.03' numOctaves='2' stitchTiles='stitch'/%3E",
+                "%3Cfilter id='f' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.03' numOctaves='2' stitchTiles='stitch'/%3E",
                 "%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0.05 0 0 0 0'/%3E%3C/filter%3E",
                 "%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E\")"
             ),
@@ -219,6 +221,211 @@ pub enum CornerStyle {
     Hand,
 }
 
+/// The weight of the rules and borders that outline surfaces, controls and
+/// the application shell. Table row rules stay fine.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum LineWeight {
+    /// 1px lines (default).
+    #[default]
+    Fine,
+    /// 2px lines, for a bold, graphic look.
+    Heavy,
+}
+
+/// How buttons stand off the page. Ghost buttons stay flat.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum ButtonDepth {
+    /// No shadow; buttons shrink slightly when pressed (default).
+    #[default]
+    Flat,
+    /// A soft shadow and top highlight; buttons sink when pressed.
+    Raised,
+    /// A hard shadow offset down and to the side, in the text colour;
+    /// buttons slide onto it when pressed.
+    Offset,
+}
+
+/// How small labels look: table column headings, the sidebar's heading and
+/// the labels of collection controls.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum LabelStyle {
+    /// Small, semibold, muted text (default).
+    #[default]
+    Plain,
+    /// Small capitals with open tracking.
+    Caps,
+    /// Small, bold text in the full text colour.
+    Strong,
+}
+
+/// The stroke width of icons.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum IconWeight {
+    /// A 1.5 stroke.
+    Light,
+    /// A 2 stroke (default).
+    #[default]
+    Regular,
+    /// A 2.5 stroke.
+    Bold,
+}
+
+/// How quickly, and with what feel, things move. Visitors who ask for
+/// reduced motion get none whichever style is chosen.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum Motion {
+    /// Short durations with a gentle ease-out (default).
+    #[default]
+    Smooth,
+    /// Shorter still, for an instant feel.
+    Snappy,
+    /// Longer, softer transitions.
+    Gentle,
+    /// An ease that overshoots slightly, so presses bounce.
+    Springy,
+}
+
+/// The typeface of headings. Body text keeps the theme's fonts.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum HeadingFont {
+    /// The body font (default).
+    #[default]
+    Body,
+    /// A transitional serif, for an editorial look.
+    Serif,
+    /// A rounded sans, where the platform has one.
+    Rounded,
+    /// The theme's monospace font.
+    Mono,
+}
+
+/// The line height of running text.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum Leading {
+    /// 1.4, for dense interfaces.
+    Tight,
+    /// 1.5 (default).
+    #[default]
+    Normal,
+    /// 1.65, for reading.
+    Airy,
+}
+
+/// How tags, such as status values in tables, are drawn.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum TagStyle {
+    /// A filled pill with a border (default).
+    #[default]
+    Pill,
+    /// A filled label with small corners.
+    Square,
+    /// A pill with a strong border and no fill.
+    Outline,
+}
+
+/// The pattern of dividing rules: separators, table row rules and the
+/// footer's top rule. Outlines of surfaces stay solid.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum RuleStyle {
+    /// Solid rules (default).
+    #[default]
+    Solid,
+    /// Dashed rules.
+    Dashed,
+    /// Dotted rules.
+    Dotted,
+}
+
+/// What large surfaces are made of: cards, panels, filter bars, table
+/// cards, the application header and the side column.
+///
+/// Glass and Frost are translucent and blur what is behind them, such as a
+/// [`Backdrop`] or a [`Finish`]. [`Theme::build`] checks text on them
+/// against every colour the page behind can show, and they turn solid for
+/// visitors who ask for reduced transparency or more contrast.
+///
+/// [`Theme::build`]: crate::Theme::build
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum Material {
+    /// Opaque surfaces (default).
+    #[default]
+    Solid,
+    /// Clear glass: 70% opaque with a light blur and a lit top edge.
+    Glass,
+    /// Frosted glass: 85% opaque with a heavy blur.
+    Frost,
+}
+
+impl Material {
+    /// The surface's opacity.
+    pub(crate) fn opacity(self) -> f64 {
+        match self {
+            Material::Solid => 1.0,
+            Material::Glass => 0.7,
+            Material::Frost => 0.85,
+        }
+    }
+}
+
+/// Soft colour behind the page, drawn from the soft accent. [`Theme::build`]
+/// checks text on the page against its strongest point, and it goes for
+/// visitors who ask for more contrast.
+///
+/// [`Theme::build`]: crate::Theme::build
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum Backdrop {
+    /// The plain background colour (default).
+    #[default]
+    Plain,
+    /// Two soft accent glows at the top of the page.
+    Glow,
+    /// An accent wash that fades out down the page.
+    Wash,
+}
+
+impl Backdrop {
+    /// The strongest opacity of the soft accent over the background.
+    pub(crate) fn max_alpha(self) -> f64 {
+        match self {
+            Backdrop::Plain => 0.0,
+            Backdrop::Glow => 0.9,
+            Backdrop::Wash => 0.8,
+        }
+    }
+
+    fn image(self) -> &'static str {
+        match self {
+            Backdrop::Plain => "none",
+            Backdrop::Glow => concat!(
+                "radial-gradient(60rem 36rem at 0 0, ",
+                "color-mix(in oklch, var(--st-accent-soft) 90%, transparent), transparent), ",
+                "radial-gradient(48rem 30rem at 100% 0, ",
+                "color-mix(in oklch, var(--st-accent-soft) 60%, transparent), transparent)"
+            ),
+            Backdrop::Wash => concat!(
+                "linear-gradient(color-mix(in oklch, var(--st-accent-soft) 80%, transparent), ",
+                "transparent 32rem)"
+            ),
+        }
+    }
+}
+
+/// How shadows are drawn, at every elevation.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum ShadowStyle {
+    /// One soft, blurred shadow (default).
+    #[default]
+    Soft,
+    /// Several stacked shadows, close and far, for realistic depth.
+    Layered,
+    /// Soft shadows coloured with the accent.
+    Tinted,
+    /// Solid shadows without blur, offset straight down.
+    Hard,
+}
+
+use crate::ornament::{HeaderEdge, Pattern, Relief};
+
 /// Every personality choice; the default reproduces stucco's base look.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub(crate) struct Personality {
@@ -235,14 +442,32 @@ pub(crate) struct Personality {
     pub(crate) shell: ShellLayout,
     pub(crate) panels: PanelStyle,
     pub(crate) corners: CornerStyle,
+    pub(crate) lines: LineWeight,
+    pub(crate) depth: ButtonDepth,
+    pub(crate) labels: LabelStyle,
+    pub(crate) icons: IconWeight,
+    pub(crate) motion: Motion,
+    pub(crate) heading_font: HeadingFont,
+    pub(crate) leading: Leading,
+    pub(crate) tags: TagStyle,
+    pub(crate) rules: RuleStyle,
+    pub(crate) material: Material,
+    pub(crate) backdrop: Backdrop,
+    pub(crate) shadows: ShadowStyle,
+    pub(crate) relief: Relief,
+    pub(crate) pattern: Pattern,
+    pub(crate) edge: HeaderEdge,
+    /// Varies the ornaments' light, layout and rhythm.
+    pub(crate) motif: u32,
 }
 
 impl Personality {
     /// `(token, value)` pairs, without the `--st-` prefix.
-    pub(crate) fn tokens(&self) -> Vec<(&'static str, &'static str)> {
+    /// `ornament_scale` is how strongly the relief and pattern are drawn.
+    pub(crate) fn tokens(&self, ornament_scale: f64) -> Vec<(&'static str, String)> {
         let (surface_shadow, card_shadow) = match self.elevation {
-            Elevation::Flat => ("none", "none"),
-            Elevation::Outlined => ("none", "var(--st-shadow-1)"),
+            Elevation::Flat => ("0 0 transparent", "0 0 transparent"),
+            Elevation::Outlined => ("0 0 transparent", "var(--st-shadow-1)"),
             Elevation::Raised => ("var(--st-shadow-1)", "var(--st-shadow-2)"),
         };
         let (rule, stripe, head) = match self.table {
@@ -261,25 +486,25 @@ impl Personality {
         let (control_bg, borders, control_radius, invalid) = match self.controls {
             ControlStyle::Outlined => (
                 "var(--st-surface)",
-                "1px",
+                "var(--st-line)",
                 "var(--st-radius-md)",
                 "0 0 0 1px var(--st-danger)",
             ),
             ControlStyle::Filled => (
                 "var(--st-surface-raised)",
-                "1px",
+                "var(--st-line)",
                 "var(--st-radius-md)",
                 "0 0 0 1px var(--st-danger)",
             ),
             ControlStyle::Underlined => (
                 "var(--st-surface-raised)",
-                "0 0 1px",
+                "0 0 var(--st-line)",
                 "var(--st-radius-sm) var(--st-radius-sm) 0 0",
                 "inset 0 -1px 0 var(--st-danger)",
             ),
         };
         let (header_bg, header_border) = match self.header {
-            HeaderStyle::Bar => ("var(--st-surface)", "var(--st-border)"),
+            HeaderStyle::Bar => ("var(--st-surface-material)", "var(--st-border)"),
             HeaderStyle::Plain => ("transparent", "var(--st-border)"),
             HeaderStyle::Tinted => ("var(--st-accent-soft)", "transparent"),
         };
@@ -354,18 +579,24 @@ impl Personality {
             ShellLayout::Sidebar => (
                 "column",
                 "var(--st-space-4) var(--st-space-2)",
-                "1px",
+                "var(--st-line)",
                 "0",
-                "var(--st-surface)",
+                "var(--st-surface-material)",
             ),
             ShellLayout::Rail => (
                 "column",
                 "var(--st-space-4) var(--st-space-2)",
-                "1px",
+                "var(--st-line)",
                 "0",
                 "transparent",
             ),
-            ShellLayout::Topbar => ("row", "var(--st-space-2)", "0", "1px", "var(--st-surface)"),
+            ShellLayout::Topbar => (
+                "row",
+                "var(--st-space-2)",
+                "0",
+                "var(--st-line)",
+                "var(--st-surface-material)",
+            ),
         };
         // Where the Bar nav style marks the current primary link: the
         // leading edge in a column, under the link in a row.
@@ -391,9 +622,9 @@ impl Personality {
         //  header fill, header padding, header margin, header rule)
         let panel = match self.panels {
             PanelStyle::Boxed => [
-                "1px solid var(--st-border)",
-                "1px solid var(--st-border)",
-                "var(--st-surface)",
+                "var(--st-line) solid var(--st-border)",
+                "var(--st-line) solid var(--st-border)",
+                "var(--st-surface-material)",
                 "var(--st-surface-radius)",
                 "var(--st-space-6)",
                 "var(--st-surface-shadow)",
@@ -404,30 +635,183 @@ impl Personality {
             ],
             PanelStyle::Ruled => [
                 "0 solid transparent",
-                "2px solid var(--st-border-strong)",
+                "calc(var(--st-line) * 2) solid var(--st-border-strong)",
                 "transparent",
                 "0",
                 "0",
-                "none",
+                "0 0 transparent",
                 "transparent",
                 "0",
                 "0 0 var(--st-space-4)",
                 "0 solid transparent",
             ],
             PanelStyle::Headed => [
-                "1px solid var(--st-border)",
-                "1px solid var(--st-border)",
-                "var(--st-surface)",
+                "var(--st-line) solid var(--st-border)",
+                "var(--st-line) solid var(--st-border)",
+                "var(--st-surface-material)",
                 "var(--st-surface-radius)",
                 "var(--st-space-6)",
                 "var(--st-surface-shadow)",
                 "var(--st-surface-raised)",
                 "var(--st-space-4) var(--st-space-6)",
                 "calc(-1 * var(--st-space-6)) calc(-1 * var(--st-space-6)) var(--st-space-5)",
-                "1px solid var(--st-border)",
+                "var(--st-line) solid var(--st-border)",
             ],
         };
-        vec![
+        let line = match self.lines {
+            LineWeight::Fine => "1px",
+            LineWeight::Heavy => "2px",
+        };
+        // Shadows are never `none`, so CSS can add to them.
+        // (rest, pressed, pressed scale, pressed shift)
+        let (button_shadow, button_pressed, press_scale, press_shift) = match self.depth {
+            ButtonDepth::Flat => ("0 0 transparent", "0 0 transparent", "0.96", "0 0"),
+            ButtonDepth::Raised => (
+                concat!(
+                    "0 1px 2px color-mix(in oklch, var(--st-shadow-ink) 18%, transparent), ",
+                    "inset 0 1px 0 color-mix(in oklch, white 22%, transparent)"
+                ),
+                "inset 0 1px 3px color-mix(in oklch, var(--st-shadow-ink) 22%, transparent)",
+                "1",
+                "0 1px",
+            ),
+            ButtonDepth::Offset => (
+                "3px 3px 0 var(--st-text)",
+                "1px 1px 0 var(--st-text)",
+                "1",
+                "2px 2px",
+            ),
+        };
+        // (transform, tracking, weight, colour)
+        let (label_case, label_tracking, label_weight, label_color) = match self.labels {
+            LabelStyle::Plain => ("none", "normal", "600", "var(--st-text-muted)"),
+            LabelStyle::Caps => ("uppercase", "0.07em", "650", "var(--st-text-muted)"),
+            LabelStyle::Strong => ("none", "normal", "700", "var(--st-text)"),
+        };
+        let icon_stroke = match self.icons {
+            IconWeight::Light => "1.5",
+            IconWeight::Regular => "2",
+            IconWeight::Bold => "2.5",
+        };
+        // (fast, normal, slow, easing)
+        let (fast, normal, slow, ease) = match self.motion {
+            Motion::Smooth => ("120ms", "200ms", "320ms", "cubic-bezier(.2,0,0,1)"),
+            Motion::Snappy => ("70ms", "120ms", "200ms", "cubic-bezier(.3,0,0,1)"),
+            Motion::Gentle => ("200ms", "320ms", "500ms", "cubic-bezier(.4,0,.2,1)"),
+            Motion::Springy => ("160ms", "260ms", "420ms", "cubic-bezier(.34,1.56,.64,1)"),
+        };
+        let heading_font = match self.heading_font {
+            HeadingFont::Body => "var(--st-font-sans)",
+            HeadingFont::Serif => concat!(
+                "Charter, \"Bitstream Charter\", \"Sitka Text\", Cambria, ",
+                "\"Iowan Old Style\", Georgia, serif"
+            ),
+            HeadingFont::Rounded => concat!(
+                "ui-rounded, \"Hiragino Maru Gothic ProN\", Quicksand, Comfortaa, Manjari, ",
+                "\"Arial Rounded MT\", var(--st-font-sans)"
+            ),
+            HeadingFont::Mono => "var(--st-font-mono)",
+        };
+        let leading = match self.leading {
+            Leading::Tight => "1.4",
+            Leading::Normal => "1.5",
+            Leading::Airy => "1.65",
+        };
+        // (radius, fill, border)
+        let (tag_radius, tag_bg, tag_border) = match self.tags {
+            TagStyle::Pill => (
+                "var(--st-radius-full)",
+                "var(--st-surface-raised)",
+                "var(--st-border)",
+            ),
+            TagStyle::Square => (
+                "var(--st-radius-sm)",
+                "var(--st-surface-raised)",
+                "var(--st-border)",
+            ),
+            TagStyle::Outline => (
+                "var(--st-radius-full)",
+                "transparent",
+                "var(--st-border-strong)",
+            ),
+        };
+        let rule_style = match self.rules {
+            RuleStyle::Solid => "solid",
+            RuleStyle::Dashed => "dashed",
+            RuleStyle::Dotted => "dotted",
+        };
+        // (fill, backdrop filter, lit edge)
+        let (material, blur, edge) = match self.material {
+            Material::Solid => ("var(--st-surface)", "none", "0 0 transparent"),
+            Material::Glass => (
+                "color-mix(in oklch, var(--st-surface) 70%, transparent)",
+                "blur(12px) saturate(1.5)",
+                "inset 0 1px 0 color-mix(in oklch, white 30%, transparent)",
+            ),
+            Material::Frost => (
+                "color-mix(in oklch, var(--st-surface) 85%, transparent)",
+                "blur(24px) saturate(1.2)",
+                "inset 0 1px 0 color-mix(in oklch, white 18%, transparent)",
+            ),
+        };
+        let panel_edge = match self.panels {
+            PanelStyle::Ruled => "0 0 transparent",
+            _ => edge,
+        };
+        let shadows = match self.shadows {
+            ShadowStyle::Soft => [
+                "0 2px 8px color-mix(in oklch, var(--st-shadow-ink) 8%, transparent)",
+                "0 4px 16px color-mix(in oklch, var(--st-shadow-ink) 12%, transparent)",
+                "0 6px 24px color-mix(in oklch, var(--st-shadow-ink) 18%, transparent)",
+            ],
+            ShadowStyle::Layered => [
+                concat!(
+                    "0 1px 1px color-mix(in oklch, var(--st-shadow-ink) 6%, transparent), ",
+                    "0 2px 4px color-mix(in oklch, var(--st-shadow-ink) 6%, transparent), ",
+                    "0 4px 8px color-mix(in oklch, var(--st-shadow-ink) 6%, transparent)"
+                ),
+                concat!(
+                    "0 1px 2px color-mix(in oklch, var(--st-shadow-ink) 6%, transparent), ",
+                    "0 3px 6px color-mix(in oklch, var(--st-shadow-ink) 7%, transparent), ",
+                    "0 8px 16px color-mix(in oklch, var(--st-shadow-ink) 8%, transparent), ",
+                    "0 16px 32px color-mix(in oklch, var(--st-shadow-ink) 6%, transparent)"
+                ),
+                concat!(
+                    "0 2px 4px color-mix(in oklch, var(--st-shadow-ink) 6%, transparent), ",
+                    "0 6px 12px color-mix(in oklch, var(--st-shadow-ink) 8%, transparent), ",
+                    "0 16px 32px color-mix(in oklch, var(--st-shadow-ink) 9%, transparent), ",
+                    "0 32px 64px color-mix(in oklch, var(--st-shadow-ink) 8%, transparent)"
+                ),
+            ],
+            ShadowStyle::Tinted => [
+                concat!(
+                    "0 2px 8px color-mix(in oklch, ",
+                    "color-mix(in oklch, var(--st-accent) 45%, var(--st-shadow-ink)) 12%, transparent)"
+                ),
+                concat!(
+                    "0 4px 16px color-mix(in oklch, ",
+                    "color-mix(in oklch, var(--st-accent) 45%, var(--st-shadow-ink)) 18%, transparent)"
+                ),
+                concat!(
+                    "0 6px 24px color-mix(in oklch, ",
+                    "color-mix(in oklch, var(--st-accent) 45%, var(--st-shadow-ink)) 24%, transparent)"
+                ),
+            ],
+            ShadowStyle::Hard => [
+                "0 2px 0 color-mix(in oklch, var(--st-shadow-ink) 12%, transparent)",
+                "0 4px 0 color-mix(in oklch, var(--st-shadow-ink) 14%, transparent)",
+                "0 6px 0 color-mix(in oklch, var(--st-shadow-ink) 16%, transparent)",
+            ],
+        };
+        let tokens = [
+            // Shadows darken in both schemes; the text colour would glow in dark.
+            (
+                "shadow-ink",
+                "light-dark(var(--st-neutral-12), oklch(0 0 0))",
+            ),
+            ("shadow-1", shadows[0]),
+            ("shadow-2", shadows[1]),
+            ("shadow-3", shadows[2]),
             ("surface-shadow", surface_shadow),
             ("card-shadow", card_shadow),
             ("table-rule", rule),
@@ -478,6 +862,44 @@ impl Personality {
             ("panel-head-pad", panel[7]),
             ("panel-head-margin", panel[8]),
             ("panel-head-rule", panel[9]),
-        ]
+            ("line", line),
+            ("button-shadow", button_shadow),
+            ("button-shadow-pressed", button_pressed),
+            ("button-press-scale", press_scale),
+            ("button-press-shift", press_shift),
+            ("label-case", label_case),
+            ("label-tracking", label_tracking),
+            ("label-weight", label_weight),
+            ("label-color", label_color),
+            ("icon-stroke", icon_stroke),
+            ("duration-fast", fast),
+            ("duration", normal),
+            ("duration-slow", slow),
+            ("ease", ease),
+            ("font-heading", heading_font),
+            ("leading", leading),
+            ("tag-radius", tag_radius),
+            ("tag-bg", tag_bg),
+            ("tag-border", tag_border),
+            ("rule-style", rule_style),
+            ("surface-material", material),
+            ("surface-blur", blur),
+            ("surface-edge", edge),
+            ("panel-edge", panel_edge),
+            ("backdrop", self.backdrop.image()),
+        ];
+        let (mask, edge_pad, rule) = self.edge.tokens(self.motif);
+        let ornaments = [
+            ("relief", self.relief.image(self.motif, ornament_scale)),
+            ("pattern", self.pattern.image(self.motif, ornament_scale)),
+            ("header-mask", mask),
+            ("header-edge", edge_pad.to_owned()),
+            ("header-rule", rule.to_owned()),
+        ];
+        tokens
+            .into_iter()
+            .map(|(name, value)| (name, value.to_owned()))
+            .chain(ornaments)
+            .collect()
     }
 }

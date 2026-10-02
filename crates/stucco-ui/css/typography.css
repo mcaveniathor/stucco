@@ -1,5 +1,5 @@
 @layer stucco.components {
-  .st-heading { font-weight: var(--st-heading-weight); line-height: 1.2; letter-spacing: var(--st-heading-tracking); color: var(--st-text); }
+  .st-heading { font-family: var(--st-font-heading, inherit); font-weight: var(--st-heading-weight); line-height: 1.2; letter-spacing: var(--st-heading-tracking); color: var(--st-text); }
   .st-heading[data-size="xs"], .st-text[data-size="xs"] { font-size: var(--st-text-xs); }
   .st-heading[data-size="sm"], .st-text[data-size="sm"] { font-size: var(--st-text-sm); }
   .st-heading[data-size="md"], .st-text[data-size="md"] { font-size: var(--st-text-base); }

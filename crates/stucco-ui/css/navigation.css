@@ -3,7 +3,7 @@
   .st-pagination a {
     display: inline-flex; align-items: center; justify-content: center;
     min-inline-size: calc(var(--st-control-h) * 0.9); block-size: calc(var(--st-control-h) * 0.9);
-    padding-inline: var(--st-space-3); border: 1px solid var(--st-border); border-radius: var(--st-radius-md);
+    padding-inline: var(--st-space-3); border: var(--st-line, 1px) solid var(--st-border); border-radius: var(--st-radius-md);
     background: var(--st-surface); color: var(--st-text); font-weight: 550; text-decoration: none;
     font-variant-numeric: tabular-nums;
     transition: background-color var(--st-duration-fast) var(--st-ease), border-color var(--st-duration-fast) var(--st-ease);

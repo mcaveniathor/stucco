@@ -2,6 +2,62 @@
 
 ## Unreleased
 
+- The finish grain's filter works in sRGB, so its grey is the 0.5 that
+  `build` checks text against. It was computed in linear light, which drew
+  it as a lighter 0.735 grey: grain was slightly weaker on light pages and
+  slightly lighter than checked on dark ones.
+- Three ornament options drawn as generated SVG, each seedable and in
+  `ThemeSpec`, the CLI and the playground (`relief`, `pattern`, `edge`):
+  - `Relief` (Flat, Venetian, Trowel, Skip) lights a raised plaster surface
+    on the page background;
+  - `Pattern` (Plain, Dots, Grid, Contours, Waves) draws a faint motif
+    behind the application header;
+  - `HeaderEdge` (Straight, Wave, Zigzag, Torn) shapes the header's bottom
+    edge.
+  `Theme::motif_seed` varies the relief's light, the pattern's layout and
+  contours, and the edge's rhythm; seeded themes take it from their seed.
+  `build` fits the relief's and pattern's strength to the theme's contrast,
+  and both go under `prefers-contrast: more`. Defaults reproduce the
+  previous look, and existing seeds keep every option they had.
+- Three personality options for transparency and depth, each seedable and
+  in `ThemeSpec`, the CLI and the playground (`material`, `backdrop`,
+  `shadows`):
+  - `Material` (Solid, Glass, Frost) makes cards, panels, filter bars, table
+    cards, the header and the side column translucent and blurred; they turn
+    solid under `prefers-reduced-transparency`, `prefers-contrast: more` and
+    forced colours;
+  - `Backdrop` (Plain, Glow, Wash) adds soft accent colour behind the page;
+  - `ShadowStyle` (Soft, Layered, Tinted, Hard) draws the shadow steps.
+  `build` now checks text on the page against the backdrop as well as the
+  finish, and text on translucent surfaces against every colour behind them.
+  Defaults reproduce the previous look, and existing seeds keep every option
+  they had.
+- Shadows are black in dark schemes instead of the light text colour, so
+  they no longer glow.
+- Four more personality options, each seedable and in `ThemeSpec`, the CLI
+  and the playground (`heading-font`, `leading`, `tags`, `rules`):
+  - `HeadingFont` (Body, Serif, Rounded, Mono) sets the typeface of
+    headings, using system fonts only;
+  - `Leading` (Tight, Normal, Airy) sets the line height of running text;
+  - `TagStyle` (Pill, Square, Outline) draws `.st-tag`;
+  - `RuleStyle` (Solid, Dashed, Dotted) patterns separators, table row rules
+    and the footer's top rule.
+  Defaults reproduce the previous look, and existing seeds keep every option
+  they had.
+- Five more personality options, each seedable and in `ThemeSpec`, the CLI
+  and the playground (`lines`, `depth`, `labels`, `icons`, `motion`):
+  - `LineWeight` (Fine, Heavy) sets the width of outlines and rules through
+    `--st-line`;
+  - `ButtonDepth` (Flat, Raised, Offset) gives buttons a shadow and a
+    matching press;
+  - `LabelStyle` (Plain, Caps, Strong) styles table column headings, the
+    sidebar's heading and collection control labels;
+  - `IconWeight` (Light, Regular, Bold) sets the icon stroke;
+  - `Motion` (Smooth, Snappy, Gentle, Springy) sets transition durations and
+    easing; reduced motion still turns transitions off.
+  The motion tokens now come from the theme's personality. Defaults
+  reproduce the previous look, and existing seeds keep every option they
+  had.
 - `AppShell` separates primary navigation from the sidebar: `link` and
   `links` add a flat list of `NavLink`s in a `<nav>` landmark (named with
   `nav_label`, default "Main"), and `sidebar` holds section navigation or a

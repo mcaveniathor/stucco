@@ -36,7 +36,7 @@ From the accent and neutral hues, stucco generates twelve-step OKLCH scales for 
 
 ## Personality
 
-Thirteen options change how components look without changing their markup:
+Twenty-eight options change how components look without changing their markup:
 
 | Option | Choices |
 | --- | --- |
@@ -53,6 +53,21 @@ Thirteen options change how components look without changing their markup:
 | `shell_layout` | Sidebar (default), Rail, Topbar |
 | `panel_style` | Boxed (default), Ruled, Headed |
 | `corner_style` | Even (default), Squircle, Bevel, Hand |
+| `line_weight` | Fine (default), Heavy |
+| `button_depth` | Flat (default), Raised, Offset |
+| `label_style` | Plain (default), Caps, Strong |
+| `icon_weight` | Light, Regular (default), Bold |
+| `motion` | Smooth (default), Snappy, Gentle, Springy |
+| `heading_font` | Body (default), Serif, Rounded, Mono |
+| `leading` | Tight, Normal (default), Airy |
+| `tag_style` | Pill (default), Square, Outline |
+| `rule_style` | Solid (default), Dashed, Dotted |
+| `material` | Solid (default), Glass, Frost |
+| `backdrop` | Plain (default), Glow, Wash |
+| `shadow_style` | Soft (default), Layered, Tinted, Hard |
+| `relief` | Flat (default), Venetian, Trowel, Skip |
+| `pattern` | Plain (default), Dots, Grid, Contours, Waves |
+| `header_edge` | Straight (default), Wave, Zigzag, Torn |
 
 Each option sets tokens such as `--st-card-shadow` or `--st-table-rule` that the component styles read. Every link style keeps an underline, so links never depend on colour alone.
 
@@ -63,6 +78,83 @@ Each option sets tokens such as `--st-card-shadow` or `--st-table-rule` that the
 `panel_style` frames panels: Boxed is a bordered box, Ruled drops the box for a strong rule above the title, and Headed sets the title in a raised band.
 
 `corner_style` shapes the corners of cards, panels, filter bars and table cards. Squircle and Bevel use the CSS `corner-shape` property, so browsers without it show ordinary rounded corners. Hand makes each corner slightly different, like plaster shaped by hand. Every style keeps the theme's radius, so sharp themes stay sharp.
+
+### Type
+
+`heading_font` sets the typeface of headings and table captions, leaving body text in the theme's fonts: a serif for an editorial look, a rounded sans where the platform has one, or the theme's monospace font. Like the body fonts, these are system fonts, so nothing is downloaded.
+
+`leading` sets the line height of running text: 1.4, 1.5 or 1.65.
+
+### Lines, depth and labels
+
+`line_weight` sets the width of the borders and rules that outline cards, panels, controls, fieldsets and the application shell. Heavy doubles them, for a bold, graphic look; table row rules stay fine either way.
+
+`button_depth` decides how buttons stand off the page. Flat buttons have no shadow and shrink slightly when pressed. Raised buttons have a soft shadow and a highlight along the top, and sink when pressed. Offset buttons cast a hard shadow in the text colour, down and to the side, and slide onto it when pressed. Ghost buttons stay flat in every style.
+
+`label_style` styles small labels: table column headings, the sidebar's heading and the labels above collection controls. Plain is small, semibold and muted; Caps sets them in spaced capitals; Strong uses bold text in the full text colour.
+
+`tag_style` draws tags, such as status values in tables, as filled pills, filled labels with small corners, or outlined pills.
+
+`rule_style` makes dividing rules (separators, table row rules and the footer's top rule) solid, dashed or dotted. The outlines of cards, panels and controls stay solid.
+
+`icon_weight` sets the stroke width of icons: 1.5, 2 or 2.5.
+
+`motion` sets the durations and easing of transitions, such as hover fills and button presses. Snappy is quicker than the default, Gentle slower and softer, and Springy overshoots slightly so presses bounce. Visitors who ask for reduced motion get none, whatever the style.
+
+```rust
+use stucco::theme::{ButtonDepth, LineWeight, Preset, Radius, Theme};
+
+// A bold, graphic look: sharp corners, heavy lines and offset buttons.
+let theme = Theme::preset(Preset::Slate)
+    .radius(Radius::Sharp)
+    .line_weight(LineWeight::Heavy)
+    .button_depth(ButtonDepth::Offset);
+```
+
+### Transparency and depth
+
+`material` decides what large surfaces are made of: cards, panels, filter bars, table cards, the application header and the side column. Glass is 70% opaque with a light blur and a lit top edge; Frost is 85% opaque with a heavier blur. Both show the backdrop and finish through them, and turn solid for visitors who ask for reduced transparency or more contrast. Inputs and other controls stay solid.
+
+`backdrop` puts soft colour behind the page, drawn from the theme's soft accent: Glow adds two glows at the top of the page, and Wash fades from the top down. Pages drop it for visitors who ask for more contrast.
+
+`shadow_style` draws shadows at every elevation. Soft is one blurred shadow; Layered stacks close and far shadows for realistic depth; Tinted colours them with the accent; Hard drops the blur for solid ledges. Shadows show on surfaces that `elevation` raises.
+
+`build` checks text on the page against the backdrop's and finish's strongest points, and text on translucent surfaces against every colour the page behind them can show, so a theme that builds stays readable.
+
+```rust
+use stucco::theme::{Backdrop, Elevation, Material, Preset, ShadowStyle, Theme};
+
+let theme = Theme::preset(Preset::Slate)
+    .material(Material::Glass)
+    .backdrop(Backdrop::Glow)
+    .elevation(Elevation::Raised)
+    .shadow_style(ShadowStyle::Layered);
+```
+
+### Ornaments
+
+Three options draw small SVG images that stucco generates from a handful of numbers, so they cost no downloads and no extra markup.
+
+`relief` lights a raised plaster surface on the page background: broad Venetian swirls, the long strokes of a trowel, or the small islands of a skip-trowel coat.
+
+`pattern` puts a faint motif behind the application header: dots, a grid, topographic contour lines or rows of waves.
+
+`header_edge` shapes the header's bottom edge as a wave, a zigzag or a torn plaster line, in place of its bottom rule. It shows on headers with a fill, so pair it with the Bar or Tinted header style.
+
+`motif_seed` varies all three: the direction of the relief's light and the layout of its plaster, the pattern's spacing and contours, and the rhythm of the edge. Seeded themes take it from their seed, so every seed draws its own contour map and its own torn edge; other themes use 0.
+
+The relief and the pattern are as strong as the theme's contrast allows. `build` checks text and controls on them at their darkest and lightest points, together with the backdrop, the finish and translucent surfaces, and fades both until every pair passes. On their own they keep their full strength; stacked with other textures on a theme with little contrast to spare, they come out fainter. Pages drop both for visitors who ask for more contrast.
+
+```rust
+use stucco::theme::{HeaderEdge, HeaderStyle, Pattern, Preset, Relief, Theme};
+
+let theme = Theme::preset(Preset::Sand)
+    .relief(Relief::Trowel)
+    .header_style(HeaderStyle::Tinted)
+    .pattern(Pattern::Contours)
+    .header_edge(HeaderEdge::Torn)
+    .motif_seed(7);
+```
 
 ### Finish
 
