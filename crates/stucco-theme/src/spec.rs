@@ -20,8 +20,9 @@ use std::str::FromStr;
 
 use crate::{
     BuiltTheme, ButtonDepth, ButtonShape, ControlStyle, CornerStyle, Density, Elevation, Finish,
-    FocusStyle, HeaderStyle, HeadingWeight, IconWeight, LabelStyle, LineWeight, LinkStyle, Motion,
-    NavStyle, PanelStyle, Preset, Radius, Scheme, ShellLayout, TableStyle, Theme,
+    FocusStyle, HeaderStyle, HeadingFont, HeadingWeight, IconWeight, LabelStyle, Leading,
+    LineWeight, LinkStyle, Motion, NavStyle, PanelStyle, Preset, Radius, RuleStyle, Scheme,
+    ShellLayout, TableStyle, TagStyle, Theme,
 };
 
 /// One choice for an option.
@@ -285,6 +286,51 @@ pub const OPTIONS: &[OptionInfo] = &[
             choice("snappy", "Snappy"),
             choice("gentle", "Gentle"),
             choice("springy", "Springy"),
+        ],
+    },
+    OptionInfo {
+        key: "heading-font",
+        label: "Heading font",
+        ty: "HeadingFont",
+        method: "heading_font",
+        choices: &[
+            choice("body", "Body"),
+            choice("serif", "Serif"),
+            choice("rounded", "Rounded"),
+            choice("mono", "Mono"),
+        ],
+    },
+    OptionInfo {
+        key: "leading",
+        label: "Leading",
+        ty: "Leading",
+        method: "leading",
+        choices: &[
+            choice("tight", "Tight"),
+            choice("normal", "Normal"),
+            choice("airy", "Airy"),
+        ],
+    },
+    OptionInfo {
+        key: "tags",
+        label: "Tags",
+        ty: "TagStyle",
+        method: "tag_style",
+        choices: &[
+            choice("pill", "Pill"),
+            choice("square", "Square"),
+            choice("outline", "Outline"),
+        ],
+    },
+    OptionInfo {
+        key: "rules",
+        label: "Rules",
+        ty: "RuleStyle",
+        method: "rule_style",
+        choices: &[
+            choice("solid", "Solid"),
+            choice("dashed", "Dashed"),
+            choice("dotted", "Dotted"),
         ],
     },
 ];
@@ -752,6 +798,19 @@ fn apply(theme: Theme, key: &str, value: &str) -> Theme {
         ("motion", "snappy") => theme.motion(Motion::Snappy),
         ("motion", "gentle") => theme.motion(Motion::Gentle),
         ("motion", "springy") => theme.motion(Motion::Springy),
+        ("heading-font", "body") => theme.heading_font(HeadingFont::Body),
+        ("heading-font", "serif") => theme.heading_font(HeadingFont::Serif),
+        ("heading-font", "rounded") => theme.heading_font(HeadingFont::Rounded),
+        ("heading-font", "mono") => theme.heading_font(HeadingFont::Mono),
+        ("leading", "tight") => theme.leading(Leading::Tight),
+        ("leading", "normal") => theme.leading(Leading::Normal),
+        ("leading", "airy") => theme.leading(Leading::Airy),
+        ("tags", "pill") => theme.tag_style(TagStyle::Pill),
+        ("tags", "square") => theme.tag_style(TagStyle::Square),
+        ("tags", "outline") => theme.tag_style(TagStyle::Outline),
+        ("rules", "solid") => theme.rule_style(RuleStyle::Solid),
+        ("rules", "dashed") => theme.rule_style(RuleStyle::Dashed),
+        ("rules", "dotted") => theme.rule_style(RuleStyle::Dotted),
         _ => theme,
     }
 }
@@ -860,6 +919,27 @@ fn current(theme: &Theme, key: &str) -> &'static str {
             Motion::Snappy => "snappy",
             Motion::Gentle => "gentle",
             Motion::Springy => "springy",
+        },
+        "heading-font" => match p.heading_font {
+            HeadingFont::Body => "body",
+            HeadingFont::Serif => "serif",
+            HeadingFont::Rounded => "rounded",
+            HeadingFont::Mono => "mono",
+        },
+        "leading" => match p.leading {
+            Leading::Tight => "tight",
+            Leading::Normal => "normal",
+            Leading::Airy => "airy",
+        },
+        "tags" => match p.tags {
+            TagStyle::Pill => "pill",
+            TagStyle::Square => "square",
+            TagStyle::Outline => "outline",
+        },
+        "rules" => match p.rules {
+            RuleStyle::Solid => "solid",
+            RuleStyle::Dashed => "dashed",
+            RuleStyle::Dotted => "dotted",
         },
         _ => unreachable!("only known keys are looked up"),
     }

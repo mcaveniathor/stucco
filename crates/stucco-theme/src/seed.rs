@@ -3,8 +3,8 @@
 
 use crate::personality::{
     ButtonDepth, ButtonShape, ControlStyle, CornerStyle, Elevation, Finish, FocusStyle,
-    HeaderStyle, HeadingWeight, IconWeight, LabelStyle, LineWeight, LinkStyle, Motion, NavStyle,
-    PanelStyle, ShellLayout, TableStyle,
+    HeaderStyle, HeadingFont, HeadingWeight, IconWeight, LabelStyle, Leading, LineWeight,
+    LinkStyle, Motion, NavStyle, PanelStyle, RuleStyle, ShellLayout, TableStyle, TagStyle,
 };
 use crate::{Color, Density, Fonts, Radius, Theme, TypeScale};
 
@@ -496,12 +496,49 @@ seeded_enum!(
         (Motion::Springy, 1),
     ]
 );
+seeded_enum!(
+    HeadingFont,
+    "heading-font",
+    [
+        (HeadingFont::Body, 4),
+        (HeadingFont::Serif, 1),
+        (HeadingFont::Rounded, 1),
+        (HeadingFont::Mono, 1),
+    ]
+);
+seeded_enum!(
+    Leading,
+    "leading",
+    [
+        (Leading::Tight, 1),
+        (Leading::Normal, 3),
+        (Leading::Airy, 1),
+    ]
+);
+seeded_enum!(
+    TagStyle,
+    "tag-style",
+    [
+        (TagStyle::Pill, 2),
+        (TagStyle::Square, 1),
+        (TagStyle::Outline, 1),
+    ]
+);
+seeded_enum!(
+    RuleStyle,
+    "rule-style",
+    [
+        (RuleStyle::Solid, 3),
+        (RuleStyle::Dashed, 1),
+        (RuleStyle::Dotted, 1),
+    ]
+);
 
 impl Seeded for Theme {
     const STREAM: &'static str = "theme";
 
     /// Every option from its own fork of `rng`: palette, fonts, type scale,
-    /// spacing, radius, density and the eighteen personality options. Pill
+    /// spacing, radius, density and the twenty-two personality options. Pill
     /// buttons become rounded on sharp themes. The result always passes
     /// [`Theme::build`].
     fn from_rng(rng: &mut SeedRng) -> Theme {
@@ -541,6 +578,10 @@ impl Seeded for Theme {
             .label_style(LabelStyle::from_rng(&mut rng.fork(LabelStyle::STREAM)))
             .icon_weight(IconWeight::from_rng(&mut rng.fork(IconWeight::STREAM)))
             .motion(Motion::from_rng(&mut rng.fork(Motion::STREAM)))
+            .heading_font(HeadingFont::from_rng(&mut rng.fork(HeadingFont::STREAM)))
+            .leading(Leading::from_rng(&mut rng.fork(Leading::STREAM)))
+            .tag_style(TagStyle::from_rng(&mut rng.fork(TagStyle::STREAM)))
+            .rule_style(RuleStyle::from_rng(&mut rng.fork(RuleStyle::STREAM)))
     }
 
     /// The theme for `seed`; its options match each option's own
@@ -637,6 +678,10 @@ mod tests {
             assert_eq!(p.labels, LabelStyle::seeded(seed));
             assert_eq!(p.icons, IconWeight::seeded(seed));
             assert_eq!(p.motion, Motion::seeded(seed));
+            assert_eq!(p.heading_font, HeadingFont::seeded(seed));
+            assert_eq!(p.leading, Leading::seeded(seed));
+            assert_eq!(p.tags, TagStyle::seeded(seed));
+            assert_eq!(p.rules, RuleStyle::seeded(seed));
             let palette = Palette::seeded(seed);
             assert_eq!(theme.accent_hue, palette.accent.h);
             assert_eq!(theme.accent_from_neutral, palette.ink);

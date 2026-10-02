@@ -133,7 +133,7 @@
   .st-switcher[data-limit="5"] > :nth-last-child(n+6), .st-switcher[data-limit="5"] > :nth-last-child(n+6) ~ * { flex-basis: 100%; }
   .st-switcher[data-limit="6"] > :nth-last-child(n+7), .st-switcher[data-limit="6"] > :nth-last-child(n+7) ~ * { flex-basis: 100%; }
   /* Separator. */
-  .st-separator { border: 0; border-block-start: var(--st-line, 1px) solid var(--st-border); margin-block: var(--st-space-4); }
+  .st-separator { border: 0; border-block-start: var(--st-line, 1px) var(--st-rule-style, solid) var(--st-border); margin-block: var(--st-space-4); }
   /* Skip link: hidden until focused. */
   .st-skip-link { position: absolute; inset-inline-start: var(--st-space-2); inset-block-start: var(--st-space-2); z-index: var(--st-z-overlay); padding: var(--st-space-2) var(--st-space-4); background: var(--st-surface); color: var(--st-accent-text); border: 2px solid var(--st-focus); border-radius: var(--st-radius-md); transform: translateY(-200%); }
   .st-skip-link:focus { transform: none; }

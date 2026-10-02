@@ -4,7 +4,7 @@
     color: var(--st-text);
     font-family: var(--st-font-sans);
     font-size: var(--st-text-base);
-    line-height: 1.5;
+    line-height: var(--st-leading, 1.5);
   }
   :focus-visible { outline: var(--st-focus-width, 2px) solid var(--st-focus); outline-offset: var(--st-focus-offset, 2px); }
   a { color: var(--st-accent-text); }

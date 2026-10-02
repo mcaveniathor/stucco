@@ -36,7 +36,7 @@ From the accent and neutral hues, stucco generates twelve-step OKLCH scales for 
 
 ## Personality
 
-Eighteen options change how components look without changing their markup:
+Twenty-two options change how components look without changing their markup:
 
 | Option | Choices |
 | --- | --- |
@@ -58,6 +58,10 @@ Eighteen options change how components look without changing their markup:
 | `label_style` | Plain (default), Caps, Strong |
 | `icon_weight` | Light, Regular (default), Bold |
 | `motion` | Smooth (default), Snappy, Gentle, Springy |
+| `heading_font` | Body (default), Serif, Rounded, Mono |
+| `leading` | Tight, Normal (default), Airy |
+| `tag_style` | Pill (default), Square, Outline |
+| `rule_style` | Solid (default), Dashed, Dotted |
 
 Each option sets tokens such as `--st-card-shadow` or `--st-table-rule` that the component styles read. Every link style keeps an underline, so links never depend on colour alone.
 
@@ -69,6 +73,12 @@ Each option sets tokens such as `--st-card-shadow` or `--st-table-rule` that the
 
 `corner_style` shapes the corners of cards, panels, filter bars and table cards. Squircle and Bevel use the CSS `corner-shape` property, so browsers without it show ordinary rounded corners. Hand makes each corner slightly different, like plaster shaped by hand. Every style keeps the theme's radius, so sharp themes stay sharp.
 
+### Type
+
+`heading_font` sets the typeface of headings and table captions, leaving body text in the theme's fonts: a serif for an editorial look, a rounded sans where the platform has one, or the theme's monospace font. Like the body fonts, these are system fonts, so nothing is downloaded.
+
+`leading` sets the line height of running text: 1.4, 1.5 or 1.65.
+
 ### Lines, depth and labels
 
 `line_weight` sets the width of the borders and rules that outline cards, panels, controls, fieldsets and the application shell. Heavy doubles them, for a bold, graphic look; table row rules stay fine either way.
@@ -76,6 +86,10 @@ Each option sets tokens such as `--st-card-shadow` or `--st-table-rule` that the
 `button_depth` decides how buttons stand off the page. Flat buttons have no shadow and shrink slightly when pressed. Raised buttons have a soft shadow and a highlight along the top, and sink when pressed. Offset buttons cast a hard shadow in the text colour, down and to the side, and slide onto it when pressed. Ghost buttons stay flat in every style.
 
 `label_style` styles small labels: table column headings, the sidebar's heading and the labels above collection controls. Plain is small, semibold and muted; Caps sets them in spaced capitals; Strong uses bold text in the full text colour.
+
+`tag_style` draws tags, such as status values in tables, as filled pills, filled labels with small corners, or outlined pills.
+
+`rule_style` makes dividing rules (separators, table row rules and the footer's top rule) solid, dashed or dotted. The outlines of cards, panels and controls stay solid.
 
 `icon_weight` sets the stroke width of icons: 1.5, 2 or 2.5.
 

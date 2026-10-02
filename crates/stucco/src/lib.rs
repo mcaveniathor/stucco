@@ -33,10 +33,10 @@ pub mod theme {
     pub use stucco_theme::spec;
     pub use stucco_theme::{
         BuiltTheme, ButtonDepth, ButtonShape, Color, ContrastFailure, ContrastReport, ControlStyle,
-        CornerStyle, Density, Elevation, Finish, FocusStyle, Fonts, HeaderStyle, HeadingWeight,
-        IconWeight, LabelStyle, LineWeight, LinkStyle, Motion, NavStyle, Palette, PanelStyle,
-        Preset, Radius, Random, Scale, Scheme, Scope, SeedRng, Seeded, ShellLayout, TableStyle,
-        Theme, TypeScale, contrast, random_seed,
+        CornerStyle, Density, Elevation, Finish, FocusStyle, Fonts, HeaderStyle, HeadingFont,
+        HeadingWeight, IconWeight, LabelStyle, Leading, LineWeight, LinkStyle, Motion, NavStyle,
+        Palette, PanelStyle, Preset, Radius, Random, RuleStyle, Scale, Scheme, Scope, SeedRng,
+        Seeded, ShellLayout, TableStyle, TagStyle, Theme, TypeScale, contrast, random_seed,
     };
 }
 

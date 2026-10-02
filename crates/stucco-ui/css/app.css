@@ -64,6 +64,6 @@
   .st-page-header-description { color: var(--st-text-muted); }
   .st-footer {
     padding: var(--st-space-5) var(--st-app-gutter, var(--st-space-6));
-    border-block-start: var(--st-line, 1px) solid var(--st-border); color: var(--st-text-muted); font-size: var(--st-text-sm);
+    border-block-start: var(--st-line, 1px) var(--st-rule-style, solid) var(--st-border); color: var(--st-text-muted); font-size: var(--st-text-sm);
   }
 }

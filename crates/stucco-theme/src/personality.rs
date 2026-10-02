@@ -283,6 +283,57 @@ pub enum Motion {
     Springy,
 }
 
+/// The typeface of headings. Body text keeps the theme's fonts.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum HeadingFont {
+    /// The body font (default).
+    #[default]
+    Body,
+    /// A transitional serif, for an editorial look.
+    Serif,
+    /// A rounded sans, where the platform has one.
+    Rounded,
+    /// The theme's monospace font.
+    Mono,
+}
+
+/// The line height of running text.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum Leading {
+    /// 1.4, for dense interfaces.
+    Tight,
+    /// 1.5 (default).
+    #[default]
+    Normal,
+    /// 1.65, for reading.
+    Airy,
+}
+
+/// How tags, such as status values in tables, are drawn.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum TagStyle {
+    /// A filled pill with a border (default).
+    #[default]
+    Pill,
+    /// A filled label with small corners.
+    Square,
+    /// A pill with a strong border and no fill.
+    Outline,
+}
+
+/// The pattern of dividing rules: separators, table row rules and the
+/// footer's top rule. Outlines of surfaces stay solid.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum RuleStyle {
+    /// Solid rules (default).
+    #[default]
+    Solid,
+    /// Dashed rules.
+    Dashed,
+    /// Dotted rules.
+    Dotted,
+}
+
 /// Every personality choice; the default reproduces stucco's base look.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub(crate) struct Personality {
@@ -304,6 +355,10 @@ pub(crate) struct Personality {
     pub(crate) labels: LabelStyle,
     pub(crate) icons: IconWeight,
     pub(crate) motion: Motion,
+    pub(crate) heading_font: HeadingFont,
+    pub(crate) leading: Leading,
+    pub(crate) tags: TagStyle,
+    pub(crate) rules: RuleStyle,
 }
 
 impl Personality {
@@ -509,7 +564,7 @@ impl Personality {
         // Shadows are never `none`, so CSS can add to them.
         // (rest, pressed, pressed scale, pressed shift)
         let (button_shadow, button_pressed, press_scale, press_shift) = match self.depth {
-            ButtonDepth::Flat => ("0 0 #0000", "0 0 #0000", "0.96", "0 0"),
+            ButtonDepth::Flat => ("0 0 transparent", "0 0 transparent", "0.96", "0 0"),
             ButtonDepth::Raised => (
                 concat!(
                     "0 1px 2px color-mix(in oklch, var(--st-neutral-12) 18%, transparent), ",
@@ -543,6 +598,46 @@ impl Personality {
             Motion::Snappy => ("70ms", "120ms", "200ms", "cubic-bezier(.3,0,0,1)"),
             Motion::Gentle => ("200ms", "320ms", "500ms", "cubic-bezier(.4,0,.2,1)"),
             Motion::Springy => ("160ms", "260ms", "420ms", "cubic-bezier(.34,1.56,.64,1)"),
+        };
+        let heading_font = match self.heading_font {
+            HeadingFont::Body => "var(--st-font-sans)",
+            HeadingFont::Serif => concat!(
+                "Charter, \"Bitstream Charter\", \"Sitka Text\", Cambria, ",
+                "\"Iowan Old Style\", Georgia, serif"
+            ),
+            HeadingFont::Rounded => concat!(
+                "ui-rounded, \"Hiragino Maru Gothic ProN\", Quicksand, Comfortaa, Manjari, ",
+                "\"Arial Rounded MT\", var(--st-font-sans)"
+            ),
+            HeadingFont::Mono => "var(--st-font-mono)",
+        };
+        let leading = match self.leading {
+            Leading::Tight => "1.4",
+            Leading::Normal => "1.5",
+            Leading::Airy => "1.65",
+        };
+        // (radius, fill, border)
+        let (tag_radius, tag_bg, tag_border) = match self.tags {
+            TagStyle::Pill => (
+                "var(--st-radius-full)",
+                "var(--st-surface-raised)",
+                "var(--st-border)",
+            ),
+            TagStyle::Square => (
+                "var(--st-radius-sm)",
+                "var(--st-surface-raised)",
+                "var(--st-border)",
+            ),
+            TagStyle::Outline => (
+                "var(--st-radius-full)",
+                "transparent",
+                "var(--st-border-strong)",
+            ),
+        };
+        let rule_style = match self.rules {
+            RuleStyle::Solid => "solid",
+            RuleStyle::Dashed => "dashed",
+            RuleStyle::Dotted => "dotted",
         };
         vec![
             ("surface-shadow", surface_shadow),
@@ -609,6 +704,12 @@ impl Personality {
             ("duration", normal),
             ("duration-slow", slow),
             ("ease", ease),
+            ("font-heading", heading_font),
+            ("leading", leading),
+            ("tag-radius", tag_radius),
+            ("tag-bg", tag_bg),
+            ("tag-border", tag_border),
+            ("rule-style", rule_style),
         ]
     }
 }

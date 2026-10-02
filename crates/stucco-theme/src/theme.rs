@@ -5,8 +5,9 @@ use std::fmt;
 use crate::color::{luminance_ratio, srgb_luminance};
 use crate::personality::{
     ButtonDepth, ButtonShape, ControlStyle, CornerStyle, Elevation, Finish, FocusStyle,
-    HeaderStyle, HeadingWeight, IconWeight, LabelStyle, LineWeight, LinkStyle, Motion, NavStyle,
-    PanelStyle, Personality, ShellLayout, TableStyle,
+    HeaderStyle, HeadingFont, HeadingWeight, IconWeight, LabelStyle, Leading, LineWeight,
+    LinkStyle, Motion, NavStyle, PanelStyle, Personality, RuleStyle, ShellLayout, TableStyle,
+    TagStyle,
 };
 use crate::roles::{INK_ACCENT, Kind, PAIRS, ROLES, STATUS, Source};
 use crate::seed::Palette;
@@ -330,6 +331,30 @@ impl Theme {
     /// How quickly, and with what feel, things move.
     pub fn motion(mut self, motion: Motion) -> Theme {
         self.personality.motion = motion;
+        self
+    }
+
+    /// The typeface of headings.
+    pub fn heading_font(mut self, font: HeadingFont) -> Theme {
+        self.personality.heading_font = font;
+        self
+    }
+
+    /// The line height of running text.
+    pub fn leading(mut self, leading: Leading) -> Theme {
+        self.personality.leading = leading;
+        self
+    }
+
+    /// How tags are drawn.
+    pub fn tag_style(mut self, style: TagStyle) -> Theme {
+        self.personality.tags = style;
+        self
+    }
+
+    /// The pattern of dividing rules.
+    pub fn rule_style(mut self, style: RuleStyle) -> Theme {
+        self.personality.rules = style;
         self
     }
 
