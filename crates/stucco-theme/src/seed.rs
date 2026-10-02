@@ -2,9 +2,10 @@
 //! stream [`SeedRng`], and implementations for every theme option.
 
 use crate::personality::{
-    ButtonDepth, ButtonShape, ControlStyle, CornerStyle, Elevation, Finish, FocusStyle,
+    Backdrop, ButtonDepth, ButtonShape, ControlStyle, CornerStyle, Elevation, Finish, FocusStyle,
     HeaderStyle, HeadingFont, HeadingWeight, IconWeight, LabelStyle, Leading, LineWeight,
-    LinkStyle, Motion, NavStyle, PanelStyle, RuleStyle, ShellLayout, TableStyle, TagStyle,
+    LinkStyle, Material, Motion, NavStyle, PanelStyle, RuleStyle, ShadowStyle, ShellLayout,
+    TableStyle, TagStyle,
 };
 use crate::{Color, Density, Fonts, Radius, Theme, TypeScale};
 
@@ -533,12 +534,40 @@ seeded_enum!(
         (RuleStyle::Dotted, 1),
     ]
 );
+seeded_enum!(
+    Material,
+    "material",
+    [
+        (Material::Solid, 4),
+        (Material::Glass, 1),
+        (Material::Frost, 1),
+    ]
+);
+seeded_enum!(
+    Backdrop,
+    "backdrop",
+    [
+        (Backdrop::Plain, 4),
+        (Backdrop::Glow, 1),
+        (Backdrop::Wash, 1),
+    ]
+);
+seeded_enum!(
+    ShadowStyle,
+    "shadow-style",
+    [
+        (ShadowStyle::Soft, 3),
+        (ShadowStyle::Layered, 2),
+        (ShadowStyle::Tinted, 1),
+        (ShadowStyle::Hard, 1),
+    ]
+);
 
 impl Seeded for Theme {
     const STREAM: &'static str = "theme";
 
     /// Every option from its own fork of `rng`: palette, fonts, type scale,
-    /// spacing, radius, density and the twenty-two personality options. Pill
+    /// spacing, radius, density and the twenty-five personality options. Pill
     /// buttons become rounded on sharp themes. The result always passes
     /// [`Theme::build`].
     fn from_rng(rng: &mut SeedRng) -> Theme {
@@ -582,6 +611,9 @@ impl Seeded for Theme {
             .leading(Leading::from_rng(&mut rng.fork(Leading::STREAM)))
             .tag_style(TagStyle::from_rng(&mut rng.fork(TagStyle::STREAM)))
             .rule_style(RuleStyle::from_rng(&mut rng.fork(RuleStyle::STREAM)))
+            .material(Material::from_rng(&mut rng.fork(Material::STREAM)))
+            .backdrop(Backdrop::from_rng(&mut rng.fork(Backdrop::STREAM)))
+            .shadow_style(ShadowStyle::from_rng(&mut rng.fork(ShadowStyle::STREAM)))
     }
 
     /// The theme for `seed`; its options match each option's own
@@ -682,6 +714,9 @@ mod tests {
             assert_eq!(p.leading, Leading::seeded(seed));
             assert_eq!(p.tags, TagStyle::seeded(seed));
             assert_eq!(p.rules, RuleStyle::seeded(seed));
+            assert_eq!(p.material, Material::seeded(seed));
+            assert_eq!(p.backdrop, Backdrop::seeded(seed));
+            assert_eq!(p.shadows, ShadowStyle::seeded(seed));
             let palette = Palette::seeded(seed);
             assert_eq!(theme.accent_hue, palette.accent.h);
             assert_eq!(theme.accent_from_neutral, palette.ink);

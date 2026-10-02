@@ -1,6 +1,6 @@
 @layer stucco.base {
   body {
-    background: var(--st-finish, none) var(--st-bg);
+    background: var(--st-finish, none), var(--st-backdrop, none) var(--st-bg);
     color: var(--st-text);
     font-family: var(--st-font-sans);
     font-size: var(--st-text-base);
@@ -14,9 +14,13 @@
     position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden;
     clip-path: inset(50%); white-space: nowrap;
   }
-  /* The finish's grain goes for visitors who ask for more contrast. */
+  /* The finish's grain and the backdrop go for visitors who ask for more contrast. */
   @media (prefers-contrast: more), (forced-colors: active) {
     body { background-image: none; }
+  }
+  /* Translucent surfaces turn solid for visitors who ask for less transparency or more contrast. */
+  @media (prefers-reduced-transparency: reduce), (prefers-contrast: more), (forced-colors: active) {
+    :root, [data-st-theme] { --st-surface-material: var(--st-surface); --st-surface-blur: none; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, ::before, ::after {

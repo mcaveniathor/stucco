@@ -101,15 +101,6 @@ pub(crate) fn token_css(built: &BuiltTheme, scope: Scope<'_>) -> String {
     css.push_str(
         "    --st-z-dropdown: 100; --st-z-sticky: 200; --st-z-overlay: 300; --st-z-toast: 400;\n",
     );
-    for (i, pct) in [8, 12, 18].iter().enumerate() {
-        let _ = writeln!(
-            css,
-            "    --st-shadow-{}: 0 {}px {}px color-mix(in oklch, var(--st-neutral-12) {pct}%, transparent);",
-            i + 1,
-            (i + 1) * 2,
-            (i + 1) * 8
-        );
-    }
     for (name, value) in t.personality.tokens() {
         let _ = writeln!(css, "    --st-{name}: {value};");
     }

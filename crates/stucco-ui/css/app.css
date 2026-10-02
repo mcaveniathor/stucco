@@ -5,7 +5,7 @@
     --st-app-side-pad: max(var(--st-space-1), calc(var(--st-app-gutter) - var(--st-space-3)));
     min-block-size: 100dvh; display: flex; flex-direction: column; container-type: inline-size;
   }
-  .st-app-header { padding: var(--st-space-6) var(--st-app-gutter); background: var(--st-header-bg); border-block-end: var(--st-line, 1px) solid var(--st-header-border); }
+  .st-app-header { padding: var(--st-space-6) var(--st-app-gutter); background: var(--st-header-bg); -webkit-backdrop-filter: var(--st-surface-blur, none); backdrop-filter: var(--st-surface-blur, none); border-block-end: var(--st-line, 1px) solid var(--st-header-border); }
   /* A grid of the primary links (nav), the sidebar (side) and main, arranged by the theme's shell layout. */
   .st-app-body {
     flex: 1; display: grid; min-inline-size: 0; container-type: inline-size;
@@ -16,12 +16,14 @@
   .st-app-nav {
     grid-area: nav; display: flex; flex-direction: var(--st-shell-nav-direction); flex-wrap: wrap; gap: 2px;
     padding: var(--st-shell-nav-pad-block) var(--st-app-side-pad); background: var(--st-shell-side-bg);
+    -webkit-backdrop-filter: var(--st-surface-blur, none); backdrop-filter: var(--st-surface-blur, none);
     border: 0 solid var(--st-border);
     border-inline-end-width: var(--st-shell-nav-rule-inline); border-block-end-width: var(--st-shell-nav-rule-block);
   }
   .st-app-sidebar {
     grid-area: side; padding: var(--st-space-4) var(--st-app-side-pad);
-    background: var(--st-shell-side-bg); border-inline-end: var(--st-line, 1px) solid var(--st-border);
+    background: var(--st-shell-side-bg); -webkit-backdrop-filter: var(--st-surface-blur, none); backdrop-filter: var(--st-surface-blur, none);
+    border-inline-end: var(--st-line, 1px) solid var(--st-border);
   }
   .st-app-main { grid-area: main; min-inline-size: 0; padding: var(--st-space-6) var(--st-app-gutter) var(--st-space-10); }
   /* Narrow shells stack everything; the primary links wrap in a row. */

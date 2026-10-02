@@ -36,7 +36,7 @@ From the accent and neutral hues, stucco generates twelve-step OKLCH scales for 
 
 ## Personality
 
-Twenty-two options change how components look without changing their markup:
+Twenty-five options change how components look without changing their markup:
 
 | Option | Choices |
 | --- | --- |
@@ -62,6 +62,9 @@ Twenty-two options change how components look without changing their markup:
 | `leading` | Tight, Normal (default), Airy |
 | `tag_style` | Pill (default), Square, Outline |
 | `rule_style` | Solid (default), Dashed, Dotted |
+| `material` | Solid (default), Glass, Frost |
+| `backdrop` | Plain (default), Glow, Wash |
+| `shadow_style` | Soft (default), Layered, Tinted, Hard |
 
 Each option sets tokens such as `--st-card-shadow` or `--st-table-rule` that the component styles read. Every link style keeps an underline, so links never depend on colour alone.
 
@@ -103,6 +106,26 @@ let theme = Theme::preset(Preset::Slate)
     .radius(Radius::Sharp)
     .line_weight(LineWeight::Heavy)
     .button_depth(ButtonDepth::Offset);
+```
+
+### Transparency and depth
+
+`material` decides what large surfaces are made of: cards, panels, filter bars, table cards, the application header and the side column. Glass is 70% opaque with a light blur and a lit top edge; Frost is 85% opaque with a heavier blur. Both show the backdrop and finish through them, and turn solid for visitors who ask for reduced transparency or more contrast. Inputs and other controls stay solid.
+
+`backdrop` puts soft colour behind the page, drawn from the theme's soft accent: Glow adds two glows at the top of the page, and Wash fades from the top down. Pages drop it for visitors who ask for more contrast.
+
+`shadow_style` draws shadows at every elevation. Soft is one blurred shadow; Layered stacks close and far shadows for realistic depth; Tinted colours them with the accent; Hard drops the blur for solid ledges. Shadows show on surfaces that `elevation` raises.
+
+`build` checks text on the page against the backdrop's and finish's strongest points, and text on translucent surfaces against every colour the page behind them can show, so a theme that builds stays readable.
+
+```rust
+use stucco::theme::{Backdrop, Elevation, Material, Preset, ShadowStyle, Theme};
+
+let theme = Theme::preset(Preset::Slate)
+    .material(Material::Glass)
+    .backdrop(Backdrop::Glow)
+    .elevation(Elevation::Raised)
+    .shadow_style(ShadowStyle::Layered);
 ```
 
 ### Finish

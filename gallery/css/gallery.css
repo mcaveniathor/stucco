@@ -11,7 +11,7 @@
   .g-preset > * + * { margin-block-start: var(--st-space-3); }
   .g-panels { display: grid; gap: var(--st-space-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); }
   .g-panel {
-    background: var(--st-finish, none) var(--st-bg); color: var(--st-text);
+    background: var(--st-finish, none), var(--st-backdrop, none) var(--st-bg); color: var(--st-text);
     border: 1px solid var(--st-border); border-radius: var(--st-radius-lg);
     padding: var(--st-space-4); font-family: var(--st-font-sans);
   }

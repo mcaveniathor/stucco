@@ -19,10 +19,10 @@ use std::fmt::{self, Write};
 use std::str::FromStr;
 
 use crate::{
-    BuiltTheme, ButtonDepth, ButtonShape, ControlStyle, CornerStyle, Density, Elevation, Finish,
-    FocusStyle, HeaderStyle, HeadingFont, HeadingWeight, IconWeight, LabelStyle, Leading,
-    LineWeight, LinkStyle, Motion, NavStyle, PanelStyle, Preset, Radius, RuleStyle, Scheme,
-    ShellLayout, TableStyle, TagStyle, Theme,
+    Backdrop, BuiltTheme, ButtonDepth, ButtonShape, ControlStyle, CornerStyle, Density, Elevation,
+    Finish, FocusStyle, HeaderStyle, HeadingFont, HeadingWeight, IconWeight, LabelStyle, Leading,
+    LineWeight, LinkStyle, Material, Motion, NavStyle, PanelStyle, Preset, Radius, RuleStyle,
+    Scheme, ShadowStyle, ShellLayout, TableStyle, TagStyle, Theme,
 };
 
 /// One choice for an option.
@@ -331,6 +331,40 @@ pub const OPTIONS: &[OptionInfo] = &[
             choice("solid", "Solid"),
             choice("dashed", "Dashed"),
             choice("dotted", "Dotted"),
+        ],
+    },
+    OptionInfo {
+        key: "material",
+        label: "Material",
+        ty: "Material",
+        method: "material",
+        choices: &[
+            choice("solid", "Solid"),
+            choice("glass", "Glass"),
+            choice("frost", "Frost"),
+        ],
+    },
+    OptionInfo {
+        key: "backdrop",
+        label: "Backdrop",
+        ty: "Backdrop",
+        method: "backdrop",
+        choices: &[
+            choice("plain", "Plain"),
+            choice("glow", "Glow"),
+            choice("wash", "Wash"),
+        ],
+    },
+    OptionInfo {
+        key: "shadows",
+        label: "Shadows",
+        ty: "ShadowStyle",
+        method: "shadow_style",
+        choices: &[
+            choice("soft", "Soft"),
+            choice("layered", "Layered"),
+            choice("tinted", "Tinted"),
+            choice("hard", "Hard"),
         ],
     },
 ];
@@ -811,6 +845,16 @@ fn apply(theme: Theme, key: &str, value: &str) -> Theme {
         ("rules", "solid") => theme.rule_style(RuleStyle::Solid),
         ("rules", "dashed") => theme.rule_style(RuleStyle::Dashed),
         ("rules", "dotted") => theme.rule_style(RuleStyle::Dotted),
+        ("material", "solid") => theme.material(Material::Solid),
+        ("material", "glass") => theme.material(Material::Glass),
+        ("material", "frost") => theme.material(Material::Frost),
+        ("backdrop", "plain") => theme.backdrop(Backdrop::Plain),
+        ("backdrop", "glow") => theme.backdrop(Backdrop::Glow),
+        ("backdrop", "wash") => theme.backdrop(Backdrop::Wash),
+        ("shadows", "soft") => theme.shadow_style(ShadowStyle::Soft),
+        ("shadows", "layered") => theme.shadow_style(ShadowStyle::Layered),
+        ("shadows", "tinted") => theme.shadow_style(ShadowStyle::Tinted),
+        ("shadows", "hard") => theme.shadow_style(ShadowStyle::Hard),
         _ => theme,
     }
 }
@@ -940,6 +984,22 @@ fn current(theme: &Theme, key: &str) -> &'static str {
             RuleStyle::Solid => "solid",
             RuleStyle::Dashed => "dashed",
             RuleStyle::Dotted => "dotted",
+        },
+        "material" => match p.material {
+            Material::Solid => "solid",
+            Material::Glass => "glass",
+            Material::Frost => "frost",
+        },
+        "backdrop" => match p.backdrop {
+            Backdrop::Plain => "plain",
+            Backdrop::Glow => "glow",
+            Backdrop::Wash => "wash",
+        },
+        "shadows" => match p.shadows {
+            ShadowStyle::Soft => "soft",
+            ShadowStyle::Layered => "layered",
+            ShadowStyle::Tinted => "tinted",
+            ShadowStyle::Hard => "hard",
         },
         _ => unreachable!("only known keys are looked up"),
     }

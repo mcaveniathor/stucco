@@ -334,6 +334,94 @@ pub enum RuleStyle {
     Dotted,
 }
 
+/// What large surfaces are made of: cards, panels, filter bars, table
+/// cards, the application header and the side column.
+///
+/// Glass and Frost are translucent and blur what is behind them, such as a
+/// [`Backdrop`] or a [`Finish`]. [`Theme::build`] checks text on them
+/// against every colour the page behind can show, and they turn solid for
+/// visitors who ask for reduced transparency or more contrast.
+///
+/// [`Theme::build`]: crate::Theme::build
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum Material {
+    /// Opaque surfaces (default).
+    #[default]
+    Solid,
+    /// Clear glass: 70% opaque with a light blur and a lit top edge.
+    Glass,
+    /// Frosted glass: 85% opaque with a heavy blur.
+    Frost,
+}
+
+impl Material {
+    /// The surface's opacity.
+    pub(crate) fn opacity(self) -> f64 {
+        match self {
+            Material::Solid => 1.0,
+            Material::Glass => 0.7,
+            Material::Frost => 0.85,
+        }
+    }
+}
+
+/// Soft colour behind the page, drawn from the soft accent. [`Theme::build`]
+/// checks text on the page against its strongest point, and it goes for
+/// visitors who ask for more contrast.
+///
+/// [`Theme::build`]: crate::Theme::build
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum Backdrop {
+    /// The plain background colour (default).
+    #[default]
+    Plain,
+    /// Two soft accent glows at the top of the page.
+    Glow,
+    /// An accent wash that fades out down the page.
+    Wash,
+}
+
+impl Backdrop {
+    /// The strongest opacity of the soft accent over the background.
+    pub(crate) fn max_alpha(self) -> f64 {
+        match self {
+            Backdrop::Plain => 0.0,
+            Backdrop::Glow => 0.9,
+            Backdrop::Wash => 0.8,
+        }
+    }
+
+    fn image(self) -> &'static str {
+        match self {
+            Backdrop::Plain => "none",
+            Backdrop::Glow => concat!(
+                "radial-gradient(60rem 36rem at 0 0, ",
+                "color-mix(in oklch, var(--st-accent-soft) 90%, transparent), transparent), ",
+                "radial-gradient(48rem 30rem at 100% 0, ",
+                "color-mix(in oklch, var(--st-accent-soft) 60%, transparent), transparent)"
+            ),
+            Backdrop::Wash => concat!(
+                "linear-gradient(color-mix(in oklch, var(--st-accent-soft) 80%, transparent), ",
+                "transparent 32rem)"
+            ),
+        }
+    }
+}
+
+/// How shadows are drawn, at every elevation.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum ShadowStyle {
+    /// One soft, blurred shadow (default).
+    #[default]
+    Soft,
+    /// Several stacked shadows, close and far, for realistic depth.
+    Layered,
+    /// Soft shadows coloured with the accent.
+    Tinted,
+    /// Solid shadows without blur, offset straight down.
+    Hard,
+}
+
 /// Every personality choice; the default reproduces stucco's base look.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub(crate) struct Personality {
@@ -359,14 +447,17 @@ pub(crate) struct Personality {
     pub(crate) leading: Leading,
     pub(crate) tags: TagStyle,
     pub(crate) rules: RuleStyle,
+    pub(crate) material: Material,
+    pub(crate) backdrop: Backdrop,
+    pub(crate) shadows: ShadowStyle,
 }
 
 impl Personality {
     /// `(token, value)` pairs, without the `--st-` prefix.
     pub(crate) fn tokens(&self) -> Vec<(&'static str, &'static str)> {
         let (surface_shadow, card_shadow) = match self.elevation {
-            Elevation::Flat => ("none", "none"),
-            Elevation::Outlined => ("none", "var(--st-shadow-1)"),
+            Elevation::Flat => ("0 0 transparent", "0 0 transparent"),
+            Elevation::Outlined => ("0 0 transparent", "var(--st-shadow-1)"),
             Elevation::Raised => ("var(--st-shadow-1)", "var(--st-shadow-2)"),
         };
         let (rule, stripe, head) = match self.table {
@@ -403,7 +494,7 @@ impl Personality {
             ),
         };
         let (header_bg, header_border) = match self.header {
-            HeaderStyle::Bar => ("var(--st-surface)", "var(--st-border)"),
+            HeaderStyle::Bar => ("var(--st-surface-material)", "var(--st-border)"),
             HeaderStyle::Plain => ("transparent", "var(--st-border)"),
             HeaderStyle::Tinted => ("var(--st-accent-soft)", "transparent"),
         };
@@ -480,7 +571,7 @@ impl Personality {
                 "var(--st-space-4) var(--st-space-2)",
                 "var(--st-line)",
                 "0",
-                "var(--st-surface)",
+                "var(--st-surface-material)",
             ),
             ShellLayout::Rail => (
                 "column",
@@ -494,7 +585,7 @@ impl Personality {
                 "var(--st-space-2)",
                 "0",
                 "var(--st-line)",
-                "var(--st-surface)",
+                "var(--st-surface-material)",
             ),
         };
         // Where the Bar nav style marks the current primary link: the
@@ -523,7 +614,7 @@ impl Personality {
             PanelStyle::Boxed => [
                 "var(--st-line) solid var(--st-border)",
                 "var(--st-line) solid var(--st-border)",
-                "var(--st-surface)",
+                "var(--st-surface-material)",
                 "var(--st-surface-radius)",
                 "var(--st-space-6)",
                 "var(--st-surface-shadow)",
@@ -538,7 +629,7 @@ impl Personality {
                 "transparent",
                 "0",
                 "0",
-                "none",
+                "0 0 transparent",
                 "transparent",
                 "0",
                 "0 0 var(--st-space-4)",
@@ -547,7 +638,7 @@ impl Personality {
             PanelStyle::Headed => [
                 "var(--st-line) solid var(--st-border)",
                 "var(--st-line) solid var(--st-border)",
-                "var(--st-surface)",
+                "var(--st-surface-material)",
                 "var(--st-surface-radius)",
                 "var(--st-space-6)",
                 "var(--st-surface-shadow)",
@@ -567,10 +658,10 @@ impl Personality {
             ButtonDepth::Flat => ("0 0 transparent", "0 0 transparent", "0.96", "0 0"),
             ButtonDepth::Raised => (
                 concat!(
-                    "0 1px 2px color-mix(in oklch, var(--st-neutral-12) 18%, transparent), ",
+                    "0 1px 2px color-mix(in oklch, var(--st-shadow-ink) 18%, transparent), ",
                     "inset 0 1px 0 color-mix(in oklch, white 22%, transparent)"
                 ),
-                "inset 0 1px 3px color-mix(in oklch, var(--st-neutral-12) 22%, transparent)",
+                "inset 0 1px 3px color-mix(in oklch, var(--st-shadow-ink) 22%, transparent)",
                 "1",
                 "0 1px",
             ),
@@ -639,7 +730,78 @@ impl Personality {
             RuleStyle::Dashed => "dashed",
             RuleStyle::Dotted => "dotted",
         };
+        // (fill, backdrop filter, lit edge)
+        let (material, blur, edge) = match self.material {
+            Material::Solid => ("var(--st-surface)", "none", "0 0 transparent"),
+            Material::Glass => (
+                "color-mix(in oklch, var(--st-surface) 70%, transparent)",
+                "blur(12px) saturate(1.5)",
+                "inset 0 1px 0 color-mix(in oklch, white 30%, transparent)",
+            ),
+            Material::Frost => (
+                "color-mix(in oklch, var(--st-surface) 85%, transparent)",
+                "blur(24px) saturate(1.2)",
+                "inset 0 1px 0 color-mix(in oklch, white 18%, transparent)",
+            ),
+        };
+        let panel_edge = match self.panels {
+            PanelStyle::Ruled => "0 0 transparent",
+            _ => edge,
+        };
+        let shadows = match self.shadows {
+            ShadowStyle::Soft => [
+                "0 2px 8px color-mix(in oklch, var(--st-shadow-ink) 8%, transparent)",
+                "0 4px 16px color-mix(in oklch, var(--st-shadow-ink) 12%, transparent)",
+                "0 6px 24px color-mix(in oklch, var(--st-shadow-ink) 18%, transparent)",
+            ],
+            ShadowStyle::Layered => [
+                concat!(
+                    "0 1px 1px color-mix(in oklch, var(--st-shadow-ink) 6%, transparent), ",
+                    "0 2px 4px color-mix(in oklch, var(--st-shadow-ink) 6%, transparent), ",
+                    "0 4px 8px color-mix(in oklch, var(--st-shadow-ink) 6%, transparent)"
+                ),
+                concat!(
+                    "0 1px 2px color-mix(in oklch, var(--st-shadow-ink) 6%, transparent), ",
+                    "0 3px 6px color-mix(in oklch, var(--st-shadow-ink) 7%, transparent), ",
+                    "0 8px 16px color-mix(in oklch, var(--st-shadow-ink) 8%, transparent), ",
+                    "0 16px 32px color-mix(in oklch, var(--st-shadow-ink) 6%, transparent)"
+                ),
+                concat!(
+                    "0 2px 4px color-mix(in oklch, var(--st-shadow-ink) 6%, transparent), ",
+                    "0 6px 12px color-mix(in oklch, var(--st-shadow-ink) 8%, transparent), ",
+                    "0 16px 32px color-mix(in oklch, var(--st-shadow-ink) 9%, transparent), ",
+                    "0 32px 64px color-mix(in oklch, var(--st-shadow-ink) 8%, transparent)"
+                ),
+            ],
+            ShadowStyle::Tinted => [
+                concat!(
+                    "0 2px 8px color-mix(in oklch, ",
+                    "color-mix(in oklch, var(--st-accent) 45%, var(--st-shadow-ink)) 12%, transparent)"
+                ),
+                concat!(
+                    "0 4px 16px color-mix(in oklch, ",
+                    "color-mix(in oklch, var(--st-accent) 45%, var(--st-shadow-ink)) 18%, transparent)"
+                ),
+                concat!(
+                    "0 6px 24px color-mix(in oklch, ",
+                    "color-mix(in oklch, var(--st-accent) 45%, var(--st-shadow-ink)) 24%, transparent)"
+                ),
+            ],
+            ShadowStyle::Hard => [
+                "0 2px 0 color-mix(in oklch, var(--st-shadow-ink) 12%, transparent)",
+                "0 4px 0 color-mix(in oklch, var(--st-shadow-ink) 14%, transparent)",
+                "0 6px 0 color-mix(in oklch, var(--st-shadow-ink) 16%, transparent)",
+            ],
+        };
         vec![
+            // Shadows darken in both schemes; the text colour would glow in dark.
+            (
+                "shadow-ink",
+                "light-dark(var(--st-neutral-12), oklch(0 0 0))",
+            ),
+            ("shadow-1", shadows[0]),
+            ("shadow-2", shadows[1]),
+            ("shadow-3", shadows[2]),
             ("surface-shadow", surface_shadow),
             ("card-shadow", card_shadow),
             ("table-rule", rule),
@@ -710,6 +872,11 @@ impl Personality {
             ("tag-bg", tag_bg),
             ("tag-border", tag_border),
             ("rule-style", rule_style),
+            ("surface-material", material),
+            ("surface-blur", blur),
+            ("surface-edge", edge),
+            ("panel-edge", panel_edge),
+            ("backdrop", self.backdrop.image()),
         ]
     }
 }

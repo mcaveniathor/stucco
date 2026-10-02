@@ -4,10 +4,10 @@ use std::fmt;
 
 use crate::color::{luminance_ratio, srgb_luminance};
 use crate::personality::{
-    ButtonDepth, ButtonShape, ControlStyle, CornerStyle, Elevation, Finish, FocusStyle,
+    Backdrop, ButtonDepth, ButtonShape, ControlStyle, CornerStyle, Elevation, Finish, FocusStyle,
     HeaderStyle, HeadingFont, HeadingWeight, IconWeight, LabelStyle, Leading, LineWeight,
-    LinkStyle, Motion, NavStyle, PanelStyle, Personality, RuleStyle, ShellLayout, TableStyle,
-    TagStyle,
+    LinkStyle, Material, Motion, NavStyle, PanelStyle, Personality, RuleStyle, ShadowStyle,
+    ShellLayout, TableStyle, TagStyle,
 };
 use crate::roles::{INK_ACCENT, Kind, PAIRS, ROLES, STATUS, Source};
 use crate::seed::Palette;
@@ -358,6 +358,24 @@ impl Theme {
         self
     }
 
+    /// What large surfaces are made of.
+    pub fn material(mut self, material: Material) -> Theme {
+        self.personality.material = material;
+        self
+    }
+
+    /// Soft accent colour behind the page.
+    pub fn backdrop(mut self, backdrop: Backdrop) -> Theme {
+        self.personality.backdrop = backdrop;
+        self
+    }
+
+    /// How shadows are drawn.
+    pub fn shadow_style(mut self, style: ShadowStyle) -> Theme {
+        self.personality.shadows = style;
+        self
+    }
+
     /// Minimum contrast for text roles (default 4.5, WCAG AA).
     pub fn min_contrast(mut self, ratio: f64) -> Theme {
         self.min_contrast = ratio;
@@ -416,25 +434,39 @@ impl Theme {
                 }
             }
         }
-        // A textured finish pulls the page background towards mid-grey by
-        // up to its strongest opacity (browsers blend in gamma-encoded
-        // sRGB), so text on the page must also clear that point.
-        let alpha = built.theme.personality.finish.max_alpha();
-        if alpha > 0.0 {
-            for scheme in Scheme::BOTH {
-                for (fg, _, kind) in PAIRS.iter().filter(|(_, bg, _)| *bg == "bg") {
+        // A backdrop and a finish change the colour behind text on the page,
+        // and translucent surfaces show that colour through, so text must
+        // clear every colour they can make.
+        let opacity = built.theme.personality.material.opacity();
+        for scheme in Scheme::BOTH {
+            let page = built.page_colours(scheme);
+            let surface = built.role(scheme, "surface").expect("surface exists");
+            let mut behind: Vec<(&'static str, &'static str, [f64; 3])> = page
+                .iter()
+                .skip(1)
+                .map(|&(label, c)| ("bg", label, c))
+                .collect();
+            if opacity < 1.0 {
+                behind.extend(page.iter().map(|&(_, c)| {
+                    (
+                        "surface",
+                        "translucent surface",
+                        mix(surface.to_srgb(), c, opacity),
+                    )
+                }));
+            }
+            for (on, label, colour) in behind {
+                for (fg, _, kind) in PAIRS.iter().filter(|(_, bg, _)| *bg == on) {
                     let required = match kind {
                         Kind::Text => built.theme.min_contrast,
                         Kind::Ui => 3.0,
                     };
                     let fg_c = built.role(scheme, fg).expect("pair roles exist");
-                    let bg_c = built.role(scheme, "bg").expect("bg exists");
-                    let grain = bg_c.to_srgb().map(|v| v * (1.0 - alpha) + 0.5 * alpha);
-                    let ratio = luminance_ratio(fg_c.luminance(), srgb_luminance(grain));
+                    let ratio = luminance_ratio(fg_c.luminance(), srgb_luminance(colour));
                     if ratio < required {
                         failures.push(ContrastFailure {
                             fg,
-                            bg: "bg with finish",
+                            bg: label,
                             scheme,
                             ratio,
                             required,
@@ -460,6 +492,12 @@ impl Theme {
             Err(ContrastReport { failures, invalid })
         }
     }
+}
+
+/// `top` at `alpha` over `under`, blended as browsers do, in gamma-encoded
+/// sRGB.
+fn mix(top: [f64; 3], under: [f64; 3], alpha: f64) -> [f64; 3] {
+    [0, 1, 2].map(|i| top[i] * alpha + under[i] * (1.0 - alpha))
 }
 
 /// The accent step used for hover: lighter than step 9 under black text,
@@ -514,6 +552,37 @@ impl BuiltTheme {
                 }
             }
         })
+    }
+
+    /// The colours the page background can show, as sRGB: the plain
+    /// background, then its strongest blends with the backdrop and the
+    /// finish's grain, each labelled for contrast reports.
+    pub(crate) fn page_colours(&self, scheme: Scheme) -> Vec<(&'static str, [f64; 3])> {
+        let p = &self.theme.personality;
+        let bg = self.role(scheme, "bg").expect("bg exists").to_srgb();
+        let mut colours = vec![("bg", bg)];
+        let backdrop = p.backdrop.max_alpha();
+        if backdrop > 0.0 {
+            let soft = self
+                .role(scheme, "accent-soft")
+                .expect("accent-soft exists")
+                .to_srgb();
+            colours.push(("bg with backdrop", mix(soft, bg, backdrop)));
+        }
+        // The grain pulls the page towards mid-grey by up to its strongest
+        // opacity.
+        let grain = p.finish.max_alpha();
+        if grain > 0.0 {
+            for i in 0..colours.len() {
+                let label = if i == 0 {
+                    "bg with finish"
+                } else {
+                    "bg with backdrop and finish"
+                };
+                colours.push((label, mix([0.5; 3], colours[i].1, grain)));
+            }
+        }
+        colours
     }
 
     /// Effective roles, with the ink-accent overrides applied.
