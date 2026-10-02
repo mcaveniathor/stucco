@@ -17,3 +17,4 @@ Ruling: ScanRequest adds offset_mode bool — Window::Offset(page=1) also repres
 Task 5 complete: all storage/scan/source tests passed; no-default tests, Rust 1.90 and adapter Clippy passed.
 Task 6 complete: table/shell/count/feedback markup tests and all-feature CSS checks passed.
 Task 7 complete: typed controls and DataTable markup, CSS, all-feature UI tests and Clippy passed.
+Task 8 complete: persistent orders HTTP acceptance and stored-HTML escaping tests passed; example Clippy and Rust 1.90 checks passed.
