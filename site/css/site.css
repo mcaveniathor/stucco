@@ -73,7 +73,13 @@
   .site-prose p, .site-prose li { line-height: 1.65; }
   .site-prose ul, .site-prose ol { padding-inline-start: var(--st-space-6); }
   .site-prose li + li { margin-block-start: var(--st-space-1); }
-  .site-prose a { color: var(--st-accent-text); text-underline-offset: 0.2em; }
+  /* Prose links follow the theme's link style, like .st-link. */
+  .site-prose a {
+    color: var(--st-accent-text); font-weight: var(--st-link-weight);
+    text-decoration-color: var(--st-link-line); text-decoration-thickness: var(--st-link-thickness);
+    text-underline-offset: 0.2em; background-image: var(--st-link-bg);
+  }
+  .site-prose a:hover { text-decoration-color: currentColor; text-decoration-thickness: var(--st-link-hover-thickness); }
   .site-prose blockquote { padding-inline-start: var(--st-space-4); border-inline-start: 3px solid var(--st-accent); color: var(--st-text-muted); }
   .site-prose table { inline-size: 100%; border-collapse: collapse; font-size: var(--st-text-sm); }
   .site-prose th, .site-prose td { padding: var(--st-space-2) var(--st-space-3); border-block-end: 1px solid var(--st-border); text-align: start; vertical-align: top; }

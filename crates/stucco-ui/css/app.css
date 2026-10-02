@@ -15,12 +15,17 @@
   .st-app-sidebar summary:hover { color: var(--st-text); }
   .st-app-sidebar nav { display: flex; flex-direction: column; gap: 2px; margin-block-start: var(--st-space-1); }
   .st-app-sidebar nav a {
-    display: block; padding: var(--st-space-2) var(--st-space-3); border-radius: var(--st-radius-md);
+    position: relative; display: block; padding: var(--st-space-2) var(--st-space-3); border-radius: var(--st-radius-md);
     color: var(--st-text); font-weight: 500; text-decoration: none;
     transition: background-color var(--st-duration-fast) var(--st-ease);
   }
   .st-app-sidebar nav a:hover { background: var(--st-hover); }
-  .st-app-sidebar nav a[aria-current="page"] { background: var(--st-accent-soft); color: var(--st-accent-text); font-weight: 600; }
+  .st-app-sidebar nav a[aria-current="page"] { background: var(--st-nav-current-bg); color: var(--st-nav-current-text); font-weight: 600; }
+  /* The current page's leading-edge bar; transparent unless the theme's nav style is Bar. */
+  .st-app-sidebar nav a[aria-current="page"]::before {
+    content: ""; position: absolute; inset-block: var(--st-space-1); inset-inline-start: 0;
+    inline-size: 3px; border-radius: var(--st-radius-full); background: var(--st-nav-current-bar);
+  }
   .st-page-header { display: flex; flex-direction: column; gap: var(--st-space-1); margin-block-end: var(--st-space-6); }
   .st-app-header .st-page-header { margin-block-end: 0; }
   .st-page-header-description { color: var(--st-text-muted); }

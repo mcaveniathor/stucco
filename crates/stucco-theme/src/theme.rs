@@ -2,8 +2,10 @@
 
 use std::fmt;
 
+use crate::color::{luminance_ratio, srgb_luminance};
 use crate::personality::{
-    ButtonShape, ControlStyle, Elevation, HeaderStyle, HeadingWeight, Personality, TableStyle,
+    ButtonShape, ControlStyle, Elevation, Finish, FocusStyle, HeaderStyle, HeadingWeight,
+    LinkStyle, NavStyle, Personality, TableStyle,
 };
 use crate::roles::{INK_ACCENT, Kind, PAIRS, ROLES, STATUS, Source};
 use crate::seed::Palette;
@@ -258,6 +260,30 @@ impl Theme {
         self
     }
 
+    /// How links in running text are drawn.
+    pub fn link_style(mut self, style: LinkStyle) -> Theme {
+        self.personality.links = style;
+        self
+    }
+
+    /// How navigation marks the current page.
+    pub fn nav_style(mut self, style: NavStyle) -> Theme {
+        self.personality.nav = style;
+        self
+    }
+
+    /// The keyboard focus ring.
+    pub fn focus_style(mut self, style: FocusStyle) -> Theme {
+        self.personality.focus = style;
+        self
+    }
+
+    /// The texture of the page background.
+    pub fn finish(mut self, finish: Finish) -> Theme {
+        self.personality.finish = finish;
+        self
+    }
+
     /// Minimum contrast for text roles (default 4.5, WCAG AA).
     pub fn min_contrast(mut self, ratio: f64) -> Theme {
         self.min_contrast = ratio;
@@ -313,6 +339,33 @@ impl Theme {
                         ratio,
                         required,
                     });
+                }
+            }
+        }
+        // A textured finish pulls the page background towards mid-grey by
+        // up to its strongest opacity (browsers blend in gamma-encoded
+        // sRGB), so text on the page must also clear that point.
+        let alpha = built.theme.personality.finish.max_alpha();
+        if alpha > 0.0 {
+            for scheme in Scheme::BOTH {
+                for (fg, _, kind) in PAIRS.iter().filter(|(_, bg, _)| *bg == "bg") {
+                    let required = match kind {
+                        Kind::Text => built.theme.min_contrast,
+                        Kind::Ui => 3.0,
+                    };
+                    let fg_c = built.role(scheme, fg).expect("pair roles exist");
+                    let bg_c = built.role(scheme, "bg").expect("bg exists");
+                    let grain = bg_c.to_srgb().map(|v| v * (1.0 - alpha) + 0.5 * alpha);
+                    let ratio = luminance_ratio(fg_c.luminance(), srgb_luminance(grain));
+                    if ratio < required {
+                        failures.push(ContrastFailure {
+                            fg,
+                            bg: "bg with finish",
+                            scheme,
+                            ratio,
+                            required,
+                        });
+                    }
                 }
             }
         }
@@ -458,6 +511,30 @@ impl std::error::Error for ContrastReport {}
 mod tests {
     use super::*;
     use crate::contrast;
+
+    #[test]
+    fn textured_finishes_check_text_against_the_grain() {
+        // Require exactly the weakest flat ratio on the page background, so
+        // the flat checks pass and only the grain can fail.
+        let flat = Theme::preset(crate::Preset::Slate).build().unwrap();
+        let mut weakest = f64::INFINITY;
+        for scheme in Scheme::BOTH {
+            let bg = flat.role(scheme, "bg").unwrap();
+            for (fg, b, kind) in PAIRS {
+                if *b == "bg" && *kind == Kind::Text {
+                    weakest = weakest.min(contrast(flat.role(scheme, fg).unwrap(), bg));
+                }
+            }
+        }
+        let strict = Theme::preset(crate::Preset::Slate).min_contrast(weakest - 1e-9);
+        let grain = |report: Result<BuiltTheme, ContrastReport>| {
+            report
+                .err()
+                .is_some_and(|r| r.failures.iter().any(|f| f.bg == "bg with finish"))
+        };
+        assert!(!grain(strict.clone().build()));
+        assert!(grain(strict.finish(Finish::Sand).build()));
+    }
 
     #[test]
     fn default_seed_meets_aa_in_both_schemes() {
