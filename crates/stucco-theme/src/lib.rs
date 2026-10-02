@@ -3,3 +3,7 @@
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
+
+mod color;
+
+pub use color::{Color, contrast};
