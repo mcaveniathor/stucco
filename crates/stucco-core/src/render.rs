@@ -34,8 +34,6 @@ impl Cx {
     }
 
     /// A context whose generated ids are prefixed with `namespace`.
-    // Used by fragments (Task 12).
-    #[allow(dead_code)]
     pub(crate) fn with_namespace(namespace: &str) -> Cx {
         let mut cx = Cx::default();
         cx.ids.namespace = namespace.to_owned();
@@ -43,7 +41,7 @@ impl Cx {
     }
 
     /// Returns a fresh id `"{prefix}-{n}"` (or `"{namespace}-{prefix}-{n}"`),
-    /// counting per prefix from 1, and records it as used.
+    /// counting per prefix from 1. It is recorded when emitted as an element id.
     pub fn id(&mut self, prefix: &str) -> String {
         self.ids.generate(prefix)
     }
@@ -315,6 +313,15 @@ mod tests {
         let mut cx = Cx::new();
         cx.claim_id("orders");
         cx.claim_id("orders");
+    }
+
+    #[test]
+    fn a_generated_id_can_be_emitted_once() {
+        let html = to_html(&render_fn(|cx: &mut Cx| {
+            let id = cx.id("probe");
+            crate::el::div().id(id).render(cx);
+        }));
+        assert_eq!(html, r#"<div id="probe-1"></div>"#);
     }
 
     #[test]

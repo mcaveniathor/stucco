@@ -85,7 +85,6 @@ impl AssetRequirements {
         self.list.is_empty()
     }
 
-    #[allow(dead_code)] // used by fragments (Task 12)
     pub(crate) fn retain(&mut self, keep: impl FnMut(&&'static Asset) -> bool) {
         self.list.retain(keep);
     }

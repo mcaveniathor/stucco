@@ -12,17 +12,16 @@ pub(crate) struct Identity {
 }
 
 impl Identity {
-    /// `"{prefix}-{n}"`, or `"{namespace}-{prefix}-{n}"` when namespaced.
+    /// `"{prefix}-{n}"`, or `"{namespace}-{prefix}-{n}"` when namespaced. Ids
+    /// are claimed when emitted (`Attrs::render`), not when generated.
     pub(crate) fn generate(&mut self, prefix: &str) -> String {
         let n = self.counters.entry(prefix.to_owned()).or_insert(0);
         *n += 1;
-        let id = if self.namespace.is_empty() {
+        if self.namespace.is_empty() {
             format!("{prefix}-{n}")
         } else {
             format!("{}-{prefix}-{n}", self.namespace)
-        };
-        self.claim(&id);
-        id
+        }
     }
 
     /// Records `id`; duplicates panic in debug builds and are kept in release.
