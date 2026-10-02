@@ -4,7 +4,7 @@ use std::fmt;
 
 /// A stylesheet chunk and/or client behaviour a component needs.
 ///
-/// Declare one as a `static`, register it with [`register_asset!`] so
+/// Declare one as a `static`, register it with [`register_asset!`](crate::register_asset) so
 /// `Bundle` serves it, and call `cx.require(&ASSET)` when rendering.
 pub struct Asset {
     /// Unique name; used in file names.
@@ -90,7 +90,7 @@ impl AssetRequirements {
     }
 }
 
-/// A registry entry; created by [`register_asset!`].
+/// A registry entry; created by [`register_asset!`](crate::register_asset).
 #[derive(Debug)]
 pub struct AssetRef(pub &'static Asset);
 
@@ -114,7 +114,7 @@ pub fn registered_assets() -> Vec<&'static Asset> {
     all
 }
 
-/// Whether `asset` was registered with [`register_asset!`].
+/// Whether `asset` was registered with [`register_asset!`](crate::register_asset).
 pub fn is_registered(asset: &'static Asset) -> bool {
     inventory::iter::<AssetRef>
         .into_iter()
