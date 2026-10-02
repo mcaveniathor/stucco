@@ -5,3 +5,7 @@
 #![deny(missing_docs)]
 
 pub mod escape;
+mod identity;
+mod render;
+
+pub use render::{Cx, Raw, Render, RenderFn, Slot, render_fn, to_html};
