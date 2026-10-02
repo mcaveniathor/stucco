@@ -27,6 +27,10 @@ impl<'a, T: 'a> Col<'a, T> {
             render: Box::new(render),
         }
     }
+    /// The column's key and kind, as a query parser needs them.
+    pub fn spec(&self) -> &ColumnSpec {
+        &self.spec
+    }
     /// Escaped text values.
     pub fn text(key: &str, label: &str, get: impl Fn(&T) -> String + 'a) -> Self {
         Self::new(key, label, ColumnKind::Text, move |r| Slot::new(get(r)))
