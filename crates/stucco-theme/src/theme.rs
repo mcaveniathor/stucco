@@ -37,7 +37,6 @@ impl Fonts {
     }
 
     /// Replaces the body stack verbatim (used by presets).
-    #[allow(dead_code)] // used by presets (Task 9)
     pub(crate) fn sans_stack(mut self, stack: &str) -> Fonts {
         self.sans = stack.to_owned();
         self
@@ -79,6 +78,9 @@ pub enum Density {
     Comfortable,
 }
 
+/// Lightness of steps 9, 10 and 11 (light, dark) under `high_contrast`.
+const HIGH_CONTRAST_L: [(f64, f64); 3] = [(0.45, 0.78), (0.40, 0.84), (0.36, 0.88)];
+
 /// A theme definition. Validation happens only in [`Theme::build`].
 #[derive(Clone, Debug, PartialEq)]
 pub struct Theme {
@@ -88,6 +90,7 @@ pub struct Theme {
     pub(crate) neutral_tint: f64,
     pub(crate) accent_from_neutral: bool,
     pub(crate) text_lightness: Option<(f64, f64)>,
+    pub(crate) high_contrast: bool,
     pub(crate) fonts: Fonts,
     pub(crate) type_scale: TypeScale,
     pub(crate) space: f64,
@@ -106,6 +109,7 @@ impl Theme {
             neutral_tint: 0.01,
             accent_from_neutral: false,
             text_lightness: None,
+            high_contrast: false,
             fonts: Fonts::system(),
             type_scale: TypeScale::new(16.0, 1.2),
             space: 4.0,
@@ -139,6 +143,13 @@ impl Theme {
     /// themes).
     pub fn accent_from_neutral(mut self) -> Theme {
         self.accent_from_neutral = true;
+        self
+    }
+
+    /// Steeper lightness for steps 9–11 of every scale, so text and accent
+    /// pairs reach WCAG AAA (7:1).
+    pub fn high_contrast(mut self) -> Theme {
+        self.high_contrast = true;
         self
     }
 
@@ -203,6 +214,14 @@ impl Theme {
                 .iter()
                 .map(|(name, h, c)| (*name, Scale::new(*h, *c))),
         );
+        if self.high_contrast {
+            for (_, scale) in &mut scales {
+                for (i, (light, dark)) in HIGH_CONTRAST_L.iter().enumerate() {
+                    scale.light[8 + i].l = *light;
+                    scale.dark[8 + i].l = *dark;
+                }
+            }
+        }
         let built = BuiltTheme {
             theme: self,
             scales,
@@ -383,6 +402,15 @@ mod tests {
             .unwrap()
             .css(Scope::Named("brand"));
         assert!(css.contains("[data-st-theme=\"brand\"] {") && !css.contains("[data-theme="));
+    }
+
+    #[test]
+    fn high_contrast_reaches_aaa_for_every_text_pair() {
+        Theme::from_seed(250.0)
+            .high_contrast()
+            .min_contrast(7.0)
+            .build()
+            .unwrap();
     }
 
     #[test]
