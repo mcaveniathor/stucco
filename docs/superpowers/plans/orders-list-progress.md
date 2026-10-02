@@ -8,3 +8,4 @@ Pre-flight: Tasks 6→7→8 share semantic components; no storage in rendering.
 Pre-flight: Tasks 8→9 share deterministic seed/port/query labels.
 Ruling: Record progress in this committed ledger instead of shell-only skill scripts — Windows-native tooling and durable handoff — cost: manual task bookkeeping.
 Baseline passed (workspace tests). Task 1 complete: collection regression suite 4/4; Rust 1.85 core check passed. Tasks 2–9 pending.
+Task 2 complete: source/context regression passed, all five Tower feature checks passed.
