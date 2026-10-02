@@ -75,7 +75,9 @@ pub fn page(bundle: &Bundle) -> String {
     )
 }
 
-fn panels(name: &'static str) -> impl Render + 'static {
+/// The sample interface in a light and a dark panel, both under the named
+/// theme `name`.
+pub fn panels(name: &'static str) -> impl Render + 'static {
     el::div()
         .class("g-panels")
         .attr("data-st-theme", name)

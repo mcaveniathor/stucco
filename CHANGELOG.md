@@ -35,6 +35,12 @@
   `SectionHeader::size` set a heading's size independently of its level;
   keyboard keys in `Kbd` are spaced.
 - `DESIGN.md` records the design language and default tokens.
+- A documentation site, built with stucco and deployed to GitHub Pages: a
+  landing page, a guide written in Markdown, a theme playground (presets,
+  seeds and per-option overrides, with Rust, CSS and JSON export), the
+  component gallery, and the API reference. A Theme menu on every page
+  applies any preset or a random theme to the whole site. The playground runs
+  `stucco-theme` compiled to WebAssembly.
 - `Theme::seeded(u64)` and `Theme::seeded_str(&str)` derive a complete theme
   (hues, tint, fonts, type scale, spacing, radius, density and personality)
   from a seed. Every seed passes the contrast checks; the mapping is pinned by
