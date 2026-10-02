@@ -2,8 +2,9 @@
 //! stream [`SeedRng`], and implementations for every theme option.
 
 use crate::personality::{
-    ButtonShape, ControlStyle, CornerStyle, Elevation, Finish, FocusStyle, HeaderStyle,
-    HeadingWeight, LinkStyle, NavStyle, PanelStyle, ShellLayout, TableStyle,
+    ButtonDepth, ButtonShape, ControlStyle, CornerStyle, Elevation, Finish, FocusStyle,
+    HeaderStyle, HeadingWeight, IconWeight, LabelStyle, LineWeight, LinkStyle, Motion, NavStyle,
+    PanelStyle, ShellLayout, TableStyle,
 };
 use crate::{Color, Density, Fonts, Radius, Theme, TypeScale};
 
@@ -453,12 +454,54 @@ seeded_enum!(
         (CornerStyle::Hand, 1),
     ]
 );
+seeded_enum!(
+    LineWeight,
+    "line-weight",
+    [(LineWeight::Fine, 4), (LineWeight::Heavy, 1)]
+);
+seeded_enum!(
+    ButtonDepth,
+    "button-depth",
+    [
+        (ButtonDepth::Flat, 3),
+        (ButtonDepth::Raised, 1),
+        (ButtonDepth::Offset, 1),
+    ]
+);
+seeded_enum!(
+    LabelStyle,
+    "label-style",
+    [
+        (LabelStyle::Plain, 2),
+        (LabelStyle::Caps, 1),
+        (LabelStyle::Strong, 1),
+    ]
+);
+seeded_enum!(
+    IconWeight,
+    "icon-weight",
+    [
+        (IconWeight::Light, 1),
+        (IconWeight::Regular, 3),
+        (IconWeight::Bold, 1),
+    ]
+);
+seeded_enum!(
+    Motion,
+    "motion",
+    [
+        (Motion::Smooth, 3),
+        (Motion::Snappy, 1),
+        (Motion::Gentle, 1),
+        (Motion::Springy, 1),
+    ]
+);
 
 impl Seeded for Theme {
     const STREAM: &'static str = "theme";
 
     /// Every option from its own fork of `rng`: palette, fonts, type scale,
-    /// spacing, radius, density and the thirteen personality options. Pill
+    /// spacing, radius, density and the eighteen personality options. Pill
     /// buttons become rounded on sharp themes. The result always passes
     /// [`Theme::build`].
     fn from_rng(rng: &mut SeedRng) -> Theme {
@@ -493,6 +536,11 @@ impl Seeded for Theme {
             .shell_layout(ShellLayout::from_rng(&mut rng.fork(ShellLayout::STREAM)))
             .panel_style(PanelStyle::from_rng(&mut rng.fork(PanelStyle::STREAM)))
             .corner_style(CornerStyle::from_rng(&mut rng.fork(CornerStyle::STREAM)))
+            .line_weight(LineWeight::from_rng(&mut rng.fork(LineWeight::STREAM)))
+            .button_depth(ButtonDepth::from_rng(&mut rng.fork(ButtonDepth::STREAM)))
+            .label_style(LabelStyle::from_rng(&mut rng.fork(LabelStyle::STREAM)))
+            .icon_weight(IconWeight::from_rng(&mut rng.fork(IconWeight::STREAM)))
+            .motion(Motion::from_rng(&mut rng.fork(Motion::STREAM)))
     }
 
     /// The theme for `seed`; its options match each option's own
@@ -584,6 +632,11 @@ mod tests {
             assert_eq!(p.shell, ShellLayout::seeded(seed));
             assert_eq!(p.panels, PanelStyle::seeded(seed));
             assert_eq!(p.corners, CornerStyle::seeded(seed));
+            assert_eq!(p.lines, LineWeight::seeded(seed));
+            assert_eq!(p.depth, ButtonDepth::seeded(seed));
+            assert_eq!(p.labels, LabelStyle::seeded(seed));
+            assert_eq!(p.icons, IconWeight::seeded(seed));
+            assert_eq!(p.motion, Motion::seeded(seed));
             let palette = Palette::seeded(seed);
             assert_eq!(theme.accent_hue, palette.accent.h);
             assert_eq!(theme.accent_from_neutral, palette.ink);

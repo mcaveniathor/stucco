@@ -32,10 +32,11 @@ pub use stucco_ui::*;
 pub mod theme {
     pub use stucco_theme::spec;
     pub use stucco_theme::{
-        BuiltTheme, ButtonShape, Color, ContrastFailure, ContrastReport, ControlStyle, CornerStyle,
-        Density, Elevation, Finish, FocusStyle, Fonts, HeaderStyle, HeadingWeight, LinkStyle,
-        NavStyle, Palette, PanelStyle, Preset, Radius, Random, Scale, Scheme, Scope, SeedRng,
-        Seeded, ShellLayout, TableStyle, Theme, TypeScale, contrast, random_seed,
+        BuiltTheme, ButtonDepth, ButtonShape, Color, ContrastFailure, ContrastReport, ControlStyle,
+        CornerStyle, Density, Elevation, Finish, FocusStyle, Fonts, HeaderStyle, HeadingWeight,
+        IconWeight, LabelStyle, LineWeight, LinkStyle, Motion, NavStyle, Palette, PanelStyle,
+        Preset, Radius, Random, Scale, Scheme, Scope, SeedRng, Seeded, ShellLayout, TableStyle,
+        Theme, TypeScale, contrast, random_seed,
     };
 }
 

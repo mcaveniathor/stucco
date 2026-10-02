@@ -36,7 +36,7 @@ From the accent and neutral hues, stucco generates twelve-step OKLCH scales for 
 
 ## Personality
 
-Thirteen options change how components look without changing their markup:
+Eighteen options change how components look without changing their markup:
 
 | Option | Choices |
 | --- | --- |
@@ -53,6 +53,11 @@ Thirteen options change how components look without changing their markup:
 | `shell_layout` | Sidebar (default), Rail, Topbar |
 | `panel_style` | Boxed (default), Ruled, Headed |
 | `corner_style` | Even (default), Squircle, Bevel, Hand |
+| `line_weight` | Fine (default), Heavy |
+| `button_depth` | Flat (default), Raised, Offset |
+| `label_style` | Plain (default), Caps, Strong |
+| `icon_weight` | Light, Regular (default), Bold |
+| `motion` | Smooth (default), Snappy, Gentle, Springy |
 
 Each option sets tokens such as `--st-card-shadow` or `--st-table-rule` that the component styles read. Every link style keeps an underline, so links never depend on colour alone.
 
@@ -63,6 +68,28 @@ Each option sets tokens such as `--st-card-shadow` or `--st-table-rule` that the
 `panel_style` frames panels: Boxed is a bordered box, Ruled drops the box for a strong rule above the title, and Headed sets the title in a raised band.
 
 `corner_style` shapes the corners of cards, panels, filter bars and table cards. Squircle and Bevel use the CSS `corner-shape` property, so browsers without it show ordinary rounded corners. Hand makes each corner slightly different, like plaster shaped by hand. Every style keeps the theme's radius, so sharp themes stay sharp.
+
+### Lines, depth and labels
+
+`line_weight` sets the width of the borders and rules that outline cards, panels, controls, fieldsets and the application shell. Heavy doubles them, for a bold, graphic look; table row rules stay fine either way.
+
+`button_depth` decides how buttons stand off the page. Flat buttons have no shadow and shrink slightly when pressed. Raised buttons have a soft shadow and a highlight along the top, and sink when pressed. Offset buttons cast a hard shadow in the text colour, down and to the side, and slide onto it when pressed. Ghost buttons stay flat in every style.
+
+`label_style` styles small labels: table column headings, the sidebar's heading and the labels above collection controls. Plain is small, semibold and muted; Caps sets them in spaced capitals; Strong uses bold text in the full text colour.
+
+`icon_weight` sets the stroke width of icons: 1.5, 2 or 2.5.
+
+`motion` sets the durations and easing of transitions, such as hover fills and button presses. Snappy is quicker than the default, Gentle slower and softer, and Springy overshoots slightly so presses bounce. Visitors who ask for reduced motion get none, whatever the style.
+
+```rust
+use stucco::theme::{ButtonDepth, LineWeight, Preset, Radius, Theme};
+
+// A bold, graphic look: sharp corners, heavy lines and offset buttons.
+let theme = Theme::preset(Preset::Slate)
+    .radius(Radius::Sharp)
+    .line_weight(LineWeight::Heavy)
+    .button_depth(ButtonDepth::Offset);
+```
 
 ### Finish
 

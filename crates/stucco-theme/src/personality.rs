@@ -219,6 +219,70 @@ pub enum CornerStyle {
     Hand,
 }
 
+/// The weight of the rules and borders that outline surfaces, controls and
+/// the application shell. Table row rules stay fine.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum LineWeight {
+    /// 1px lines (default).
+    #[default]
+    Fine,
+    /// 2px lines, for a bold, graphic look.
+    Heavy,
+}
+
+/// How buttons stand off the page. Ghost buttons stay flat.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum ButtonDepth {
+    /// No shadow; buttons shrink slightly when pressed (default).
+    #[default]
+    Flat,
+    /// A soft shadow and top highlight; buttons sink when pressed.
+    Raised,
+    /// A hard shadow offset down and to the side, in the text colour;
+    /// buttons slide onto it when pressed.
+    Offset,
+}
+
+/// How small labels look: table column headings, the sidebar's heading and
+/// the labels of collection controls.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum LabelStyle {
+    /// Small, semibold, muted text (default).
+    #[default]
+    Plain,
+    /// Small capitals with open tracking.
+    Caps,
+    /// Small, bold text in the full text colour.
+    Strong,
+}
+
+/// The stroke width of icons.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum IconWeight {
+    /// A 1.5 stroke.
+    Light,
+    /// A 2 stroke (default).
+    #[default]
+    Regular,
+    /// A 2.5 stroke.
+    Bold,
+}
+
+/// How quickly, and with what feel, things move. Visitors who ask for
+/// reduced motion get none whichever style is chosen.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum Motion {
+    /// Short durations with a gentle ease-out (default).
+    #[default]
+    Smooth,
+    /// Shorter still, for an instant feel.
+    Snappy,
+    /// Longer, softer transitions.
+    Gentle,
+    /// An ease that overshoots slightly, so presses bounce.
+    Springy,
+}
+
 /// Every personality choice; the default reproduces stucco's base look.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub(crate) struct Personality {
@@ -235,6 +299,11 @@ pub(crate) struct Personality {
     pub(crate) shell: ShellLayout,
     pub(crate) panels: PanelStyle,
     pub(crate) corners: CornerStyle,
+    pub(crate) lines: LineWeight,
+    pub(crate) depth: ButtonDepth,
+    pub(crate) labels: LabelStyle,
+    pub(crate) icons: IconWeight,
+    pub(crate) motion: Motion,
 }
 
 impl Personality {
@@ -261,19 +330,19 @@ impl Personality {
         let (control_bg, borders, control_radius, invalid) = match self.controls {
             ControlStyle::Outlined => (
                 "var(--st-surface)",
-                "1px",
+                "var(--st-line)",
                 "var(--st-radius-md)",
                 "0 0 0 1px var(--st-danger)",
             ),
             ControlStyle::Filled => (
                 "var(--st-surface-raised)",
-                "1px",
+                "var(--st-line)",
                 "var(--st-radius-md)",
                 "0 0 0 1px var(--st-danger)",
             ),
             ControlStyle::Underlined => (
                 "var(--st-surface-raised)",
-                "0 0 1px",
+                "0 0 var(--st-line)",
                 "var(--st-radius-sm) var(--st-radius-sm) 0 0",
                 "inset 0 -1px 0 var(--st-danger)",
             ),
@@ -354,18 +423,24 @@ impl Personality {
             ShellLayout::Sidebar => (
                 "column",
                 "var(--st-space-4) var(--st-space-2)",
-                "1px",
+                "var(--st-line)",
                 "0",
                 "var(--st-surface)",
             ),
             ShellLayout::Rail => (
                 "column",
                 "var(--st-space-4) var(--st-space-2)",
-                "1px",
+                "var(--st-line)",
                 "0",
                 "transparent",
             ),
-            ShellLayout::Topbar => ("row", "var(--st-space-2)", "0", "1px", "var(--st-surface)"),
+            ShellLayout::Topbar => (
+                "row",
+                "var(--st-space-2)",
+                "0",
+                "var(--st-line)",
+                "var(--st-surface)",
+            ),
         };
         // Where the Bar nav style marks the current primary link: the
         // leading edge in a column, under the link in a row.
@@ -391,8 +466,8 @@ impl Personality {
         //  header fill, header padding, header margin, header rule)
         let panel = match self.panels {
             PanelStyle::Boxed => [
-                "1px solid var(--st-border)",
-                "1px solid var(--st-border)",
+                "var(--st-line) solid var(--st-border)",
+                "var(--st-line) solid var(--st-border)",
                 "var(--st-surface)",
                 "var(--st-surface-radius)",
                 "var(--st-space-6)",
@@ -404,7 +479,7 @@ impl Personality {
             ],
             PanelStyle::Ruled => [
                 "0 solid transparent",
-                "2px solid var(--st-border-strong)",
+                "calc(var(--st-line) * 2) solid var(--st-border-strong)",
                 "transparent",
                 "0",
                 "0",
@@ -415,8 +490,8 @@ impl Personality {
                 "0 solid transparent",
             ],
             PanelStyle::Headed => [
-                "1px solid var(--st-border)",
-                "1px solid var(--st-border)",
+                "var(--st-line) solid var(--st-border)",
+                "var(--st-line) solid var(--st-border)",
                 "var(--st-surface)",
                 "var(--st-surface-radius)",
                 "var(--st-space-6)",
@@ -424,8 +499,50 @@ impl Personality {
                 "var(--st-surface-raised)",
                 "var(--st-space-4) var(--st-space-6)",
                 "calc(-1 * var(--st-space-6)) calc(-1 * var(--st-space-6)) var(--st-space-5)",
-                "1px solid var(--st-border)",
+                "var(--st-line) solid var(--st-border)",
             ],
+        };
+        let line = match self.lines {
+            LineWeight::Fine => "1px",
+            LineWeight::Heavy => "2px",
+        };
+        // Shadows are never `none`, so CSS can add to them.
+        // (rest, pressed, pressed scale, pressed shift)
+        let (button_shadow, button_pressed, press_scale, press_shift) = match self.depth {
+            ButtonDepth::Flat => ("0 0 #0000", "0 0 #0000", "0.96", "0 0"),
+            ButtonDepth::Raised => (
+                concat!(
+                    "0 1px 2px color-mix(in oklch, var(--st-neutral-12) 18%, transparent), ",
+                    "inset 0 1px 0 color-mix(in oklch, white 22%, transparent)"
+                ),
+                "inset 0 1px 3px color-mix(in oklch, var(--st-neutral-12) 22%, transparent)",
+                "1",
+                "0 1px",
+            ),
+            ButtonDepth::Offset => (
+                "3px 3px 0 var(--st-text)",
+                "1px 1px 0 var(--st-text)",
+                "1",
+                "2px 2px",
+            ),
+        };
+        // (transform, tracking, weight, colour)
+        let (label_case, label_tracking, label_weight, label_color) = match self.labels {
+            LabelStyle::Plain => ("none", "normal", "600", "var(--st-text-muted)"),
+            LabelStyle::Caps => ("uppercase", "0.07em", "650", "var(--st-text-muted)"),
+            LabelStyle::Strong => ("none", "normal", "700", "var(--st-text)"),
+        };
+        let icon_stroke = match self.icons {
+            IconWeight::Light => "1.5",
+            IconWeight::Regular => "2",
+            IconWeight::Bold => "2.5",
+        };
+        // (fast, normal, slow, easing)
+        let (fast, normal, slow, ease) = match self.motion {
+            Motion::Smooth => ("120ms", "200ms", "320ms", "cubic-bezier(.2,0,0,1)"),
+            Motion::Snappy => ("70ms", "120ms", "200ms", "cubic-bezier(.3,0,0,1)"),
+            Motion::Gentle => ("200ms", "320ms", "500ms", "cubic-bezier(.4,0,.2,1)"),
+            Motion::Springy => ("160ms", "260ms", "420ms", "cubic-bezier(.34,1.56,.64,1)"),
         };
         vec![
             ("surface-shadow", surface_shadow),
@@ -478,6 +595,20 @@ impl Personality {
             ("panel-head-pad", panel[7]),
             ("panel-head-margin", panel[8]),
             ("panel-head-rule", panel[9]),
+            ("line", line),
+            ("button-shadow", button_shadow),
+            ("button-shadow-pressed", button_pressed),
+            ("button-press-scale", press_scale),
+            ("button-press-shift", press_shift),
+            ("label-case", label_case),
+            ("label-tracking", label_tracking),
+            ("label-weight", label_weight),
+            ("label-color", label_color),
+            ("icon-stroke", icon_stroke),
+            ("duration-fast", fast),
+            ("duration", normal),
+            ("duration-slow", slow),
+            ("ease", ease),
         ]
     }
 }

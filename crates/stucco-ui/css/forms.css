@@ -1,6 +1,6 @@
 @layer stucco.components {
   .st-form > * + * { margin-block-start: var(--st-space-4); }
-  .st-fieldset { border: 1px solid var(--st-border); border-radius: var(--st-radius-md); padding: var(--st-space-4); min-inline-size: 0; }
+  .st-fieldset { border: var(--st-line, 1px) solid var(--st-border); border-radius: var(--st-radius-md); padding: var(--st-space-4); min-inline-size: 0; }
   .st-fieldset > * + * { margin-block-start: var(--st-space-4); }
   .st-legend { font-weight: 600; padding-inline: var(--st-space-1); color: var(--st-text); }
   .st-field-hint { font-size: var(--st-text-sm); color: var(--st-text-muted); }

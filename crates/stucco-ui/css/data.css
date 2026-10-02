@@ -1,6 +1,6 @@
 @layer stucco.components {
   .st-card {
-    padding: var(--st-space-6); border: 1px solid var(--st-border); background: var(--st-surface); box-shadow: var(--st-card-shadow);
+    padding: var(--st-space-6); border: var(--st-line, 1px) solid var(--st-border); background: var(--st-surface); box-shadow: var(--st-card-shadow);
     border-radius: var(--st-surface-radius); corner-shape: var(--st-corner-shape);
   }
   /* The theme's panel style: a box, an open section under a strong rule, or a box with a title band. */
@@ -21,7 +21,7 @@
   .st-table th, .st-table td { padding: var(--st-space-3) var(--st-space-4); border-block-end: 1px solid var(--st-table-rule); text-align: start; vertical-align: middle; }
   .st-table tbody tr:nth-child(even) > * { background: var(--st-table-stripe); }
   .st-table th, .st-table td { white-space: nowrap; }
-  .st-table thead th { background: var(--st-table-head-bg); border-block-end-color: var(--st-border); color: var(--st-text-muted); font-size: var(--st-text-sm); font-weight: 600; }
+  .st-table thead th { background: var(--st-table-head-bg); border-block-end-color: var(--st-border); color: var(--st-label-color, var(--st-text-muted)); font-size: var(--st-text-sm); font-weight: var(--st-label-weight, 600); text-transform: var(--st-label-case, none); letter-spacing: var(--st-label-tracking, normal); }
   .st-table tbody tr:last-child > * { border-block-end: 0; }
   .st-table [data-kind="number"] { text-align: end; font-variant-numeric: tabular-nums; }
   .st-table [data-kind="date"] { font-variant-numeric: tabular-nums; }
