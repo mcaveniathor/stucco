@@ -1,81 +1,102 @@
-# stucco — design
+# stucco — component library design
 
-Date: 2026-10-01 · Status: draft for review
+Date: 2026-10-01 · Revision 2 · Status: draft for review
 
-## 1. Purpose
+Revision 2 applies `2026-10-01-stucco-spec-improvements.md`. Server execution, Tower
+integration and data contracts are specified separately in
+`2026-10-01-stucco-integration-design.md`. Open choices are collected in §15.
 
-`stucco` is a public (crates.io) Rust library for building server-rendered web UIs.
-It gives Rust web applications a typed, themeable, accessible component kit whose
-output is plain HTML and CSS, enhanced by small JavaScript behaviours only where a
-component needs them. Diagrams are one optional module.
+## 1. Purpose and boundaries
 
-Primary goals, in order: **modularity** (pay only for what you use, at compile time
-and on the page) and **intuitiveness** (one rendering trait, one set of component
-conventions, sensible defaults).
+`stucco` is a public (crates.io) Rust library for building server-rendered web UIs: a
+typed, themeable, accessible component kit whose output is plain HTML and CSS,
+enhanced by small JavaScript behaviours only where a component needs them. Diagrams
+are one optional module.
 
-### 1.1 Origin
+Priorities, in order: **modularity** (pay only for what you use, at compile time and
+on the page), **intuitive APIs** (one rendering trait, one set of conventions,
+sensible defaults), **accessible native HTML**, **progressive enhancement**,
+**framework-independent rendering**, **minimal shipped assets**.
 
-The design starts from `skimasque-visual` and keeps its strongest ideas: builder-style
-component structs, escape-by-construction (markup can only come from rendering a
-component), token-driven theming checked by tests, accessible captions on diagrams,
-and markup that works before any script runs. It drops everything SkiMasque-specific
-(the fixed `NodeKind` vocabulary, the Alpine palette, access/policy/decision cards,
-the site pages) and the hard dependency on askama.
+### 1.1 Boundaries
 
-### 1.2 Roadmap context
+| Crate | Owns | Never does |
+|---|---|---|
+| `stucco-theme` | token generation, scales, presets, contrast validation | rendering |
+| `stucco-core` | rendering, safe markup, identity, asset requirements, pages, fragments, the client runtime, presentation-state types | HTTP, I/O, async |
+| `stucco-ui` | primitives, compositions, shells | executing requests, queries or mutations |
+| `stucco-diagram` | diagram rendering and enhancement | — |
+| `stucco` | lightweight component facade (re-exports + features) | server dependencies |
+| `stucco-tower` (integration spec) | Tower services and layers, response conversion, data/action contracts | — |
 
-This spec covers sub-project 1 only: the component library. Sub-project 2, a
-tower-based web framework built around it, gets its own spec later. This library must
-not depend on any server framework; its one integration point for the framework is
-`Bundle` (§4.5), which the framework will wrap as a tower `Service`.
+The component library compiles without Tower, an HTTP server or an async runtime.
+Components receive data, state and endpoint descriptions; rendering never performs
+database queries or backend mutations.
+
+### 1.2 Origin
+
+The design starts from `skimasque-visual` and keeps: builder-style component
+structs, escape-by-construction, token-driven theming enforced by tests, captioned
+diagrams, and markup that works before scripts run. It drops everything
+SkiMasque-specific and the hard dependency on askama.
 
 ### 1.3 Non-goals for v1
 
-- No routing, server, dev server, hydration or islands (framework sub-project).
-- No WebAssembly. Behaviours are JavaScript; WASM is reserved for future
-  compute-heavy client work (first candidate: automatic graph layout), and the asset
-  model already accommodates it (§4.4).
-- No proc-macro templating DSL. One may be added later as a separate crate on top of
-  the element builder.
-- Deferred features: server-rendered SVG charts and sparklines, automatic diagram
-  layout, syntax highlighting, self-hosted fonts, a custom date picker (native
-  `<input type="date">` is used).
+- Routing, a framework facade, hydration or islands (integration spec, later scope).
+- WebAssembly. Behaviours are JavaScript; the asset model reserves a WASM variant for
+  future compute-heavy work (first candidate: automatic graph layout).
+- A proc-macro templating DSL (possible later crate on top of the element builder).
+- HTML email. Email clients need a restricted subset; no component or delivery mode
+  is guaranteed to work in email.
+- Everything marked **later** in the catalogue (§8).
 
 ## 2. Users and success criteria
 
-Users are Rust developers rendering HTML on the server with any framework (axum,
-actix-web, the future stucco framework) or generating static pages, with or without
-an existing template engine (askama, maud).
+Users are Rust developers rendering HTML on the server with any framework, or
+generating static pages, with or without askama/maud.
 
 v1 succeeds when:
 
-1. A user can depend on `stucco`, enable a few features, and render a themed,
-   accessible page from an axum handler in under 20 lines, without Node or a bundler.
-2. Every component works with JavaScript disabled; behaviours only enhance.
-3. A page ships only the scripts for behaviours present on it.
-4. User CSS overrides library styles without specificity hacks.
-5. All presets pass WCAG AA contrast in light and dark; axe-core reports no
-   violations on any gallery page.
-6. Every public item is documented with a runnable example.
+1. Depending on `stucco` pulls in no server, HTTP or async-runtime crate.
+2. A themed, accessible page renders from an axum handler in under 20 lines, without
+   Node or a bundler.
+3. Every component works with JavaScript disabled; behaviours only enhance.
+4. A page ships only the behaviour modules it uses; a fragment inserted later can
+   introduce behaviour modules the page did not have, each loaded once, without ID
+   collisions.
+5. User CSS overrides library styles without specificity hacks.
+6. All presets pass WCAG AA contrast in light and dark; axe-core reports no
+   violations on any gallery page in the browser matrix (§11).
+7. Every public item is documented with a runnable example.
+8. Minimal, selected-combination and all-features builds compile and pass tests.
 
-## 3. Workspace layout
+## 3. Features
 
-Users depend on the `stucco` facade only and select features.
+Users depend on `stucco` and select features. Defaults: `layout`, `typography`,
+`actions`, `forms`, `feedback`, `navigation`, `overlay`, `data`, `app`.
 
-| Crate | Published | Purpose | Depends on |
-|---|---|---|---|
-| `stucco-core` | yes | `Render`, `Cx`, element builder, escaping, `Href`, `Attrs`, `Asset`, `Page`, `Bundle`, `behavior` vocabulary; `askama` / `maud` adapter features | — |
-| `stucco-theme` | yes | `Theme`, OKLCH colour, palettes, presets, token CSS generation, contrast checking | core |
-| `stucco-ui` | yes | Components, feature-gated by family | core, theme |
-| `stucco-diagram` | yes | Diagram system | core, theme, ui (icons) |
-| `stucco` | yes | Facade: re-exports and features | all of the above |
-| `gallery` | no | Docs/gallery site generator and browser test bed | stucco |
+| Feature | Requires (unavoidable) | Optional embellishment |
+|---|---|---|
+| `layout` | — | — |
+| `typography` | — | — |
+| `actions` | — | — |
+| `forms` | `actions` | — |
+| `feedback` | — | — |
+| `navigation` | — | — |
+| `overlay` | `actions` | — |
+| `data` | — | — |
+| `collections` | `data`, `forms`, `navigation`, `feedback` | — |
+| `app` | `navigation`, `layout` | — |
+| `marketing` | `layout`, `typography`, `actions` | — |
+| `diagram` | `icons` (starter node kinds use them) | — |
+| `icons` | — | adds the Lucide set; any component with an icon slot accepts it |
+| `markdown` | `typography` | — |
+| `askama`, `maud` | — | adapters (§4.9) |
 
-Facade features: `layout`, `typography`, `forms`, `feedback`, `navigation`,
-`overlay`, `data`, `marketing`, `shells`, `diagram`, `icons`, `markdown`, `askama`,
-`maud`. Default: `layout`, `typography`, `forms`, `feedback`, `navigation`,
-`overlay`, `data`, `shells`, `icons`. Feature dependencies are explicit (for example
-`shells` enables `navigation`; `diagram` enables `icons`).
+The `Icon` **type** (a name plus SVG path data) is always available, so components
+with icon slots never require the `icons` feature; the feature only adds the vendored
+Lucide constants (ISC licence, attribution shipped). No text-only component depends
+on icons.
 
 ## 4. Core (`stucco-core`)
 
@@ -87,37 +108,70 @@ pub trait Render {
 }
 ```
 
-`Cx` (render context) owns the output buffer, the asset collector and a per-page id
-generator (`cx.id("tabs")` returns `tabs-1`, `tabs-2`, …; unique within one page
-render). Rendering is infallible.
+`Cx` owns the output buffer, the asset requirements and the identity state (§4.3).
+Rendering is infallible.
 
-`Render` is implemented for:
+`Render` is implemented for `&str`, `String`, `Cow<str>`, integers, floats, `char`
+(escaped text); `Option<T>` (`None` renders nothing); `Vec<T>`, slices and tuples up
+to 12; `&T`, `Box<T>`, `Rc<T>`, `Arc<T>`; closures via `render_fn(|cx| …)`.
 
-- `&str`, `String`, `Cow<str>`, integers, floats, `char` — escaped as text;
-- `Option<T: Render>` — `None` renders nothing;
-- `Vec<T>`, slices, and tuples up to 12 — rendered in order;
-- `&T`, `Box<T>`, `Rc<T>`, `Arc<T>` where `T: Render`;
-- `F: Fn(&mut Cx)` via the wrapper `render_fn(f)`.
+**Slots.** `Slot<'a>` is a struct wrapping `Box<dyn Render + 'a>` and the
+`type_name` of the value it was built from; its `Debug` prints that type name, so
+components holding slots still derive `Debug`. Components carry the lifetime
+(`Card<'a>`), which lets slots borrow request data (`Card::new().body(&rows[0])`)
+without cloning. Builders infer the lifetime; users rarely write it.
 
-`Slot = Box<dyn Render>` is the type components use for arbitrary children. Any
-`Render + 'static` value converts into a `Slot` via `Into`.
+### 4.2 Pages and fragments
 
-`fn to_html(r: &impl Render) -> String` renders a fragment standalone (assets are
-discarded; meant for tests and htmx-style partial responses, where `Page`'s asset
-handling does not apply).
+- `Page` renders a complete document (§4.7).
+- `render_fragment(namespace: &str, r: &impl Render) -> RenderedFragment`:
 
-### 4.2 Element builder
+  ```rust
+  pub struct RenderedFragment {
+      pub html: String,
+      pub assets: AssetRequirements,   // resolved, dependency-ordered
+  }
+  ```
 
-Module `stucco::el` has one function per HTML element (`el::div()`, `el::a()`,
-`el::input()`, …) returning `Element`. Void elements reject children at the type
-level (`VoidElement` has no `child` method).
+  `fragment.to_response_html(&bundle) -> String` prefixes the HTML with an
+  `<st-require>` element listing the hashed module URLs of required behaviours
+  (§4.8). Fragments are the API for partial responses.
+- `to_html(r) -> String` is an HTML-only helper for tests, static snippets and
+  places where no behaviour can be required; it discards requirements and its docs say
+  so. It is not recommended for partial responses.
+
+### 4.3 Identity policy
+
+- A component given an explicit id (`.id("orders")`) uses it verbatim on its root and
+  derives internal ids from it: `orders-label`, `orders-panel-2`. Explicit ids are
+  stable across rerenders regardless of render order.
+- Components without an explicit id get generated ids `{namespace}{prefix}-{n}`,
+  where `n` counts per prefix within one render. `Page` renders with the empty
+  namespace; `render_fragment` requires a non-empty namespace (validated:
+  `[a-z0-9-]+`, rendered as `{namespace}-`). Generated ids are stable across rerenders
+  that use the same namespace and render the same structure.
+- Fragments must use a namespace that is unique within the document they are
+  inserted into; the conventional namespace is the target element's id or a record
+  key (`order-42`). This is what prevents collisions between independently rendered
+  fragments.
+- Uniqueness of explicit ids is the caller's responsibility. `Cx` records every id
+  emitted; a duplicate within one render panics in debug builds and is kept in
+  release builds.
+- Regions that are replaced by fragments should use explicit ids on interactive
+  controls so focus can be restored (§4.8).
+
+### 4.4 Element builder and attribute safety
+
+`stucco::el` has one function per standard HTML element; `el::custom(tag)` accepts
+custom element names (lowercase, containing a hyphen, validated). Void elements
+return `VoidElement`, which has no child methods.
 
 ```rust
 el::section().class("hero").id("intro")
     .attr("hx-get", "/more")
     .bool_attr("hidden", collapsed)
-    .data("state", "open")              // data-state="open"
-    .aria("label", "Introduction")      // aria-label="…"
+    .data("state", "open")
+    .aria("label", "Introduction")
     .child(el::h1().text("Hello"))
     .child_if(show, Alert::warning("Beta"))
     .children(items.iter().map(|i| el::li().text(&i.name)))
@@ -125,135 +179,221 @@ el::section().class("hero").id("intro")
 
 Rules:
 
-- Attribute values and text are always escaped.
-- `.class()` appends and de-duplicates; it never replaces.
-- Attribute names are validated (ASCII letters, digits, `-`, `_`, `:`, `.`); invalid
-  names panic in debug builds and are dropped in release builds.
-- URL-bearing attributes (`href`, `src`, `action`, `formaction`, `poster`) accept
-  only `Href`. `Href::new` accepts relative URLs and the schemes `http`, `https`,
-  `mailto`, `tel`; others (including `javascript:` and `data:`) produce
-  `Href::invalid()`, which renders as `#` and is reported by `Href::is_valid`.
-  `Href::trusted(s)` bypasses the check.
-- Raw markup is only possible via `Raw::trusted(s)`, named so that it is easy to find
-  in review.
+- Text and attribute values are always escaped, including inside `<script>` and
+  `<style>`.
+- Attribute names: ASCII letter first, then letters, digits, `-`, `_`, `:`, `.`.
+  `data(name)` and `aria(name)` names: `[a-z0-9-]+`; `aria` names are checked against
+  the WAI-ARIA 1.2 attribute list in debug builds.
+- `attr()` refuses executable or HTML-bearing attributes: names starting with `on`
+  and `srcdoc`. URL-bearing attributes (`href`, `src`, `action`, `formaction`,
+  `poster`, `cite`, `data` on `<object>`, `xlink:href`, `ping`, `srcset`) are checked
+  per URL through `Href` rules; a rejected URL renders as `#` (or is dropped from a
+  list).
+- Invalid or refused names panic in debug builds and are dropped in release builds.
+- The escape hatches are `trusted_attr(name, value)` (any valid name, no URL check,
+  value still escaped) and `Raw::trusted(html)`. Both are named to be found in review;
+  they are the trust boundary.
+- `Href::new` accepts relative URLs and the schemes `http`, `https`, `mailto`, `tel`
+  after browser-style normalisation (leading whitespace/control characters stripped,
+  tab/newline removed); `Href::trusted` bypasses the check.
+- `.class()` always appends and de-duplicates. `.id()` replaces. Setting any other
+  attribute twice keeps the last value.
 
-### 4.3 Component conventions
+### 4.5 Component conventions
 
-Every component in every crate follows the same shape:
+**Composition levels.** All levels implement `Render`.
 
-- `Component::new(required…)` plus chained setters that take `impl Into<…>`;
-- every component exposes `.class()`, `.id()`, `.attr()`, `.data()`, `.aria()`
-  through a shared `Attrs` value applied to its root element, so users can add
-  classes, ids or htmx attributes without forking;
-- variants and sizes are enums (`Variant::Primary`, `Size::Sm`) rendered as
-  `data-variant` / `data-size`;
-- components are plain data: `Clone` where their slots allow, `Debug` always.
+1. **Primitives** — one layout, semantic, visual or interaction concern (Button,
+   Stack, Input).
+2. **Compositions** — recurring patterns with named slots and shared accessibility
+   wiring (Field, Panel, PageHeader, DataTable).
+3. **Shells and recipes** — page structure (AppShell, DocsShell, MarketingShell) and
+   gallery recipes assembled only from public components.
 
-### 4.4 Assets
+**Builders.** `Component::new(required…)` plus chained setters taking
+`impl Into<…>`. Variants and sizes are enums rendered as `data-variant` /
+`data-size`.
+
+**Slots.** Standard slot names, used wherever they apply: `heading`, `description`,
+`media`, `actions`, `body`, `meta`, `footer`. Each accepts `impl Render + 'a`.
+Compositions collect assets by rendering their children; no composition requests
+assets on a child's behalf.
+
+**Passthrough attributes.** Every component exposes `.class()`, `.id()`, `.attr()`,
+`.data()`, `.aria()` via a shared `Attrs` applied to its root element. Each component
+documents its **reserved attributes** (ids it wires, `role`, behaviour `data-*`
+state); setting a reserved attribute through passthrough panics in debug builds and
+is ignored in release builds (the component's value wins).
+
+**Landmarks.** Only shells emit `<main>` (with `id="main"`, the `SkipLink` target),
+top-level `<header>`, `<footer>` and primary `<nav>`. Panels, cards and sections never
+emit `main`; a `Section` or `Panel` with a heading renders `<section
+aria-labelledby>`, without a heading a `<div>`.
+
+**Headings.** Semantic level and visual size are independent:
+`Heading::new(2, "Orders").size(Size::Xl)`. Compositions with a heading slot take
+`.level(n)` (default 2); `PageHeader` defaults to 1.
+
+**Public types.** A constituent gets its own public type only if it is used
+standalone or has two or more independent options (`Feature`, `PricingTier`,
+`AccordionItem`, `MenuItem`). Otherwise it is a builder method on its parent
+(`Tabs::tab(label, panel)`, `List::item(..)`). Names in the catalogue (§8) are
+reserved even when not yet implemented.
+
+### 4.6 Assets
 
 ```rust
 pub struct Asset {
-    pub name: &'static str,          // "tabs"
-    pub css: Option<&'static str>,   // component stylesheet chunk
-    pub behavior: Option<Behavior>,  // client-side enhancement
+    pub name: &'static str,
+    pub css: Option<&'static str>,
+    pub behavior: Option<Behavior>,
     pub deps: &'static [&'static Asset],
 }
-pub enum Behavior { Js(&'static str) /* , Wasm(…) reserved */ }
+#[non_exhaustive]
+pub enum Behavior { Js(&'static str) /* Wasm reserved */ }
 ```
 
-A component calls `cx.require(&TABS)` while rendering. Requirements are de-duplicated
-and resolved with dependencies in a stable order.
+Components call `cx.require(&TABS)` while rendering; requirements resolve
+dependencies first, each asset once, cycles terminating. Assets register themselves
+with `register_asset!(TABS)` (via `inventory`) so `Bundle` includes every compiled-in
+asset without manual lists. Unregistered assets work on full pages (scripts inlined)
+but not in fragments: requiring one in a fragment panics in debug builds and is
+omitted in release builds.
 
 The `behavior` module defines the client contract: behaviour names, custom-element
-tag names (`st-tabs`), and `data-*` attribute and state names. A build-time test
-generates the matching JavaScript constants and fails if the scripts drift from them.
+tags (`st-tabs`), `data-*` names, header names and the theme storage key
+(`stucco-theme`). A test generates the matching JS constants and fails on drift.
 
-### 4.5 Bundle and Page
-
-`Bundle` is built once at startup and owns all static assets:
+### 4.7 Bundle, Page and delivery
 
 ```rust
-let bundle = Bundle::new(Theme::preset(Preset::Slate))
-    .with_theme("marketing", Theme::preset(Preset::Iris));
+let bundle = Bundle::new(Preset::Slate)                          // infallible
+    .with_theme("marketing", Theme::preset(Preset::Iris).radius(Radius::Round).build()?);
+bundle.get(path) -> Option<AssetFile>   // bytes, MIME, ETag, immutable flag
 ```
 
-It generates the stylesheet (tokens for each theme, base layers, and the CSS of every
-component compiled in), and every behaviour script, each content-hashed and served
-under a configurable prefix (default `/_stucco/`). Integration with any server:
+`Bundle::new` and `with_theme` take `impl Into<BuiltTheme>`, implemented for
+`Preset` (pre-validated in CI) and `BuiltTheme`. A `Theme` — including a modified
+preset — must go through `Theme::build()`, the only place validation happens; there
+is no path that skips it.
+
+The bundle builds one stylesheet (layers, reset, theme tokens, named themes, base,
+every registered asset's CSS), the client runtime, and one module per behaviour, all
+content-hashed under a configurable prefix (default `/_stucco/`, must be same-origin
+for fragments).
 
 ```rust
-bundle.get(path) -> Option<AssetFile>   // bytes, MIME type, ETag, immutable cache flag
-```
-
-`Page` renders a complete document:
-
-```rust
-Page::new(&bundle, "Dashboard")
-    .lang("en")
-    .meta(Meta::description("…").og_image(href))
-    .head(extra)                      // user head content
-    .body(app)
+Page::new(&bundle, "Orders")
+    .lang("en").meta(Meta::description("…"))
+    .head(extra).body(app)
     .csp_nonce(nonce)
-    .render()                         // -> String
+    .enhanced()            // include the runtime even if no behaviour is used yet
+    .delivery(Delivery::Linked)
+    .render()
 ```
 
-`Page` renders the body first, then emits `<head>` from the collected requirements.
-Delivery modes (`.delivery(…)`):
+- **Linked (default):** the site-wide stylesheet link (identical on every page);
+  the runtime module if the page uses any behaviour or `.enhanced()` is set; one
+  module per used behaviour. Fragments inserted later can load further modules
+  (§4.8).
+- **Inline:** the CSS chunks actually used and the used behaviours inline, for
+  single-file documents, embeds and offline pages. Inline pages do not support
+  dynamic fragment insertion; the runtime is not included.
 
-- `Linked` (default): one site-wide stylesheet link (identical on every page, so it
-  stays cached) plus one `<script type="module">` per behaviour used on this page;
-- `Inline`: only the CSS chunks this page uses, in a `<style>` element, and used
-  behaviours as inline module scripts — for emails, embeds and single files.
+The theme-flash prevention script is inlined in `<head>`; when a CSP nonce is set,
+every inline `<script>` and `<style>` carries it.
 
-The theme-switch script that prevents a flash of the wrong theme is inlined in the
-head. When a CSP nonce is set, every inline `<script>` and `<style>` the page emits
-(including those of `Inline` delivery) carries it.
+### 4.8 Client runtime and fragment protocol
 
-### 4.6 Template engine adapters
+The runtime is one small ES module (`stucco-runtime`, budget 6 KB gzip) providing:
 
-- Feature `askama`: any `askama::Template` can be wrapped with `Askama(t)`, which
-  implements `Render` (template errors render an HTML comment in release and panic in
-  debug). stucco values implement `Display` through `Rendered(r)` for embedding in
-  askama templates with `|safe`.
-- Feature `maud`: `maud::Markup` implements `Render`; stucco values implement
-  `maud::Render`.
+1. **Requirement loading.** `<st-require modules="…">` (emitted at the start of
+   fragment responses) imports each listed module once: a map from URL to the import
+   promise de-duplicates concurrent fragments; the browser module map de-duplicates
+   further. On failure it dispatches `stucco:asset-error`, sets `data-state="error"`
+   on the enclosing enhanced region and shows that region's `RequestStatus` message
+   with a reload link. Only same-origin hashed URLs from the bundle are accepted; no
+   inline script is ever injected, so a strict CSP (`script-src 'self'` or
+   nonce + `'strict-dynamic'`) holds.
+2. **Self-enhancement.** Behaviours are custom elements; their
+   `connectedCallback` runs when inserted by any mechanism, so swapped content
+   enhances itself once its module has loaded (the element upgrades on definition).
+3. **Enhanced requests.** Links and forms marked by an `Enhance` description (§6)
+   are submitted with `fetch`, sending `Stucco-Request: fragment` and
+   `Stucco-Target: <id>`. The response replaces (or appends to) the target.
+   - Stale and out-of-order responses: one in-flight request per target; a new
+     request aborts the previous (`AbortController`); responses for superseded
+     requests are discarded.
+   - Status handling: 200 and 422 and 409 swap; 204 with `Stucco-Location` navigates;
+     anything else leaves content in place and shows the region's failure state.
+   - Focus: if focus was inside the target and an element with the same id exists
+     after the swap, it is focused; after a 422 the `ErrorSummary` is focused;
+     otherwise focus moves to the target's heading if focus was lost.
+   - Announcements: result counts and status changes go to a polite `LiveRegion`.
+   - URL: GET enhancements update the address bar with `history.replaceState` when
+     `push_url` is set, so state remains shareable.
+4. **Invoker fallback.** If `command`/`commandfor` are unsupported, a polyfill
+   behaviour is imported on demand.
 
-Assets required by components embedded inside foreign templates are still collected,
-because the adapters render into the active `Cx`.
+**Icons** render as inline `<svg>` at each use (no sprite, no shared ids), so
+fragments never depend on a page-level sprite; repetition compresses well. A sprite
+optimisation may be added later without API change.
+
+**htmx.** Supported and smoke-tested: content swapped in by htmx enhances itself and
+its `<st-require>` loads modules, provided the page includes the runtime
+(`.enhanced()`). stucco has no htmx-specific API and does not integrate with htmx
+history or focus handling.
+
+### 4.9 Template adapters
+
+Foreign templates cannot thread `Cx` through, so adapters use an **ambient render
+context**: while stucco renders, a thread-local points at the active `Cx` (rendering
+is synchronous).
+
+- `askama`: `Askama(template)` implements `Render`; inside it, stucco values embedded
+  with `{{ value|safe }}` implement `Display` by rendering into the ambient `Cx`, so
+  their asset requirements and ids are recorded. Template errors render an HTML
+  comment in release builds and panic in debug builds.
+- `maud`: `maud::Markup` implements `Render`; stucco values implement `maud::Render`
+  through the same ambient context.
+- Rendering a stucco value through `Display` with no ambient context falls back to a
+  standalone render; if that value required any asset, debug builds panic with a
+  message pointing to `Askama(..)`/`Page`, release builds drop the requirement.
+- Each adapter ships runnable examples (doctests) proving a component embedded in a
+  template contributes its behaviour module to the page.
 
 ## 5. Theme and CSS (`stucco-theme`)
 
 ### 5.1 Theme API
 
 ```rust
-Theme::from_seed(250.0)                        // OKLCH hue of the accent
-    .neutral_tint(0.01)                        // chroma of the neutral scale
+Theme::from_seed(250.0)
+    .neutral_tint(0.01)
     .accent(Color::oklch(0.65, 0.18, 145.0))
     .fonts(Fonts::system().mono("JetBrains Mono"))
-    .type_scale(TypeScale::new(16.0, 1.2))     // base px, ratio; fluid via clamp()
-    .space(4.0)                                // spacing unit in px
+    .type_scale(TypeScale::new(16.0, 1.2))
+    .space(4.0)
     .radius(Radius::Soft)
     .density(Density::Comfortable)
-    .build()?                                  // Result<BuiltTheme, ContrastReport>
+    .build()?          // Result<BuiltTheme, ContrastReport>
 ```
 
-- Palettes: 12-step OKLCH scales for neutral, accent, success, warning, danger, info,
-  each generated separately for light and dark.
-- Semantic roles map onto scale steps: `--st-bg`, `--st-surface`, `--st-surface-raised`,
+- 12-step OKLCH scales for neutral, accent, success, warning, danger, info, each
+  generated for light and dark; out-of-gamut colours are chroma-reduced.
+- Semantic roles: `--st-bg`, `--st-surface`, `--st-surface-raised`, `--st-hover`,
   `--st-text`, `--st-text-muted`, `--st-border`, `--st-border-strong`, `--st-accent`,
-  `--st-accent-text`, `--st-on-accent`, `--st-focus`, and `--st-{success,warning,danger,info}`
-  with `-text` and `-soft` variants. Diagram tones get their own roles.
-- Other tokens: type scale steps, spacing steps, radii, elevation shadows, motion
-  durations and easings, z-index layers.
-- `build()` checks every text/background role pair against WCAG AA (4.5:1 text,
-  3:1 large text and UI) in both schemes and returns a report on failure.
-  `Bundle::new` takes `impl Into<ThemeSource>`; presets are pre-validated and
-  infallible.
+  `--st-accent-hover`, `--st-accent-text`, `--st-accent-soft`, `--st-on-accent`,
+  `--st-focus`, and `--st-{success,warning,danger,info}` with `-text` and `-soft`.
+  Diagram tones add their own roles in the diagram feature.
+- Other tokens: type steps, spacing steps, radii, elevation, motion, z-index layers,
+  control height (density).
+- `build()` checks text/background role pairs against WCAG AA (4.5:1 text, 3:1 UI)
+  in both schemes and returns a `ContrastReport` listing every failing pair.
 
 ### 5.2 Presets
 
-`Theme::preset(Preset::X)` returns a customisable `Theme`. All presets are
-contrast-checked in CI in both schemes.
+`Theme::preset(p)` returns a customisable `Theme`; `Preset` itself converts to
+`BuiltTheme` infallibly because every preset is validated in CI in both schemes.
 
 | Preset | Neutral | Accent | Character |
 |---|---|---|---|
@@ -270,18 +410,14 @@ contrast-checked in CI in both schemes.
 | Ember | charcoal | red-orange | bold, high energy |
 | Sol | warm cream | gold | bright, optimistic |
 | Terminal | near-black | phosphor green | monospace, sharp corners |
-| Contrast | pure black/white | strong blue | WCAG AAA throughout |
-
-Exact OKLCH values are tuned during implementation and recorded in the presets
-module.
+| Contrast | pure black/white | strong blue | WCAG AAA text |
 
 ### 5.3 Light and dark
 
-Roles are declared once with `light-dark()`. Without a `data-theme` attribute the
-operating system preference decides; `data-theme="light"` or `"dark"` on any element
-forces that scheme for its subtree by setting `color-scheme`. Named extra themes apply
-to a subtree with `data-st-theme="<name>"`. The theme switcher behaviour persists the
-choice in `localStorage` and tolerates storage being unavailable.
+Roles are declared once with `light-dark()`. Without `data-theme` the OS decides;
+`data-theme="light|dark"` on any element forces a scheme for its subtree; named
+themes apply with `data-st-theme="<name>"`. `ThemeScope` (layout family) renders a
+wrapper with those attributes.
 
 ### 5.4 CSS architecture
 
@@ -290,231 +426,330 @@ choice in `localStorage` and tolerates storage being unavailable.
        stucco.components, stucco.utilities;
 ```
 
-Unlayered user CSS always wins over the library.
+Unlayered user CSS always wins. Classes use the `st-` prefix; variants and states are
+data attributes shared with the behaviour contract. Components use container queries
+and logical properties. `prefers-reduced-motion: reduce` disables non-essential
+animation.
 
-- Class names use the `st-` prefix (`st-card`, `st-card-title`). Variants and states
-  are data attributes shared with the behaviour contract.
-- Components use container queries for their own responsiveness and logical
-  properties throughout (right-to-left layouts work).
-- `prefers-reduced-motion: reduce` disables non-essential animation.
+Enforced by tests: no colour literals outside generated tokens; component CSS uses
+semantic roles only, never palette steps; every role defined for both schemes in
+every preset; all component CSS inside a `stucco.*` layer; reduced motion honoured.
 
-Enforced by tests:
+## 6. Backend-aware presentation
 
-1. No colour literals outside generated token CSS.
-2. Component CSS references only semantic role tokens, never palette steps.
-3. Every role is defined for both schemes in every preset.
-4. All component CSS sits inside a `stucco.*` layer.
-5. Reduced motion disables every animation and transition marked non-essential.
+The library renders presentation state and describes endpoints; it never executes
+them (execution: integration spec).
 
-## 6. Components (`stucco-ui`)
+**Modes**, documented per component:
 
-**JS** marks components with a behaviour. Each JS component works without its
-script; the fallback is stated.
+- **Server** — links, GET/POST forms, full-page responses. Always works.
+- **Enhanced** — the same endpoints requested asynchronously with partial
+  replacement (§4.8). Same operation semantics as Server.
+- **Live** — polling or streaming updates over an initial server-rendered snapshot.
+  **Later**; components designed for it render a usable snapshot plus a manual
+  refresh link without it.
 
-### 6.1 Icons (feature `icons`)
+**Presentation types** (in `stucco-core`, no HTTP dependency):
 
-Vendored Lucide set (ISC licence, attribution shipped) exposed as typed constants:
-`Icon::new(icon::CHECK).label("Done")` (labelled icons get `role="img"`, unlabelled
-ones are `aria-hidden`). `Page` emits a sprite containing only the icons used on that
-page. `Icon::custom(name, svg)` registers user icons (the SVG is trusted input).
+- `Action { method: Method, href: Href, enhance: Option<Enhance> }` with
+  `Method::{Get, Post}` (what HTML forms support) and
+  `Enhance { target: String, swap: Swap::{Replace, Append}, push_url: bool }`.
+- `FormState` — submitted values per field, field errors, form-level errors.
+  Fields marked sensitive (`PasswordInput`, `.sensitive()`) never redisplay values.
+  `Field::bind(&state, "email")` fills value, error and `aria-invalid`.
+- `CollectionQuery` — shareable query state for collections: sort, direction,
+  search, filters per column, and a `Window`: `Offset { page, per_page }` or
+  `After(Cursor)` / `Before(Cursor)` for key-ordered stores. `CollectionQuery::parse`
+  (unknown or malformed parameters ignored) and `to_query_string` are the query codec;
+  parameter names `sort`, `dir`, `q`, `f.<column>`, `page`, `per`, `after`, `before`.
+- `CollectionPage<T> { rows, next: Option<Cursor>, prev: Option<Cursor>, total: Option<u64> }`
+  and `Capabilities { sortable, filterable, searchable, total_count }`, so a
+  collection renders only the controls its source supports. `Cursor` is an opaque,
+  URL-safe string.
+- `ViewState` for regions: `Ready`, `Loading`, `Empty`, `Failed { message, retry: Option<Action> }`,
+  `Conflict { message }`; validation lives in `FormState`.
 
-### 6.2 Layout (feature `layout`)
+**Fallback rules.** Without JavaScript: infinite loading keeps a next-page link;
+autosave keeps an explicit submit button; remote suggestions keep a native
+`<datalist>` or a server search submit; live regions render a snapshot and a refresh
+link.
 
-Stack, Cluster, Sidebar, Switcher, Center, Container, Grid (auto-fit, min column
-width), Cover, Frame (aspect ratio), Reel. Each takes spacing from the theme's
-spacing steps (`Space::S3`).
+## 7. Composition and catalogue rules
 
-### 6.3 Typography (feature `typography`)
+- Constituents that matter standalone are public (§4.5): `Feature`/`FeatureGrid`,
+  `PricingTier`/`PricingTiers`, `Testimonial`/`TestimonialGroup`,
+  `AccordionItem`/`Accordion`, `FaqItem`/`Faq`, `TimelineItem`/`Timeline`.
+- Consolidations: `FileInput` (no separate `File`); `Accordion` and `Faq` are built
+  on `Disclosure`; `Callout` and `Banner` are `Alert` variants
+  (`Alert::callout`, `Alert::banner`); `ConfirmAction` is a button that opens a
+  `ConfirmDialog` (one public type each, the dialog usable alone); `RemoteSearch` is
+  `SearchForm` plus a results region with an `Enhance`; `TableRow`/`TableCell` are
+  `Table::row` / `Row::cell` builder methods; `Tab`/`TabPanel` are `Tabs::tab`;
+  `ListItem` is `List::item`; `MenuSeparator` is `DropdownMenu::separator`.
+- Complete pages (collection, detail, edit, settings, dashboard, search, sign-in,
+  file manager, job monitor, docs, landing, pricing, error) are gallery **recipes**,
+  not public types.
 
-Heading (level and visual size set separately), Text (size, tone, weight), Link,
-Code, Kbd, Blockquote, Prose (styles arbitrary long-form HTML children). Feature
-`markdown` adds `Prose::markdown(src)` (pulldown-cmark; raw HTML in the source is
-escaped unless `allow_html()` is set).
+## 8. Catalogue
 
-### 6.4 Forms (feature `forms`)
+Columns: **L** level (P primitive, C composition, S shell); **Step** roadmap step
+(§14) where it lands, or **later**; **Fallback / behaviour** (— = static HTML/CSS,
+**JS** = behaviour module); **Feature**.
 
-- `Field` wraps a control with label, hint and error; it wires `for`/`id`,
-  `aria-describedby` and `aria-invalid` automatically, and accepts server-side
-  validation errors via `.error(msg)` or `.errors(iter)`.
-- Controls: Input (types; prefix/suffix adornments), Textarea, Select, Checkbox,
-  RadioGroup, Switch (styled checkbox), Range, File, Fieldset, Button
-  (variant, size, loading state, `type`), ButtonGroup, Form (method, action, CSRF
-  token slot).
-- **JS** PasswordInput reveal toggle (fallback: plain password input).
-- **JS** Combobox: filters a `<datalist>`-backed or server-backed option list with
-  full keyboard support (fallback: native `<input list>`).
+### 8.1 Layout and foundations (`layout`)
 
-### 6.5 Feedback (feature `feedback`)
+| Component | L | Step | Fallback / behaviour |
+|---|---|---|---|
+| Stack, Cluster, Grid, Sidebar, Switcher, Center, Container | P | 2 | — |
+| Cover, Frame, Reel | P | 7 | — |
+| Separator, VisuallyHidden, SkipLink, Surface, ThemeScope | P | 2 | — |
+| Spacer | P | 7 | — |
+| Image (width/height required, lazy by default) | P | 7 | — |
+| Icon (type always available; set via `icons`) | P | 2 | — |
 
-Alert/Callout, Badge, Tag, StatusDot, Progress (native), Meter (native), Spinner,
-Skeleton, EmptyState. **JS** Toast region (fallback: messages render inline as Alerts).
+### 8.2 Typography and content (`typography`)
 
-### 6.6 Navigation (feature `navigation`)
+| Component | L | Step | Fallback / behaviour |
+|---|---|---|---|
+| Heading, Text, Link, Code, Kbd | P | 2 | — |
+| List (`List::item`), DescriptionList, Caption, Time | P | 7 | — |
+| Blockquote, Prose (`markdown`: `Prose::markdown`) | P | 7 | — |
+| CodeBlock | C | 7 | copy button **JS** (absent without JS) |
 
-Navbar (responsive; the mobile menu is a `<details>` disclosure), Breadcrumbs,
-Pagination, SidebarNav, Steps, TableOfContents, SkipLink. **JS** Tabs (fallback: tab
-list is a list of anchor links to the panels, all panels visible).
+### 8.3 Actions (`actions`)
 
-### 6.7 Overlay (feature `overlay`)
+| Component | L | Step | Fallback / behaviour |
+|---|---|---|---|
+| Button, ButtonLink, IconButton (label required) | P | 2 | — |
+| ButtonGroup, ActionGroup | C | 4 | — |
+| ActionForm (one-button POST form) | C | 5 | — |
+| CopyButton | P | 7 | **JS**; hidden without JS |
+| DownloadLink | P | 7 | — |
+| ConfirmAction | C | 7 | opens ConfirmDialog; without invokers/JS submits a confirm page via `fallback_href` |
+| AsyncAction (ActionForm + RequestStatus + Enhance) | C | later | — |
 
-- Dialog and Drawer: native `<dialog>` opened by invoker commands
-  (`command="show-modal"` / `commandfor`); no script required.
-- Popover: native popover API.
-- Tooltip: CSS anchor positioning, text also available to assistive technology via
-  `aria-describedby`.
-- **JS** DropdownMenu: popover plus menu keyboard navigation (fallback: popover with
-  ordinary focusable links/buttons).
+### 8.4 Form primitives (`forms`)
 
-### 6.8 Data display (feature `data`)
+| Component | L | Step | Fallback / behaviour |
+|---|---|---|---|
+| Form, Field, FieldHint, FieldError, Fieldset, Legend | P/C | 2 | — |
+| Input, Textarea, Select, Checkbox, RadioGroup, HiddenInput, CsrfToken | P | 2 | — |
+| ErrorSummary (links to fields; focused after 422) | C | 5 | — |
+| CheckboxGroup, Switch, Range, FileInput | P | 7 | — |
+| PasswordInput | P | 7 | reveal toggle **JS**; plain password field without |
+| Combobox | C | 7 | **JS**; native `<input list>` / server search without |
 
-Card, Table (sticky header, responsive overflow, optional sortable headers as server
-links), DescriptionList, Avatar (image or initials), Stat (KPI tile), Timeline,
-Accordion (`<details>`), **JS** CodeBlock copy button (fallback: no button rendered
-without script; the block stays selectable).
+### 8.5 Composed forms (`forms`)
 
-**DataTable** — one API, two modes:
+| Component | L | Step | Fallback / behaviour |
+|---|---|---|---|
+| FormSection, FormActions | C | 5 | — |
+| ValidatedForm (Form + FormState + ErrorSummary) | C | 5 | — |
+| SearchForm, FilterBar | C | 4 | GET form |
+| SettingsSection | C | 7 | — |
+| InlineEdit, UploadField, RepeatableFields, FormWizard, AutosaveForm | C | later | — |
 
-```rust
-DataTable::new(&rows)
-    .column(Col::text("Name", |r| &r.name).sortable().searchable())
-    .column(Col::enumeration("Status", |r| r.status).filter())
-    .column(Col::number("Size", |r| r.bytes).sortable().filter())
-    .column(Col::date("Created", |r| r.created).sortable())
-    .query(&query)                // TableQuery parsed from the request
-    .page(Pagination::new(page, per_page, total))
-    .client_side()                // optional; omit for server mode
-```
+### 8.6 Feedback and state (`feedback`)
 
-- Column kinds (text, number, date, enumeration, custom) set sort order and filter
-  control: enumeration → select, number/date → min/max range, searchable text → the
-  shared search box.
-- **Server mode (default):** state lives in query parameters
-  (`sort`, `dir`, `q`, `f.<column>`, `page`). Headers are sort links, filters and
-  search are a GET form; works without JS on any data size. `TableQuery::parse(query_string, &columns)`
-  validates parameters against the declared columns (unknown or malformed parameters
-  are ignored, never errors) and exposes `sort()`, `filters()`, `search()`, `page()` for
-  the handler to apply to its data source. A helper `TableQuery::apply(&mut Vec<T>)`
-  covers in-memory data.
-- **Client mode (JS):** for tables with all rows on the page. Sorting, filtering and
-  search happen in place, a polite `aria-live` region announces result counts, and the
-  URL query parameters are updated with `history.replaceState`, so links remain
-  shareable and work in server mode when scripts are off.
-- Headers carry `aria-sort`; all controls are real buttons, links and form controls.
+| Component | L | Step | Fallback / behaviour |
+|---|---|---|---|
+| Alert (`callout`, `banner` variants), Badge, Tag, StatusDot | P | 4 | — |
+| EmptyState, ErrorState, Spinner, Skeleton | P | 4 | — |
+| RequestStatus (renders a `ViewState`), LiveRegion | C | 6 | — |
+| FlashMessages (server flash → Alerts or ToastRegion) | C | 5 | inline Alerts |
+| Progress, Meter | P | 7 | — |
+| Toast, ToastRegion | C | 7 | **JS**; inline Alerts without |
+| ConnectionStatus, JobProgress | C | later | — |
 
-### 6.9 Marketing (feature `marketing`)
+### 8.7 Navigation (`navigation`)
 
-Hero, Section, FeatureGrid, CtaBand, ComparisonTable, Faq (`<details>`), PricingTiers,
-Testimonial, LogoCloud. Ported and generalised from `skimasque-visual`'s chrome.
+| Component | L | Step | Fallback / behaviour |
+|---|---|---|---|
+| Navbar (mobile menu via `<details>`), NavGroup, NavItem, SidebarNav | C | 4 | — |
+| Breadcrumbs, Pagination (numbered or cursor) | C | 4 | — |
+| Disclosure | P | 7 | — |
+| Tabs (`Tabs::tab`) | C | 7 | **JS**; anchor list with all panels visible |
+| Steps, TableOfContents | C | 7 | — |
+| AccountMenu, WorkspaceSwitcher | C | 7 | DropdownMenu |
+| SearchNavigation | C | later | — |
 
-### 6.10 Shells (feature `shells`)
+### 8.8 Overlays (`overlay`)
 
-AppShell (header, collapsible sidebar, main), DocsShell (sidebar nav, content, table
-of contents), MarketingShell (navbar, content sections, footer), Footer, and the
-**JS** ThemeSwitcher (fallback: hidden; the OS preference applies).
+| Component | L | Step | Fallback / behaviour |
+|---|---|---|---|
+| Dialog, Drawer | C | 7 | native `<dialog>` + invokers; polyfill **JS** if unsupported; `fallback_href` to a server-rendered page |
+| ConfirmDialog, FormDialog | C | 7 | as Dialog |
+| Popover | P | 7 | native popover API |
+| Tooltip | P | 7 | CSS anchor positioning; `@supports` fallback places it below |
+| DropdownMenu, MenuItem (`DropdownMenu::separator`) | C | 7 | **JS** keyboard navigation; popover with plain links/buttons without |
+| RemoteDialog (Dialog loading a fragment) | C | later | link to the page |
 
-## 7. Diagrams (`stucco-diagram`, feature `diagram`)
+### 8.9 Data display (`data`)
+
+| Component | L | Step | Fallback / behaviour |
+|---|---|---|---|
+| Card, Panel, Table (`Table::row`, `Row::cell`), ResultCount | P/C | 4 | — |
+| Stat, MetricGrid | C | 7 | — |
+| Avatar, AvatarGroup | P | 7 | — |
+| Timeline, TimelineItem, Accordion, AccordionItem | C | 7 | `<details>` |
+| ResourceList, ResourceListItem, DetailPanel | C | 7 | — |
+| SortControl, PageSizeSelect | P | 4 | links / GET select |
+| ActivityFeed, ActivityItem, FileList, FileItem | C | later | — |
+
+### 8.10 Backend-aware collections (`collections`)
+
+| Component | L | Step | Fallback / behaviour |
+|---|---|---|---|
+| CollectionToolbar (SearchForm + FilterBar + SortControl + ResultCount) | C | 4 | GET form |
+| DataTable (Table + CollectionToolbar + EmptyState + Pagination + LiveRegion) | C | 4 server, 6 enhanced | **JS** client mode for fully loaded rows |
+| DataList (ResourceList with the same query model) | C | 7 | as DataTable |
+| LoadMoreList | C | 7 | next-page link; Enhance with `Swap::Append` |
+| BulkActionBar | C | 7 | checkboxes + POST form |
+| DependentFields | C | later | full-page reload on change |
+| RemoteSearch, RemoteSelect | C | later | SearchForm / native select |
+| InfiniteList, NotificationCenter, JobList | C | later | next-page link / snapshot |
+
+DataTable columns are typed (`Col::text`, `Col::number`, `Col::date`,
+`Col::enumeration`, `Col::custom`); the column kind sets sort order and filter
+control. Controls appear only where `Capabilities` allow. Server mode works on any
+data size without JS; **client mode** (`.client_side()`, **JS**) sorts, filters and
+searches rows already on the page, announces counts and keeps URL parameters in sync.
+
+### 8.11 Application composition (`app`)
+
+| Component | L | Step | Fallback / behaviour |
+|---|---|---|---|
+| AppShell, PageHeader, SectionHeader, Footer | S/C | 4 | — |
+| ThemeSwitcher | C | 7 | **JS**; hidden without JS (OS preference applies) |
+| DocsShell, MarketingShell | S | 9 | — |
+| SplitPane, MasterDetail | C | later | stacked layout |
+
+### 8.12 Marketing (`marketing`, step 9)
+
+Section, Hero, Feature, FeatureGrid, CtaBand, ComparisonTable, PricingTier,
+PricingTiers, Testimonial, TestimonialGroup, LogoCloud, Faq, FaqItem — all static.
+NewsletterForm, ContactForm — ValidatedForm recipes with public builders.
+
+### 8.13 Diagrams (`diagram`, step 9) — see §9.
+
+## 9. Diagrams (`stucco-diagram`)
 
 ```rust
 pub trait NodeKind {
     fn label(&self) -> &str;
-    fn icon(&self) -> Icon;
+    fn icon(&self) -> Option<Icon>;
     fn tone(&self) -> Tone;
 }
-
 Node::new(kinds::DATABASE).label("Orders").sub("db.prod:5432").status(Status::Healthy)
-Node::new(Kind::new("Ledger", icon::BOOK).tone(Tone::Structure))
+Node::new(Kind::new("Ledger").tone(Tone::Structure))          // iconless: text-only node
 ```
 
-- Starter kinds in `diagram::kinds`: service, database, queue, user, client, api,
-  cloud, server, function, storage, external, gateway, process, decision.
-- Tones: Primary, Structure, Edge, Neutral, Success, Danger, Info, Warning, each
-  backed by theme roles.
-- Connections: Data (solid), Control (dashed), Active (emphasised), Potential
-  (dotted), Denied (broken with ×). Each takes a label; its meaning is also present as
-  visually hidden text.
-- Containers: Flow, Branch, Layers, Sequence, Compare, Boundary (group / trust zone),
-  Topology. Each requires a caption, which becomes its text equivalent.
-- Width-safety is enforced by types: containers implement `Block`, simple nodes
-  implement `Inline`; content-sized slots (a Flow step, a Branch root) accept only
-  `Inline`, while width-defined slots (Compare sides, Branch arms, Boundary bodies)
-  accept `Block`. This replaces the doc-comment warning in `skimasque-visual`.
-- Motion: `Reveal` (steps appear in order) and **JS** `Walkthrough` (playable stages
-  with captions, user-supplied; fallback: all stages listed in order).
-- Rendering stays HTML/CSS (not absolutely positioned SVG), so diagrams reflow on
-  narrow screens, follow the theme and remain readable by screen readers.
+- Starter kinds (service, database, queue, user, client, api, cloud, server,
+  function, storage, external, gateway, process, decision) use Lucide icons; this is
+  why `diagram` requires `icons`. Custom kinds may have no icon.
+- Tones: Primary, Structure, Edge, Neutral, Success, Danger, Info, Warning.
+- Connections: Data, Control, Active, Potential, Denied, each with a label and a
+  visually hidden meaning.
+- Containers: Flow, Branch, Layers, Sequence, Compare, Boundary, Topology; each
+  requires a caption (`DiagramCaption`), and `DiagramLegend` explains tones and
+  connection kinds.
+- Width safety in types: containers implement `Block`, nodes `Inline`; content-sized
+  slots accept only `Inline`.
+- Motion: `Reveal` (static order under reduced motion) and **JS** `Walkthrough`
+  (fallback: all stages listed).
+- **Later:** DiagramInspector, LiveDiagram, automatic layout.
 
-## 8. Client behaviours
+Rendering is HTML/CSS, so diagrams reflow, follow the theme and remain readable by
+screen readers.
 
-- Each behaviour is a dependency-free ES module defining one custom element
-  (`<st-tabs>`, `<st-combobox>`, `<st-data-table>`, …) that wraps native markup in the
-  light DOM (no shadow DOM, so theme CSS applies).
-- `connectedCallback` / `disconnectedCallback` attach and detach behaviour, so
-  content inserted later (htmx swaps, the future framework) enhances itself without a
-  global scan.
-- Behaviours read configuration from `data-*` attributes defined in
-  `core::behavior`, never from inline JSON or globals.
-- Behaviours: theme-switcher, tabs, dropdown-menu, combobox, password-reveal, toast,
-  copy, data-table, walkthrough.
-- Target: each module under 4 KB minified and gzip-compressed; scripts are shipped
-  unminified-but-small source in v1 (no JS build step), and the size budget is checked
-  in CI against gzip output.
+## 10. Behaviours
 
-## 9. Error handling
+Each behaviour is a dependency-free ES module defining one light-DOM custom element
+wrapping native markup, configured only by `data-*` attributes from
+`core::behavior`. Behaviours in v1: runtime (§4.8), invoker polyfill, theme-switcher,
+tabs, dropdown-menu, combobox, password-reveal, toast, copy, data-table (client
+mode), walkthrough. Budget: 4 KB gzip per behaviour, checked in CI.
 
-- Rendering cannot fail. Invalid input degrades safely: invalid attribute names
-  are dropped (debug panic), unsafe URLs become `#`, unknown table query parameters are
-  ignored.
-- `Theme::build()` is the one fallible public API, returning `ContrastReport`
-  (each failing role pair, scheme, measured and required ratio).
-- `Bundle::get` returns `None` for unknown paths; callers map that to 404.
+## 11. Browser support
 
-## 10. Quality
+Supported: the current and previous major versions of Chrome, Edge, Firefox and
+Safari (desktop and iOS), tested with Playwright's Chromium, Firefox and WebKit.
 
-### 10.1 Tests
+| Platform feature | Use | Support at time of writing | Fallback |
+|---|---|---|---|
+| `light-dark()`, container queries, `:has()`, `<dialog>`, popover API | everywhere | Baseline widely available | none needed |
+| Invoker commands (`command`/`commandfor`) | Dialog, Drawer, Popover triggers | Chrome 135, Firefox 144, Safari 26.2 | polyfill behaviour; `fallback_href` without JS |
+| CSS anchor positioning | Tooltip, DropdownMenu placement | Chrome 125, Firefox 147, Safari 26 | `@supports not (anchor-name: --a)` places below the trigger |
 
-- Rust unit tests per component: markup contract, escaping, aria wiring, id
-  uniqueness, declared assets.
-- Snapshot tests (`insta`) of the rendered HTML of every gallery example.
-- CSS rule tests (§5.4) and contrast tests for every preset in both schemes.
-- Behaviour contract test: generated JS constants match `core::behavior`.
-- Browser tests with Playwright (Chromium, Firefox and WebKit) against the generated
-  gallery: keyboard interaction for every JS component, DataTable in both modes,
-  axe-core (`@axe-core/playwright`) on every page in both schemes, and a pass with
-  JavaScript disabled (`javaScriptEnabled: false`) to verify fallbacks.
-- Node, Playwright and axe are development-only; crate users never need Node.
+Versions are re-verified when each feature's step begins; the Playwright suite runs
+each feature's fallback path with the native feature disabled where Playwright allows,
+and with JavaScript disabled.
 
-### 10.2 Documentation
+## 12. Error handling
 
-- `#![deny(missing_docs)]`; every public component has a runnable rustdoc example.
-- Gallery site: every component with variants and copyable code, the palette page
-  (each preset's scales and role mapping), a live theme switcher across all presets.
-  Built in CI, deployable to GitHub Pages.
-- `examples/`: axum, actix-web, askama embedding, maud embedding, static site
-  generation, DataTable server mode, DataTable client mode.
+- Rendering cannot fail; invalid input degrades safely (§4.4), unknown query
+  parameters are ignored.
+- `Theme::build()` is the one fallible public API (`ContrastReport`).
+- `Bundle::get` returns `None` for unknown paths; the integration maps it to 404.
+- Client asset load failures are visible (§4.8.1).
 
-### 10.3 Tooling
+## 13. Quality
 
-- Rust edition 2024, MSRV 1.85 (checked in CI).
-- `cargo clippy -D warnings`, `cargo fmt --check`, `cargo-deny` (licences, advisories),
-  `cargo-semver-checks` before each release.
-- GitHub Actions CI. Licence: MIT OR Apache-2.0.
-- Repository: `C:\Users\Thor\Documents\src\stucco`, local git only until the user
-  asks for a remote or a release.
+- Rust unit tests per component: markup contract, escaping, attribute refusal, aria
+  wiring, id policy, reserved attributes, declared assets.
+- `insta` snapshots of every gallery example.
+- CSS rule tests and contrast tests for every preset in both schemes.
+- Behaviour contract test (Rust constants ↔ JS).
+- Feature matrix in CI: no default features, each feature alone, the defaults, the
+  integration-slice combination, and all features (`cargo hack` with
+  `--each-feature` plus the named combinations).
+- Playwright (Chromium, Firefox, WebKit) over the gallery and the slice examples:
+  keyboard interaction for every behaviour, axe-core in both schemes, a
+  JavaScript-disabled pass, fragment insertion introducing a new behaviour and icon,
+  concurrent fragments requesting the same module, stale-response discard, focus
+  restoration, and an htmx smoke test.
+- Docs: `#![deny(missing_docs)]`, runnable examples on every public item, the gallery
+  (components, recipes, palette page, theme switcher), and `examples/`.
+- Tooling: edition 2024, MSRV 1.85, clippy `-D warnings`, rustfmt, `cargo-deny`,
+  `cargo-semver-checks` before releases, GitHub Actions; MIT OR Apache-2.0; local git
+  only until the user asks otherwise.
 
-## 11. Build order
+## 14. Roadmap
 
-Each step ends with its gallery pages and tests green.
+Each step ships a working example, a no-JavaScript path, keyboard and accessibility
+checks, and feature-build checks.
 
-1. Workspace, `stucco-core` (Render, Cx, element builder, Href, Attrs, assets, Page,
-   Bundle), gallery skeleton.
-2. `stucco-theme`: OKLCH, scales, roles, CSS generation, contrast checks, all presets,
-   palette page.
-3. Base CSS layers, icons, layout, typography.
-4. Forms.
-5. Feedback, navigation, overlay, and the behaviour runtime conventions plus the
-   Puppeteer harness.
-6. Data display including DataTable (both modes).
-7. Shells and theme switcher.
-8. Marketing.
-9. Diagrams.
-10. Adapters (askama, maud), examples, documentation pass, release checklist.
+1. Core: rendering, safe markup and attribute policy, assets, fragments
+   (`RenderedFragment`, `<st-require>`), identity policy, Bundle, Page, runtime
+   requirement loading.
+2. Theme generation, presets and contrast validation; base CSS; minimal layout,
+   typography, actions and form primitives (step-2 rows in §8).
+3. Thin Tower integration serving Bundle assets and full pages (integration spec).
+4. AppShell + PageHeader + server-mode DataTable with GET sort/filter/search and
+   numbered **and** cursor pagination, backed by a k/v store example.
+5. Edit form: submitted-value redisplay, server validation, ErrorSummary, CSRF,
+   authorization, conflict on concurrent edit.
+6. Enhanced mode on the same endpoints; a fragment inserts a component whose
+   behaviour and icon were absent from the initial page.
+7. Catalogue expansion (step-7 rows) and gallery coverage, in family order.
+8. Uploads, job observation and one live-update path — **only after a separate
+   framework scope review**.
+9. Marketing, diagrams, DocsShell/MarketingShell, adapters, documentation and the
+   v1 release.
+
+Committed v1 = steps 1–7 and 9. Step 8 and every **later** row are outside v1.
+
+## 15. Decisions for review
+
+1. Crate name `stucco-tower` for the integration, kept out of the `stucco` facade
+   (no `server` feature). Framework facade decided in the framework spec.
+2. Icons inline per use (no sprite) — simplest fragment story; costs repeated bytes
+   before compression.
+3. Fragment namespaces required and caller-chosen (target id or record key) as the
+   id-collision policy.
+4. `Slot<'a>` and lifetime-carrying components to allow borrowed data.
+5. Ambient thread-local render context for askama/maud embedding.
+6. Reserved attributes: debug panic, release ignore.
+7. Browser matrix: current + previous major of Chrome, Edge, Firefox, Safari.
+8. Inline delivery excludes dynamic fragments; email is out of scope.
+9. Live mode, uploads and jobs deferred to step 8 behind a scope review.
