@@ -133,6 +133,55 @@ pub trait Seeded: Sized {
     }
 }
 
+/// A [`Seeded`] value from a fresh random seed. Implemented for every
+/// `Seeded` type, including [`Theme`].
+///
+/// The seed comes from the standard library's per-process random hasher
+/// keys mixed with the clock: fine for variety, not for cryptography. Keep
+/// the seed from [`Random::random_with_seed`] to recreate a result you like
+/// with [`Seeded::seeded`].
+///
+/// ```
+/// use stucco_theme::{Random, Seeded, Theme};
+///
+/// let (theme, seed) = Theme::random_with_seed();
+/// assert_eq!(theme, Theme::seeded(seed));
+/// assert!(theme.build().is_ok());
+/// ```
+pub trait Random: Seeded {
+    /// A value from a fresh random seed.
+    fn random() -> Self {
+        Self::random_with_seed().0
+    }
+
+    /// A value from a fresh random seed, and that seed.
+    fn random_with_seed() -> (Self, u64) {
+        let seed = random_seed();
+        (Self::seeded(seed), seed)
+    }
+}
+
+impl<T: Seeded> Random for T {}
+
+/// A fresh, non-cryptographic random seed.
+///
+/// ```
+/// assert_ne!(stucco_theme::random_seed(), stucco_theme::random_seed());
+/// ```
+pub fn random_seed() -> u64 {
+    use std::hash::BuildHasher;
+    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    // A counter keeps calls distinct even when the clock does not move.
+    static CALLS: AtomicU64 = AtomicU64::new(0);
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d| d.as_nanos());
+    let calls = CALLS.fetch_add(1, Ordering::Relaxed);
+    std::collections::hash_map::RandomState::new().hash_one((nanos, calls))
+}
+
 /// A theme's colour choices: the accent, the neutral scale's hue and tint,
 /// and whether the accent is the text colour ("ink").
 ///
@@ -502,6 +551,17 @@ mod tests {
         ] {
             assert!(css.contains(line), "seed 1 changed; missing {line}\n{css}");
         }
+    }
+
+    #[test]
+    fn random_values_are_reproducible_from_their_seed() {
+        let (theme, seed) = Theme::random_with_seed();
+        assert_eq!(theme, Theme::seeded(seed));
+        let (radius, seed) = Radius::random_with_seed();
+        assert_eq!(radius, Radius::seeded(seed));
+        let seeds: std::collections::HashSet<u64> = (0..100).map(|_| random_seed()).collect();
+        assert_eq!(seeds.len(), 100);
+        assert!(Theme::random().build().is_ok());
     }
 
     #[test]

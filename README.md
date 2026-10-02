@@ -118,6 +118,10 @@ An option seeded on its own matches what the full seeded theme chooses for it,
 because each option draws from its own named stream. Implement `Seeded` for
 your own types with `SeedRng`.
 
+For a surprise, every `Seeded` type also implements `Random`:
+`Theme::random()` picks a fresh seed, and `Theme::random_with_seed()` also
+returns that seed so you can keep a result with `Theme::seeded(seed)`.
+
 The style personality changes presentation without changing markup: surface
 elevation, table rows, input style, header treatment, heading weight and
 button shape. Add more themes to a bundle with `Bundle::with_theme` and apply
