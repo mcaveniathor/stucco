@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Four more personality options, each seedable and in `ThemeSpec`, the CLI
+  and the playground (`heading-font`, `leading`, `tags`, `rules`):
+  - `HeadingFont` (Body, Serif, Rounded, Mono) sets the typeface of
+    headings, using system fonts only;
+  - `Leading` (Tight, Normal, Airy) sets the line height of running text;
+  - `TagStyle` (Pill, Square, Outline) draws `.st-tag`;
+  - `RuleStyle` (Solid, Dashed, Dotted) patterns separators, table row rules
+    and the footer's top rule.
+  Defaults reproduce the previous look, and existing seeds keep every option
+  they had.
 - Five more personality options, each seedable and in `ThemeSpec`, the CLI
   and the playground (`lines`, `depth`, `labels`, `icons`, `motion`):
   - `LineWeight` (Fine, Heavy) sets the width of outlines and rules through

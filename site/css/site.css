@@ -69,8 +69,9 @@
   .site-prose h1 { font-size: var(--st-text-3xl); line-height: 1.15; letter-spacing: -0.02em; }
   .site-prose h2 { margin-block-start: var(--st-space-10); font-size: var(--st-text-2xl); line-height: 1.2; }
   .site-prose h3 { margin-block-start: var(--st-space-7); font-size: var(--st-text-lg); }
+  .site-prose h1, .site-prose h2, .site-prose h3 { font-family: var(--st-font-heading, inherit); }
   .site-prose h2, .site-prose h3 { font-weight: var(--st-heading-weight); letter-spacing: var(--st-heading-tracking); scroll-margin-block-start: var(--st-space-6); }
-  .site-prose p, .site-prose li { line-height: 1.65; }
+  .site-prose p, .site-prose li { line-height: max(1.65, var(--st-leading, 1.5)); }
   .site-prose ul, .site-prose ol { padding-inline-start: var(--st-space-6); }
   .site-prose li + li { margin-block-start: var(--st-space-1); }
   /* Prose links follow the theme's link style, like .st-link. */

@@ -17,8 +17,8 @@ mod theme;
 pub use color::{Color, contrast};
 pub use personality::{
     ButtonDepth, ButtonShape, ControlStyle, CornerStyle, Elevation, Finish, FocusStyle,
-    HeaderStyle, HeadingWeight, IconWeight, LabelStyle, LineWeight, LinkStyle, Motion, NavStyle,
-    PanelStyle, ShellLayout, TableStyle,
+    HeaderStyle, HeadingFont, HeadingWeight, IconWeight, LabelStyle, Leading, LineWeight,
+    LinkStyle, Motion, NavStyle, PanelStyle, RuleStyle, ShellLayout, TableStyle, TagStyle,
 };
 pub use presets::Preset;
 pub use scale::{Scale, Scheme};

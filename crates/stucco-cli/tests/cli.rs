@@ -129,6 +129,14 @@ fn lists_presets_and_options() {
     assert!(presets.starts_with("slate\n"));
     assert_eq!(presets.lines().count(), 14);
     let options = stdout(&["options"]);
-    assert!(options.contains("radius     sharp, soft, round\n"));
-    assert!(options.contains("finish     smooth, sand, float, knockdown\n"));
+    let line = |key: &str| {
+        options
+            .lines()
+            .find_map(|l| l.strip_prefix(key).filter(|rest| rest.starts_with(' ')))
+            .map(str::trim)
+            .unwrap_or_else(|| panic!("no {key} line"))
+    };
+    assert_eq!(line("radius"), "sharp, soft, round");
+    assert_eq!(line("finish"), "smooth, sand, float, knockdown");
+    assert_eq!(line("heading-font"), "body, serif, rounded, mono");
 }

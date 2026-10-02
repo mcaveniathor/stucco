@@ -30,7 +30,7 @@
   .st-collection-actions { display: flex; flex: 1 1 auto; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--st-space-2); }
   .st-collection-toolbar { display: flex; flex-direction: column; gap: var(--st-space-4); }
   .st-data-table .st-table-scroll { background: var(--st-surface); border: var(--st-line, 1px) solid var(--st-border); border-radius: var(--st-surface-radius); corner-shape: var(--st-corner-shape); box-shadow: var(--st-surface-shadow); }
-  .st-data-table .st-table caption { padding: var(--st-space-4); border-block-end: var(--st-line, 1px) solid var(--st-border); }
+  .st-data-table .st-table caption { padding: var(--st-space-4); border-block-end: var(--st-line, 1px) var(--st-rule-style, solid) var(--st-border); }
   .st-data-table th a { display: inline-flex; align-items: center; gap: var(--st-space-1); color: inherit; text-decoration: none; }
   .st-data-table th a:hover { color: var(--st-text); text-decoration: underline; text-underline-offset: 0.2em; }
   .st-data-table th a::after { content: "↕"; content: "↕" / ""; opacity: 0.45; font-size: 0.9em; }
@@ -41,8 +41,8 @@
   .st-data-table-footer .st-pagination { padding-block: 0; }
   .st-tag {
     display: inline-flex; align-items: center; padding: 0.125em 0.625em;
-    border: var(--st-line, 1px) solid var(--st-border); border-radius: var(--st-radius-full);
-    background: var(--st-surface-raised); color: var(--st-text);
+    border: var(--st-line, 1px) solid var(--st-tag-border, var(--st-border)); border-radius: var(--st-tag-radius, var(--st-radius-full));
+    background: var(--st-tag-bg, var(--st-surface-raised)); color: var(--st-text);
     font-size: var(--st-text-sm); font-weight: 550; line-height: 1.4; white-space: nowrap;
   }
 }
