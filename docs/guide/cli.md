@@ -1,6 +1,6 @@
 # Command line
 
-The `stucco` command generates themes in a terminal or a build script, using the same engine as your app and the playground.
+The `stucco` command starts new apps, and generates themes in a terminal or a build script using the same engine as your app and the playground.
 
 ## Install
 
@@ -9,6 +9,19 @@ cargo install stucco-cli
 ```
 
 This installs a binary called `stucco`. It needs Rust 1.85 or later.
+
+## Start an app
+
+`stucco new` writes a working axum app: a theme, a shared layout with navigation, a home page and a table whose columns come from a struct.
+
+```sh
+stucco new my-app                  # the Slate preset
+stucco new my-app --name my-app    # a theme derived from the app's name
+stucco new my-app --seed 42        # or --preset NAME, or --random
+cd my-app && cargo run             # then open http://127.0.0.1:3000
+```
+
+The directory's name names the crate, and it must be new or empty. The app takes stucco from crates.io at the CLI's version; `--git` takes it from the repository instead, for features not released yet, and `--stucco-path DIR` from a local checkout. The [recipes](recipes.html) show where to go from there.
 
 ## Generate a theme
 
