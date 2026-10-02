@@ -111,7 +111,7 @@ Components use semantic roles only. Each role resolves to a step of a twelve-ste
 
 ## Themes
 
-Tokens above are the light scheme. Pages follow the operating system by default; `data-theme` forces a scheme on a subtree. Dark values for the default preset:
+Tokens above are the light scheme. Pages follow the operating system by default; `data-theme` forces a scheme on a subtree, and `data-st-theme` applies a named theme. Beyond the presets, `Theme::seeded` derives a complete theme, including its style personality, from one number; a given seed always yields the same theme and always passes the contrast checks. Dark values for the default preset:
 
 | Role | Dark |
 | --- | --- |
@@ -154,16 +154,18 @@ Inputs, selects and buttons share one control height, which compact density redu
 
 ## Elevation & Depth
 
-Borders carry structure; shadows mark elevation. Cards add the first shadow step to their border, overlays use the second, and panels, filter bars and table cards stay flat with a border only. Shadows are tinted from the neutral scale so they follow the theme.
+Borders carry structure; shadows mark elevation. How much elevation surfaces get is part of a theme's personality: flat themes use borders only, outlined themes (the default) add a light shadow to cards, and raised themes also lift panels, filter bars and table cards. Components read `--st-card-shadow` and `--st-surface-shadow` instead of naming a shadow step, and overlays use the second step. Shadows are tinted from the neutral scale so they follow the theme.
 
 ## Shapes
 
-Presets choose one of three radius sets: soft (the default), round or sharp. Controls, buttons and pagination use `md`; cards, panels, filter bars and table cards use `lg`; tags use `full`.
+Presets choose one of three radius sets: soft (the default), round or sharp. Controls and pagination use `md`, buttons use `md` or `full` depending on the theme's button shape, and underlined inputs round only their top corners; cards, panels, filter bars and table cards use `lg`; tags use `full`.
 
 ## Components
 
+Theme personality sets table rules and stripes, input fill and borders, header fill, heading weight and button radius through tokens (`--st-table-rule`, `--st-control-bg`, `--st-header-bg`, `--st-heading-weight`, `--st-button-radius` and their siblings). Component CSS reads those tokens rather than fixed values, so one markup serves every personality.
+
 - **Buttons** come in primary, secondary, ghost and danger variants at three sizes. Use one primary action per group, placed at the trailing end. Pressed buttons shrink slightly as press feedback. Loading buttons stay focusable and announce busy.
-- **Forms** wire every control to a visible label, hint and error. Invalid fields get a thicker `danger` border, and an error summary above the form lists each error with a link to its field and takes focus after a failed submission.
+- **Forms** wire every control to a visible label, hint and error. Invalid fields get a `danger` border and ring that never shifts layout, and an error summary above the form lists each error with a link to its field and takes focus after a failed submission.
 - **Collections** put filters in a surface card with labels above controls, Clear before Apply at the trailing end, and range filters as two inputs that stack with visible labels in narrow containers. The table sits in its own card with a muted header row and sort arrows; the result count and pagination share a footer row.
 - **Tags** show enumeration values as neutral pills carrying `data-value`, so applications can tone individual values.
 - **Navigation** links in the sidebar are full-width rows with a `hover` fill; the current page uses `accent-soft` with `accent-text`.

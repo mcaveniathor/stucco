@@ -35,6 +35,19 @@
   `SectionHeader::size` set a heading's size independently of its level;
   keyboard keys in `Kbd` are spaced.
 - `DESIGN.md` records the design language and default tokens.
+- `Theme::seeded(u64)` and `Theme::seeded_str(&str)` derive a complete theme
+  (hues, tint, fonts, type scale, spacing, radius, density and personality)
+  from a seed. Every seed passes the contrast checks; the mapping is pinned by
+  a test and changes only in minor releases.
+- Style personality options on `Theme`: `elevation`, `table_style`,
+  `control_style`, `header_style`, `heading_weight` and `button_shape`. They
+  emit tokens (`--st-card-shadow`, `--st-table-rule`, `--st-control-bg`, …)
+  that the component CSS reads, so markup is unchanged. Defaults reproduce the
+  previous look.
+- Invalid inputs show a ring instead of a thicker border, so they no longer
+  shift layout.
+- Themes now also check `text` and `text-muted` against `accent-soft`; a custom
+  theme with a very dark or saturated soft accent can now fail `build`.
 - `stucco-tower`: the `Submission` axum extractor (415 for other content types)
   and the `SeeOther` 303 redirect for post-redirect-get.
 - docs.rs now labels items that require a cargo feature.

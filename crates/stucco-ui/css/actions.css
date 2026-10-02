@@ -2,7 +2,7 @@
   .st-button {
     display: inline-flex; align-items: center; justify-content: center; gap: var(--st-space-2);
     block-size: var(--st-control-h); padding-inline: calc(var(--st-space-4) * var(--st-pad-scale));
-    border: 1px solid transparent; border-radius: var(--st-radius-md);
+    border: 1px solid transparent; border-radius: var(--st-button-radius);
     font: inherit; font-weight: 550; line-height: 1; text-decoration: none; white-space: nowrap;
     cursor: pointer; user-select: none;
     transition: background-color var(--st-duration-fast) var(--st-ease), border-color var(--st-duration-fast) var(--st-ease), scale var(--st-duration-fast) var(--st-ease);

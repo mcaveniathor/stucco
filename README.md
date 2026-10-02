@@ -90,6 +90,30 @@ async fn main() -> std::io::Result<()> {
 The [hello example](https://github.com/mcaveniathor/stucco/tree/main/examples/hello)
 also demonstrates fragment responses.
 
+## Themes
+
+Fourteen presets cover common looks, each in light and dark. For anything
+else, build a `Theme`, or derive a whole one from a seed:
+
+```rust
+use stucco::Bundle;
+use stucco::theme::{Elevation, TableStyle, Theme};
+
+// Colours, fonts, type scale, spacing, radius, density and a style
+// personality, all from one number. The same seed always gives the same theme,
+// and seeded themes always pass the contrast checks.
+let theme = Theme::seeded(42);
+// Or hash a name, then adjust any option.
+let theme = Theme::seeded_str("acme").elevation(Elevation::Raised).table_style(TableStyle::Striped);
+let bundle = Bundle::new(theme.build().expect("contrast passes"));
+```
+
+The style personality changes presentation without changing markup: surface
+elevation, table rows, input style, header treatment, heading weight and
+button shape. Add more themes to a bundle with `Bundle::with_theme` and apply
+them to a subtree with `ThemeScope`. The gallery's seeded themes page shows a
+dozen seeds side by side.
+
 ## Collections and persistence
 
 Enable the `collections` feature for typed columns, a `DataTable`, native GET
