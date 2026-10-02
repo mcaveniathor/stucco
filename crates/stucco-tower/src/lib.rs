@@ -9,6 +9,8 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+#[cfg(feature = "axum")]
+mod app;
 mod assets;
 #[cfg(feature = "axum")]
 mod axum_support;
@@ -20,6 +22,10 @@ mod response;
 #[cfg(feature = "axum")]
 mod submission;
 
+#[cfg(all(feature = "axum", feature = "tower-http"))]
+pub use app::StuccoRouter;
+#[cfg(feature = "axum")]
+pub use app::{Document, IntoBundle, MissingBundle, PageCx};
 pub use assets::{AssetService, FallbackFuture, WithFallback};
 #[cfg(feature = "axum")]
 pub use axum_support::assets_router;

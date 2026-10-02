@@ -35,6 +35,6 @@ pub use fragment::{RenderedFragment, render_fragment};
 pub use href::Href;
 #[doc(hidden)]
 pub use inventory;
-pub use page::{Delivery, Meta, Page};
+pub use page::{Delivery, Meta, Page, WithBody};
 pub use render::{Cx, Raw, Render, RenderFn, Slot, render_fn, to_html};
 pub use validate::{Check, Validator};

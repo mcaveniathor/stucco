@@ -37,22 +37,24 @@ stucco = "0.1"
 
 ```rust
 use stucco::prelude::*;
-use stucco::actions::Button;
-use stucco::layout::{Container, Stack};
-use stucco::typography::{Heading, Text};
 
 let bundle = Bundle::new(Preset::Slate);
-let content = Container::new().child(
-    Stack::new()
-        .child(Heading::new(1, "Hello, stucco"))
-        .child(Text::new("A page rendered entirely in Rust."))
-        .child(Button::new("Continue")),
-);
 let html = Page::new(&bundle, "Hello, stucco")
-    .body(el::main().id("main").child(content))
+    .main(
+        Container::new().child(
+            Stack::new()
+                .child(Heading::new(1, "Hello, stucco"))
+                .child(Text::new("A page rendered entirely in Rust."))
+                .child(Button::new("Continue")),
+        ),
+    )
     .render();
 assert!(html.contains("Hello, stucco"));
 ```
+
+The prelude brings in the everyday components. `main` puts the content in
+the page's `<main id="main">` landmark after a skip link to it; for
+application layouts, `app` takes an `AppShell`, which brings its own.
 
 The page links to assets under `/_stucco/`. Serve them through
 `stucco_tower::assets_router`, or write the files exposed by `Bundle::paths`
@@ -60,38 +62,38 @@ and `Bundle::get` to your static asset directory.
 
 ## Serve with Axum
 
-Add `stucco-tower = "0.1"`, `axum = "0.8"`, and
-`tokio = { version = "1", features = ["macros", "rt-multi-thread", "net"] }`.
+Turn on the `axum` feature, and add `axum = "0.8"` and
+`tokio = { version = "1", features = ["macros", "rt-multi-thread", "net"] }`:
+
+```toml
+stucco = { version = "0.1", features = ["axum"] }
+```
 
 ```rust,no_run
-use std::sync::Arc;
-use stucco::{Bundle, Page, el, theme::Preset};
-use stucco_tower::{LayerConfig, PageResponse, assets_router, with_standard_layers};
+use axum::{Router, routing::get};
+use stucco::prelude::*;
+
+async fn index(page: PageCx) -> Document {
+    page.title("Hello").main(Heading::new(1, "Hello"))
+}
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    let bundle = Arc::new(Bundle::new(Preset::Slate));
-    let html = Page::new(&bundle, "Hello")
-        .body(el::main().id("main").child(el::h1().text("Hello")))
-        .render();
-    let routes = axum::Router::new().route(
-        "/",
-        axum::routing::get(move || {
-            let html = html.clone();
-            async move { PageResponse::new(html) }
-        }),
-    );
-    let app = with_standard_layers(
-        routes.merge(assets_router(bundle)),
-        &LayerConfig::default(),
-    );
+    let app = Router::new().route("/", get(index)).stucco(Preset::Slate);
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000").await?;
     axum::serve(listener, app).await
 }
 ```
 
-The [hello example](https://github.com/mcaveniathor/stucco/tree/main/examples/hello)
-also demonstrates fragment responses.
+`stucco` is the last call on the router: it serves the theme's assets under
+`/_stucco/`, adds the standard middleware (request ids, `nosniff`, tracing,
+a body limit and a timeout) and hands the theme to the `PageCx` extractor.
+A handler builds a `Document` from it and returns it; its content can borrow
+request data, and `status` sets the response code. The rest of
+`stucco-tower`, such as fragment negotiation and form submissions, is under
+`stucco::server`. The
+[hello example](https://github.com/mcaveniathor/stucco/tree/main/examples/hello)
+also answers fragment requests.
 
 ## Themes
 

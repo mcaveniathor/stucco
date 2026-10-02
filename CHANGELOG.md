@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+- Easier setup for axum apps:
+  - `Router::stucco(theme)` (the `StuccoRouter` trait in `stucco-tower`)
+    serves a bundle's assets, adds the standard layers and makes the bundle
+    available to handlers in one call; `stucco_with` takes a `LayerConfig`.
+  - The `PageCx` extractor builds a `Document`, a page that handlers return
+    directly. Its content is rendered when set, so it can borrow request
+    data; `status` sets the response code, and `PageCx::fragment` answers
+    fragment requests.
+  - The `stucco` crate's new `axum` feature re-exports `stucco-tower` as
+    `stucco::server` and puts `PageCx`, `Document` and `StuccoRouter` in the
+    prelude.
+- `PageExt` adds `main` and `app` to pages and documents: `main` wraps
+  content in `<main id="main">` after a skip link, and `app` takes an
+  `AppShell`. They build on the new `WithBody` trait in `stucco-core`.
+- `stucco::prelude` now includes the everyday components of each enabled
+  feature (layout, typography, actions, forms, feedback, navigation, data,
+  app and collections) and the shared `Size`, `Space`, `Tone`, `Variant`
+  and `Measure` enums.
+- The hello and orders examples use the new setup.
 - The finish grain's filter works in sRGB, so its grey is the 0.5 that
   `build` checks text against. It was computed in linear light, which drew
   it as a lighter 0.735 grey: grain was slightly weaker on light pages and

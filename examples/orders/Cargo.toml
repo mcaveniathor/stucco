@@ -6,8 +6,7 @@ rust-version = "1.90"
 publish = false
 
 [dependencies]
-stucco = { workspace = true, features = ["collections"] }
-stucco-tower.workspace = true
+stucco = { workspace = true, features = ["collections", "axum"] }
 stucco-redb = { path = "../../crates/stucco-redb" }
 axum = { workspace = true, features = ["http1", "tokio", "query"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net"] }

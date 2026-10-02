@@ -29,5 +29,8 @@ navigation = []
 app = ["layout", "navigation", "typography"]
 collections = ["data", "forms", "navigation", "feedback"]
 
+[dev-dependencies]
+stucco-theme.workspace = true
+
 [package.metadata.docs.rs]
 all-features = true

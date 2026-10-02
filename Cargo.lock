@@ -335,7 +335,6 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "stucco",
- "stucco-tower",
  "tokio",
 ]
 
@@ -557,7 +556,6 @@ dependencies = [
  "serde",
  "stucco",
  "stucco-redb",
- "stucco-tower",
  "tempfile",
  "tokio",
  "tower",
@@ -840,6 +838,7 @@ version = "0.1.0"
 dependencies = [
  "stucco-core",
  "stucco-theme",
+ "stucco-tower",
  "stucco-ui",
 ]
 
@@ -903,6 +902,7 @@ version = "0.1.0"
 dependencies = [
  "form_urlencoded",
  "stucco-core",
+ "stucco-theme",
 ]
 
 [[package]]
