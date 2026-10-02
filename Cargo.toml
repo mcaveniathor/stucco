@@ -29,6 +29,7 @@ tokio = "1.53"
 tracing = "0.1"
 tracing-subscriber = "0.3.23"
 stucco-tower = { path = "crates/stucco-tower", version = "0.1.0" }
+stucco-macros = { path = "crates/stucco-macros", version = "0.1.0" }
 insta = "1"
 form_urlencoded = "1"
 

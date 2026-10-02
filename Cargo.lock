@@ -837,6 +837,7 @@ name = "stucco"
 version = "0.1.0"
 dependencies = [
  "stucco-core",
+ "stucco-macros",
  "stucco-theme",
  "stucco-tower",
  "stucco-ui",
@@ -857,6 +858,15 @@ dependencies = [
  "form_urlencoded",
  "inventory",
  "stucco-theme",
+]
+
+[[package]]
+name = "stucco-macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
 ]
 
 [[package]]

@@ -172,7 +172,9 @@ Declare sortable/searchable/filterable columns and provide backend capabilities
 to enable their controls. `CollectionQuery` validates incoming query parameters;
 `CollectionSource` in `stucco-tower` loads the corresponding page, and its
 `load` does both in one call, returning a `Collection` that
-`DataTable::from_collection` takes whole.
+`DataTable::from_collection` takes whole. With the `derive` feature,
+`#[derive(Columns)]` builds a row type's columns, and the query parser's
+column list, from its fields.
 `stucco-redb` adds typed records, transactional secondary indexes, and bounded
 blocking scans.
 
@@ -193,6 +195,7 @@ schema migrations, and mutation endpoints belong to the application.
 | `stucco-tower` | Tower services, Axum responses, and collection sources | 1.85 |
 | `stucco-redb` | Optional redb 4.3 storage adapter | 1.90 |
 | `stucco-cli` | The `stucco` command for generating themes | 1.85 |
+| `stucco-macros` | `#[derive(Columns)]`, through `stucco`'s `derive` feature | 1.85 |
 
 ## Features
 
