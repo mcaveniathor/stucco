@@ -39,6 +39,12 @@
   (hues, tint, fonts, type scale, spacing, radius, density and personality)
   from a seed. Every seed passes the contrast checks; the mapping is pinned by
   a test and changes only in minor releases.
+- The `Seeded` trait (`from_rng`, `seeded`, `seeded_str`) is implemented by
+  `Theme` and every option: `Palette` (new: accent, neutral hue and tint, ink),
+  `Fonts`, `TypeScale`, `Radius`, `Density` and the six personality enums.
+  Each option draws from its own named fork of a `SeedRng`, so
+  `Radius::seeded(s)` equals the radius `Theme::seeded(s)` picks, and adding
+  options never reshuffles existing ones. `Theme::palette` applies a palette.
 - Style personality options on `Theme`: `elevation`, `table_style`,
   `control_style`, `header_style`, `heading_weight` and `button_shape`. They
   emit tokens (`--st-card-shadow`, `--st-table-rule`, `--st-control-bg`, …)

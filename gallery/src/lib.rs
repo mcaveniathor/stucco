@@ -35,9 +35,12 @@ pub fn bundle() -> Bundle {
     let presets = Preset::ALL.iter().fold(Bundle::new(Preset::Slate), |b, p| {
         b.with_theme(p.name(), *p)
     });
-    themes_page::SEEDS.iter().fold(presets, |b, (seed, name)| {
-        b.with_theme(name, themes_page::seeded(*seed))
-    })
+    themes_page::SEEDS
+        .iter()
+        .fold(presets, |b, (seed, name)| {
+            b.with_theme(name, themes_page::seeded(*seed))
+        })
+        .with_theme(themes_page::MIXED, themes_page::mixed())
 }
 
 /// Writes every page and bundle file under `dir`.

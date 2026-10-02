@@ -111,7 +111,7 @@ Components use semantic roles only. Each role resolves to a step of a twelve-ste
 
 ## Themes
 
-Tokens above are the light scheme. Pages follow the operating system by default; `data-theme` forces a scheme on a subtree, and `data-st-theme` applies a named theme. Beyond the presets, `Theme::seeded` derives a complete theme, including its style personality, from one number; a given seed always yields the same theme and always passes the contrast checks. Dark values for the default preset:
+Tokens above are the light scheme. Pages follow the operating system by default; `data-theme` forces a scheme on a subtree, and `data-st-theme` applies a named theme. Beyond the presets, `Theme::seeded` derives a complete theme, including its style personality, from one number; a given seed always yields the same theme and always passes the contrast checks. Every option is seedable on its own and matches the full theme's choice for the same seed, so presets can borrow individual options from a seed. Dark values for the default preset:
 
 | Role | Dark |
 | --- | --- |
