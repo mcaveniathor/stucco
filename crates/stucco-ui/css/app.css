@@ -5,14 +5,22 @@
     --st-app-side-pad: max(var(--st-space-1), calc(var(--st-app-gutter) - var(--st-space-3)));
     min-block-size: 100dvh; display: flex; flex-direction: column; container-type: inline-size;
   }
-  /* The header's fill carries the theme's pattern; a shaped edge masks its bottom and replaces the rule. */
+  /* The header's fill carries the theme's pattern; a shaped edge masks its bottom and replaces the rule.
+     The fill sits on a layer behind the content, so the mask shapes only the fill and never clips
+     what opens out of the header, such as a menu. */
   .st-app-header {
+    /* Above the content that follows, so what opens out of it stays on top. */
+    position: relative; z-index: 1;
     padding: var(--st-space-6) var(--st-app-gutter); padding-block-end: calc(var(--st-space-6) + var(--st-header-edge, 0px));
+    border-block-end: var(--st-header-rule, var(--st-line, 1px)) solid var(--st-header-border);
+  }
+  .st-app-header::before {
+    content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
     -webkit-mask: var(--st-header-mask, none); mask: var(--st-header-mask, none);
-    background: var(--st-pattern, none) var(--st-header-bg); -webkit-backdrop-filter: var(--st-surface-blur, none); backdrop-filter: var(--st-surface-blur, none); border-block-end: var(--st-header-rule, var(--st-line, 1px)) solid var(--st-header-border);
+    background: var(--st-pattern, none) var(--st-header-bg); -webkit-backdrop-filter: var(--st-surface-blur, none); backdrop-filter: var(--st-surface-blur, none);
   }
   @media (prefers-contrast: more), (forced-colors: active) {
-    .st-app-header { background-image: none; }
+    .st-app-header::before { background-image: none; }
   }
   /* A grid of the primary links (nav), the sidebar (side) and main, arranged by the theme's shell layout. */
   .st-app-body {
