@@ -45,6 +45,9 @@
   Each option draws from its own named fork of a `SeedRng`, so
   `Radius::seeded(s)` equals the radius `Theme::seeded(s)` picks, and adding
   options never reshuffles existing ones. `Theme::palette` applies a palette.
+- The `Random` trait, implemented for every `Seeded` type, gives `random()`
+  and `random_with_seed()` from a fresh seed (`random_seed()`); the returned
+  seed recreates the value with `seeded`.
 - Style personality options on `Theme`: `elevation`, `table_style`,
   `control_style`, `header_style`, `heading_weight` and `button_shape`. They
   emit tokens (`--st-card-shadow`, `--st-table-rule`, `--st-control-bg`, …)

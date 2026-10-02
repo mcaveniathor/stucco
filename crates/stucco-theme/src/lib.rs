@@ -19,7 +19,7 @@ pub use personality::{
 };
 pub use presets::Preset;
 pub use scale::{Scale, Scheme};
-pub use seed::{Palette, SeedRng, Seeded};
+pub use seed::{Palette, Random, SeedRng, Seeded, random_seed};
 pub use theme::{
     BuiltTheme, ContrastFailure, ContrastReport, Density, Fonts, Radius, Scope, Theme, TypeScale,
 };
