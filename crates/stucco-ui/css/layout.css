@@ -90,15 +90,14 @@
   .st-container[data-size="prose"] { max-inline-size: 65ch; }
   /* Sidebar: a fixed-width side beside a fluid main that wraps when cramped. */
   .st-sidebar { display: flex; flex-wrap: wrap; }
-  .st-sidebar > :first-child { flex-grow: 1; }
-  .st-sidebar > :last-child { flex-basis: 0; flex-grow: 999; min-inline-size: 50%; }
-  .st-sidebar[data-side="right"] > :first-child { order: 2; }
-  .st-sidebar[data-side-width="xs"] > :first-child { flex-basis: 20rem; }
-  .st-sidebar[data-side-width="sm"] > :first-child { flex-basis: 30rem; }
-  .st-sidebar[data-side-width="md"] > :first-child { flex-basis: 40rem; }
-  .st-sidebar[data-side-width="lg"] > :first-child { flex-basis: 60rem; }
-  .st-sidebar[data-side-width="xl"] > :first-child { flex-basis: 75rem; }
-  .st-sidebar[data-side-width="prose"] > :first-child { flex-basis: 65ch; }
+  .st-sidebar > .st-sidebar-side { flex-grow: 1; }
+  .st-sidebar > .st-sidebar-main { flex-basis: 0; flex-grow: 999; min-inline-size: 50%; }
+  .st-sidebar[data-side-width="xs"] > .st-sidebar-side { flex-basis: 20rem; }
+  .st-sidebar[data-side-width="sm"] > .st-sidebar-side { flex-basis: 30rem; }
+  .st-sidebar[data-side-width="md"] > .st-sidebar-side { flex-basis: 40rem; }
+  .st-sidebar[data-side-width="lg"] > .st-sidebar-side { flex-basis: 60rem; }
+  .st-sidebar[data-side-width="xl"] > .st-sidebar-side { flex-basis: 75rem; }
+  .st-sidebar[data-side-width="prose"] > .st-sidebar-side { flex-basis: 65ch; }
   .st-sidebar[data-space="0"] { gap: 0; }
   .st-sidebar[data-space="1"] { gap: var(--st-space-1); }
   .st-sidebar[data-space="2"] { gap: var(--st-space-2); }

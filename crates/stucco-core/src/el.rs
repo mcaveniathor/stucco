@@ -69,13 +69,14 @@ impl<'a> Element<'a> {
     }
 
     /// Appends text. It is HTML-escaped, except inside `<script>` and
-    /// `<style>`, where it is written as-is with `</` neutralised as `<\/` so
-    /// the element cannot be closed early. Script content is code: never put
+    /// `<style>`, where it is written as-is with `</`, `<!--` and `<script`
+    /// neutralised (`<\/`, `<\!--`, `<\script`) so the element can neither
+    /// close early nor fail to close. Script content is code: never put
     /// untrusted text there.
     pub fn text(self, text: impl Into<String>) -> Element<'a> {
         let text = text.into();
         if matches!(self.tag, "script" | "style") && self.custom.is_none() {
-            self.child(crate::Raw::trusted(text.replace("</", r"<\/")))
+            self.child(crate::Raw::trusted(neutralise_raw_text(&text)))
         } else {
             self.child(text)
         }
@@ -185,4 +186,30 @@ impl Render for VoidElement {
         self.attrs.render(cx);
         cx.raw(">");
     }
+}
+
+/// Rewrites the sequences that change how the HTML parser ends a raw-text
+/// element: `</` (closes it), `<!--` and `<script` (case-insensitive; together
+/// they enter the "double escaped" state, where the closing tag is ignored).
+/// Each gains a backslash, which JS strings and CSS both read as the same text.
+pub(crate) fn neutralise_raw_text(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    while let Some(i) = rest.find('<') {
+        out.push_str(&rest[..i]);
+        let tail = &rest[i + 1..];
+        let lower: String = tail
+            .chars()
+            .take(6)
+            .collect::<String>()
+            .to_ascii_lowercase();
+        if tail.starts_with('/') || tail.starts_with("!--") || lower.starts_with("script") {
+            out.push_str("<\\");
+        } else {
+            out.push('<');
+        }
+        rest = tail;
+    }
+    out.push_str(rest);
+    out
 }

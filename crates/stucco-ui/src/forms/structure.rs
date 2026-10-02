@@ -48,9 +48,13 @@ impl<'a> Form<'a> {
         Form::new(false, action)
     }
 
-    /// Adds a CSRF token field (`_csrf`).
+    /// Adds a CSRF token field (`_csrf`). POST forms only: on a GET form the
+    /// token would leak into URLs and logs (debug panic, ignored in release).
     pub fn csrf(mut self, token: &str) -> Self {
-        self.csrf = Some(token.to_owned());
+        debug_assert!(self.post, "CSRF tokens belong on POST forms only");
+        if self.post {
+            self.csrf = Some(token.to_owned());
+        }
         self
     }
 

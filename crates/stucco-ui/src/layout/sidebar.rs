@@ -26,7 +26,7 @@ impl<'a> Sidebar<'a> {
     /// Reserved attributes (set by the component).
     pub const RESERVED: &'static [&'static str] = &["data-side", "data-side-width", "data-space"];
 
-    /// `side` (rendered first) beside `main`.
+    /// `side` beside `main` (side on the left by default).
     pub fn new(side: impl Render + 'a, main: impl Render + 'a) -> Self {
         Sidebar {
             attrs: Attrs::default(),
@@ -38,7 +38,8 @@ impl<'a> Sidebar<'a> {
         }
     }
 
-    /// Shows the side panel on the right (it stays first in reading order).
+    /// Shows the side panel on the right (after the main area in reading
+    /// order, matching what is seen).
     pub fn right(mut self) -> Self {
         self.right = true;
         self
@@ -66,9 +67,15 @@ impl Render for Sidebar<'_> {
             .class("st-sidebar")
             .data("side", if self.right { "right" } else { "left" })
             .data("side-width", self.side_width.as_str())
-            .data("space", self.space.as_str())
-            .child(el::div().child(&self.side))
-            .child(el::div().child(&self.main));
+            .data("space", self.space.as_str());
+        let side = el::div().class("st-sidebar-side").child(&self.side);
+        let main = el::div().class("st-sidebar-main").child(&self.main);
+        // DOM order follows visual order so reading and focus order match.
+        let el = if self.right {
+            el.child(main).child(side)
+        } else {
+            el.child(side).child(main)
+        };
         apply(el, &self.attrs, Self::RESERVED).render(cx);
     }
 }

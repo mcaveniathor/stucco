@@ -95,7 +95,14 @@ impl Control for Textarea {
         let mut el = wire(el, wiring, self.required).attrs(&passthrough_without_id(&self.attrs));
         if !self.sensitive {
             if let Some(v) = wiring.value.as_ref().or(self.value.as_ref()) {
-                el = el.text(v.clone());
+                // The parser drops one newline right after <textarea>; double
+                // a leading newline so the value survives redisplay.
+                let v = if v.starts_with('\n') {
+                    format!("\n{v}")
+                } else {
+                    v.clone()
+                };
+                el = el.text(v);
             }
         }
         el.render(cx);

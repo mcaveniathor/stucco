@@ -7,7 +7,7 @@ use crate::{Attrs, Behavior, Bundle, Cx, Href, Render, Slot, is_registered};
 /// Content for an inline `<script>` or `<style>`: `</` becomes `<\/` so the
 /// element cannot be closed early (valid in JS strings and CSS alike).
 fn raw_text(s: &str) -> String {
-    s.replace("</", r"<\/")
+    crate::el::neutralise_raw_text(s)
 }
 
 const THEME_INIT_JS: &str = include_str!("../js/theme_init.js");

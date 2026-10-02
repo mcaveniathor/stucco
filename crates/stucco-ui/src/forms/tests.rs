@@ -61,3 +61,16 @@ fn hidden_inputs_escape_values() {
         r#"<input type="hidden" name="next" value="/a?b=1&amp;c=&quot;2&quot;">"#
     );
 }
+
+#[test]
+#[cfg(debug_assertions)]
+#[should_panic(expected = "CSRF")]
+fn csrf_tokens_on_get_forms_panic_in_debug() {
+    let _ = Form::get("/search").csrf("t");
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
+fn csrf_tokens_on_get_forms_are_dropped_in_release() {
+    assert!(!to_html(&Form::get("/search").csrf("t")).contains("_csrf"));
+}

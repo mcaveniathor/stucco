@@ -85,7 +85,11 @@ impl Control for Select {
 
     fn render_wired(&self, cx: &mut Cx, wiring: &Wiring) {
         cx.require(&FORMS);
-        let selected = wiring.value.as_ref().or(self.selected.as_ref());
+        let selected = wiring
+            .value
+            .as_ref()
+            .or(self.selected.as_ref())
+            .filter(|v| self.options.iter().any(|(value, _)| value == *v));
         let mut el = wire(
             el::select()
                 .class("st-select")

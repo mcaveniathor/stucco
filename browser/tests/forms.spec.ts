@@ -15,7 +15,7 @@ test("invalid fields expose their errors to assistive technology", async ({ page
   const email = page.getByLabel("Email");
   await expect(email).toHaveAttribute("aria-invalid", "true");
   await expect(email).toHaveAccessibleDescription(/Enter a valid email address/);
-  await expect(page.getByRole("group", { name: "Billing" })).toHaveAccessibleDescription(/Choose a billing period/);
+  await expect(page.getByRole("radiogroup", { name: "Billing" })).toHaveAccessibleDescription(/Choose a billing period/);
 });
 
 test("the submitted password is not redisplayed", async ({ page }) => {

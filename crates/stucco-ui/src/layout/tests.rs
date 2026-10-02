@@ -73,12 +73,16 @@ fn layout_stylesheet_covers_every_value() {
 }
 
 #[test]
-fn sidebar_orders_side_and_main() {
-    let html = to_html(&Sidebar::new("nav", "content").right());
+fn sidebar_dom_order_matches_visual_order() {
     assert_eq!(
-        html,
-        r#"<div class="st-sidebar" data-side="right" data-side-width="xs" data-space="4"><div>nav</div><div>content</div></div>"#
+        to_html(&Sidebar::new("nav", "content")),
+        r#"<div class="st-sidebar" data-side="left" data-side-width="xs" data-space="4"><div class="st-sidebar-side">nav</div><div class="st-sidebar-main">content</div></div>"#
     );
+    assert_eq!(
+        to_html(&Sidebar::new("nav", "content").right()),
+        r#"<div class="st-sidebar" data-side="right" data-side-width="xs" data-space="4"><div class="st-sidebar-main">content</div><div class="st-sidebar-side">nav</div></div>"#
+    );
+    assert!(!LAYOUT.css.unwrap().contains(" order:"));
 }
 
 #[test]

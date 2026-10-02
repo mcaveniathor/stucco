@@ -5,7 +5,10 @@ use stucco_core::{Attrs, Cx, FormState, Render, Slot, el};
 use super::{FORMS, FieldError, FieldHint, Legend};
 use crate::passthrough::apply;
 
-/// A labelled checkbox.
+/// A labelled checkbox, optionally required and with a hint and errors.
+///
+/// Passthrough attributes (`.id()`, `.data()`, …) go on the `<input>`, like
+/// the other controls; the label is styled with the `st-checkbox` class.
 ///
 /// ```
 /// use stucco_ui::forms::Checkbox;
@@ -20,11 +23,22 @@ pub struct Checkbox<'a> {
     value: String,
     checked: bool,
     disabled: bool,
+    required: bool,
+    hint: Option<String>,
+    errors: Vec<String>,
 }
 
 impl<'a> Checkbox<'a> {
     /// Reserved attributes (set by the component).
-    pub const RESERVED: &'static [&'static str] = &["name", "type", "value", "checked"];
+    pub const RESERVED: &'static [&'static str] = &[
+        "name",
+        "type",
+        "value",
+        "checked",
+        "required",
+        "aria-describedby",
+        "aria-invalid",
+    ];
 
     /// A checkbox named `name` with value `"on"`.
     pub fn new(name: &str, label: impl Render + 'a) -> Self {
@@ -35,7 +49,28 @@ impl<'a> Checkbox<'a> {
             value: "on".to_owned(),
             checked: false,
             disabled: false,
+            required: false,
+            hint: None,
+            errors: Vec::new(),
         }
+    }
+
+    /// Requires the box to be checked (e.g. accepting terms).
+    pub fn required(mut self) -> Self {
+        self.required = true;
+        self
+    }
+
+    /// Help text below the checkbox.
+    pub fn hint(mut self, text: impl Into<String>) -> Self {
+        self.hint = Some(text.into());
+        self
+    }
+
+    /// Adds a validation error.
+    pub fn error(mut self, message: impl Into<String>) -> Self {
+        self.errors.push(message.into());
+        self
     }
 
     /// The submitted value.
@@ -57,9 +92,10 @@ impl<'a> Checkbox<'a> {
     }
 
     /// Checked when `state` has this value among the submitted values for the
-    /// name.
+    /// name; also takes the name's errors.
     pub fn bind(mut self, state: &FormState) -> Self {
         self.checked = state.values(&self.name).contains(&self.value);
+        self.errors.extend(state.errors(&self.name).iter().cloned());
         self
     }
 }
@@ -69,17 +105,64 @@ passthrough!(Checkbox<'_>);
 impl Render for Checkbox<'_> {
     fn render(&self, cx: &mut Cx) {
         cx.require(&FORMS);
-        let input = el::input()
+        let described = self.hint.is_some() || !self.errors.is_empty();
+        let id = match self.attrs.get_id() {
+            Some(id) => Some(id.to_owned()),
+            None if described => Some(cx.id("checkbox")),
+            None => None,
+        };
+        let ids = id
+            .as_ref()
+            .map(|id| (format!("{id}-hint"), format!("{id}-error")));
+        let mut input = el::input();
+        if let Some(id) = &id {
+            input = input.id(id.clone());
+        }
+        let mut input = input
             .attr("type", "checkbox")
             .attr("name", self.name.clone())
             .attr("value", self.value.clone())
             .bool_attr("checked", self.checked)
-            .bool_attr("disabled", self.disabled);
+            .bool_attr("disabled", self.disabled)
+            .bool_attr("required", self.required);
+        if let Some((hint_id, error_id)) = &ids {
+            let d: Vec<&str> = [
+                self.hint.as_ref().map(|_| hint_id.as_str()),
+                (!self.errors.is_empty()).then_some(error_id.as_str()),
+            ]
+            .into_iter()
+            .flatten()
+            .collect();
+            if !d.is_empty() {
+                input = input.aria("describedby", d.join(" "));
+            }
+        }
+        if !self.errors.is_empty() {
+            input = input.aria("invalid", "true");
+        }
+        let conflicts = self.attrs.reserved_conflicts(Self::RESERVED);
+        debug_assert!(
+            conflicts.is_empty(),
+            "reserved attribute set through passthrough: {conflicts:?}"
+        );
+        let input = input.attrs(&self.attrs.without(Self::RESERVED).without(&["id"]));
         let label = el::label()
             .class("st-checkbox")
             .child(input)
             .child(&self.label);
-        apply(label, &self.attrs, Self::RESERVED).render(cx);
+        match (described, ids) {
+            (true, Some((hint_id, error_id))) => el::div()
+                .class("st-checkbox-field")
+                .child(label)
+                .child(
+                    self.hint
+                        .as_ref()
+                        .map(|h| FieldHint::new(&hint_id, h.clone())),
+                )
+                .child(FieldError::new(&error_id, &self.errors))
+                .render(cx),
+            _ => label.render(cx),
+        }
     }
 }
 
@@ -105,7 +188,7 @@ pub struct RadioGroup<'a> {
 
 impl<'a> RadioGroup<'a> {
     /// Reserved attributes (set by the component).
-    pub const RESERVED: &'static [&'static str] = &["aria-describedby", "aria-invalid"];
+    pub const RESERVED: &'static [&'static str] = &["role", "aria-describedby", "aria-invalid"];
 
     /// A group named `name`, captioned `legend`.
     pub fn new(name: &str, legend: impl Render + 'a) -> Self {
@@ -176,7 +259,11 @@ impl Render for RadioGroup<'_> {
         .into_iter()
         .flatten()
         .collect();
-        let mut el = el::fieldset().class("st-radio-group");
+        // role="radiogroup" (named by the legend) supports aria-invalid,
+        // which the default fieldset role ("group") does not.
+        let mut el = el::fieldset()
+            .class("st-radio-group")
+            .attr("role", "radiogroup");
         if !described.is_empty() {
             el = el.aria("describedby", described.join(" "));
         }

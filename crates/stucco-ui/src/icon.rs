@@ -116,13 +116,79 @@ mod tests {
         assert!(!html.contains("aria-hidden"));
     }
 
+    #[test]
+    fn the_allowlist_rejects_anything_but_plain_shapes() {
+        assert!(is_plain_shape_markup(
+            r#"<path d="M5 12h14" /><circle cx="1" cy="2" r="3" />"#
+        ));
+        for bad in [
+            "<animate/onbegin=alert(1) attributeName=x dur=1s>",
+            r#"<path d="x" onclick="y" />"#,
+            r#"<a href="javascript:x"><path d="x" /></a>"#,
+            "<style>*{}</style>",
+            "<foreignObject></foreignObject>",
+            r#"<path d="x" style="fill:red" />"#,
+            "<path d=x>",
+        ] {
+            assert!(!is_plain_shape_markup(bad), "{bad}");
+        }
+    }
+
     #[cfg(feature = "icons")]
     #[test]
     fn the_lucide_set_is_complete_and_safe() {
         assert!(ALL.len() > 1500, "{}", ALL.len());
         assert_eq!(ARROW_RIGHT.name(), "arrow-right");
-        assert!(ALL.iter().all(|i| !i.body().contains("<script")
-            && !i.body().contains(" on")
-            && !i.body().contains("href")));
+        for icon in ALL {
+            assert!(
+                is_plain_shape_markup(icon.body()),
+                "{}: {}",
+                icon.name(),
+                icon.body()
+            );
+        }
+    }
+
+    /// Whether `body` is only self-closing plain shape elements with
+    /// geometry attributes and double-quoted values — the allowlist the Lucide
+    /// generator enforces (tools/gen-icons.mjs).
+    fn is_plain_shape_markup(body: &str) -> bool {
+        const ELEMENTS: &[&str] = &[
+            "path", "circle", "rect", "line", "polyline", "polygon", "ellipse",
+        ];
+        const ATTRIBUTES: &[&str] = &[
+            "d", "cx", "cy", "r", "rx", "ry", "x", "y", "x1", "x2", "y1", "y2", "width", "height",
+            "points", "fill",
+        ];
+        let mut rest = body.trim();
+        while !rest.is_empty() {
+            let Some(tag) = rest.strip_prefix('<') else {
+                return false;
+            };
+            let Some(end) = tag.find("/>") else {
+                return false;
+            };
+            let inner = &tag[..end];
+            rest = tag[end + 2..].trim_start();
+            let mut parts = inner.splitn(2, ' ');
+            let name = parts.next().unwrap_or("");
+            if !ELEMENTS.contains(&name) {
+                return false;
+            }
+            let mut attrs = parts.next().unwrap_or("").trim();
+            while !attrs.is_empty() {
+                let Some((attr, after)) = attrs.split_once("=\"") else {
+                    return false;
+                };
+                let Some((value, next)) = after.split_once('"') else {
+                    return false;
+                };
+                if !ATTRIBUTES.contains(&attr) || value.contains('<') || value.contains('>') {
+                    return false;
+                }
+                attrs = next.trim_start();
+            }
+        }
+        true
     }
 }

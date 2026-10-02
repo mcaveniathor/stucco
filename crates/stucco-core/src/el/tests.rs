@@ -207,3 +207,18 @@ mod release_drops {
         assert_eq!(to_html(&el::custom("tabs")), "<div></div>");
     }
 }
+
+#[test]
+fn script_text_cannot_enter_the_double_escaped_state() {
+    let html = to_html(&el::script().text(r#"{"note":"<!--<script>"}"#));
+    assert!(
+        !html.contains("<!--") && !html.contains("<script>\"}"),
+        "{html}"
+    );
+    assert!(html.ends_with("</script>"));
+    let upper = to_html(&el::script().text("<!-- <SCRIPT x"));
+    assert!(
+        !upper.contains("<!--") && !upper.to_ascii_lowercase().contains("<script x"),
+        "{upper}"
+    );
+}

@@ -187,7 +187,26 @@ impl Control for Input<'_> {
                 input = input.attr(name, v.clone());
             }
         }
-        let input = wire_void(input, wiring, self.required)
+        // Adornments (units, schemes) carry meaning: with an id available,
+        // give them ids and put them first in aria-describedby.
+        let adornment_id = |which: &str, slot: &Option<Slot<'_>>| {
+            slot.as_ref()
+                .and(wiring.id.as_ref())
+                .map(|id| format!("{id}-{which}"))
+        };
+        let prefix_id = adornment_id("prefix", &self.prefix);
+        let suffix_id = adornment_id("suffix", &self.suffix);
+        let mut wiring = wiring.clone();
+        let described: Vec<&str> = [
+            prefix_id.as_deref(),
+            suffix_id.as_deref(),
+            wiring.described_by.as_deref(),
+        ]
+        .into_iter()
+        .flatten()
+        .collect();
+        wiring.described_by = (!described.is_empty()).then(|| described.join(" "));
+        let input = wire_void(input, &wiring, self.required)
             .bool_attr("disabled", self.disabled)
             .bool_attr("readonly", self.readonly)
             .attrs(&passthrough_without_id(&self.attrs));
@@ -197,16 +216,24 @@ impl Control for Input<'_> {
         }
         el::div()
             .class("st-input-group")
-            .child(adornment(&self.prefix))
+            .child(adornment(&self.prefix, prefix_id))
             .child(input)
-            .child(adornment(&self.suffix))
+            .child(adornment(&self.suffix, suffix_id))
             .render(cx);
     }
 }
 
-fn adornment<'s>(slot: &'s Option<Slot<'_>>) -> Option<stucco_core::el::Element<'s>> {
-    slot.as_ref()
-        .map(|s| el::span().class("st-input-adornment").child(s))
+fn adornment<'s>(
+    slot: &'s Option<Slot<'_>>,
+    id: Option<String>,
+) -> Option<stucco_core::el::Element<'s>> {
+    slot.as_ref().map(|s| {
+        let mut span = el::span();
+        if let Some(id) = id {
+            span = span.id(id);
+        }
+        span.class("st-input-adornment").child(s)
+    })
 }
 
 impl Render for Input<'_> {

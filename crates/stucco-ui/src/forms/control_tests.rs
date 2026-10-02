@@ -158,7 +158,7 @@ fn radio_groups_are_fieldsets_with_described_errors() {
             .bind(&state),
     );
     assert!(
-        html.starts_with(r#"<fieldset class="st-radio-group" aria-describedby="radios-1-error" aria-invalid="true"><legend class="st-legend">Plan</legend>"#),
+        html.starts_with(r#"<fieldset class="st-radio-group" role="radiogroup" aria-describedby="radios-1-error" aria-invalid="true"><legend class="st-legend">Plan</legend>"#),
         "{html}"
     );
     assert!(html.contains(r#"<label class="st-radio"><input type="radio" name="plan" value="pro" checked>Pro &lt;best&gt;</label>"#));
@@ -178,4 +178,70 @@ fn radio_group_hints_and_required() {
             && html.contains(r#"<input type="radio" name="size" value="s" required>"#),
         "{html}"
     );
+}
+
+#[test]
+fn checkboxes_can_be_required_and_described() {
+    let state = FormState::new().with_error("terms", "You must agree");
+    let html = to_html(
+        &Checkbox::new("terms", "I agree")
+            .required()
+            .hint("Read them first")
+            .bind(&state),
+    );
+    assert!(html.starts_with(r#"<div class="st-checkbox-field"><label class="st-checkbox"><input id="checkbox-1" type="checkbox""#), "{html}");
+    assert!(html.contains(r#" required aria-describedby="checkbox-1-hint checkbox-1-error" aria-invalid="true">I agree</label>"#), "{html}");
+    assert!(html.contains(r#"<p id="checkbox-1-hint" class="st-field-hint">Read them first</p>"#));
+    assert!(html.contains("You must agree"));
+}
+
+#[test]
+fn checkbox_passthrough_goes_to_the_input() {
+    let html = to_html(
+        &Checkbox::new("terms", "I agree")
+            .id("terms")
+            .data("track", "t"),
+    );
+    assert_eq!(
+        html,
+        r#"<label class="st-checkbox"><input id="terms" type="checkbox" name="terms" value="on" data-track="t">I agree</label>"#
+    );
+}
+
+#[test]
+fn adornments_are_announced_with_the_field() {
+    let html =
+        to_html(&Field::new("Quantity", Input::number("q").suffix("seats")).hint("Whole seats"));
+    assert!(
+        html.contains(r#"<span id="field-1-suffix" class="st-input-adornment">seats</span>"#),
+        "{html}"
+    );
+    assert!(
+        html.contains(r#"aria-describedby="field-1-suffix field-1-hint""#),
+        "{html}"
+    );
+}
+
+#[test]
+fn textareas_keep_a_leading_newline() {
+    let html = to_html(&Textarea::new("bio").value("\nsecond line"));
+    assert!(
+        html.contains("<textarea class=\"st-textarea\" name=\"bio\">\n\nsecond line</textarea>"),
+        "{html:?}"
+    );
+}
+
+#[test]
+fn unmatched_selections_keep_the_placeholder_selected() {
+    let html = to_html(
+        &Select::new("plan")
+            .placeholder("Choose…")
+            .option("free", "Free")
+            .selected("gone"),
+    );
+    assert!(
+        html.contains(r#"<option value="" disabled selected>Choose…</option>"#),
+        "{html}"
+    );
+    assert!(!html.contains(r#"value="free" selected"#));
 }
