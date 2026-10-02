@@ -1,4 +1,4 @@
-use crate::{passthrough::apply, typography::Heading};
+use crate::{Size, passthrough::apply, typography::Heading};
 use stucco_core::{Attrs, Cx, Render, Slot, el};
 /// Page identity with optional context and actions.
 #[derive(Debug)]
@@ -6,6 +6,7 @@ pub struct PageHeader<'a> {
     attrs: Attrs,
     title: String,
     level: u8,
+    size: Option<Size>,
     description: Option<Slot<'a>>,
     actions: Option<Slot<'a>>,
     breadcrumbs: Option<Slot<'a>>,
@@ -17,6 +18,7 @@ impl<'a> PageHeader<'a> {
             attrs: Attrs::default(),
             title: title.into(),
             level: 1,
+            size: None,
             description: None,
             actions: None,
             breadcrumbs: None,
@@ -25,6 +27,11 @@ impl<'a> PageHeader<'a> {
     /// Sets heading level.
     pub fn level(mut self, n: u8) -> Self {
         self.level = n.clamp(1, 6);
+        self
+    }
+    /// Sets the heading's visual size (by default it follows the level).
+    pub fn size(mut self, size: Size) -> Self {
+        self.size = Some(size);
         self
     }
     /// Sets descriptive content.
@@ -51,8 +58,18 @@ impl Render for PageHeader<'_> {
             el::div()
                 .class("st-page-header")
                 .child(self.breadcrumbs.as_ref())
-                .child(Heading::new(self.level, &self.title))
-                .child(self.description.as_ref())
+                .child({
+                    let heading = Heading::new(self.level, &self.title);
+                    match self.size {
+                        Some(size) => heading.size(size),
+                        None => heading,
+                    }
+                })
+                .child(
+                    self.description
+                        .as_ref()
+                        .map(|d| el::div().class("st-page-header-description").child(d)),
+                )
                 .child(self.actions.as_ref()),
             &self.attrs,
             &[],
@@ -71,6 +88,11 @@ impl<'a> SectionHeader<'a> {
     /// Sets explanatory content.
     pub fn description(mut self, r: impl Render + 'a) -> Self {
         self.0 = self.0.description(r);
+        self
+    }
+    /// Sets the heading's visual size (by default it follows the level).
+    pub fn size(mut self, size: Size) -> Self {
+        self.0 = self.0.size(size);
         self
     }
     /// Sets heading actions.

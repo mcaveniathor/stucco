@@ -72,6 +72,11 @@ impl<'a> Row<'a> {
         self.cells.push((false, Slot::new(value), Attrs::default()));
         self
     }
+    /// Appends a data cell with attributes, such as `data-kind="number"`.
+    pub fn cell_with_attrs(mut self, value: impl Render + 'a, attrs: Attrs) -> Self {
+        self.cells.push((false, Slot::new(value), attrs));
+        self
+    }
     /// Appends a heading (column scope in a table header, row scope in the body).
     pub fn header(mut self, value: impl Render + 'a) -> Self {
         self.cells.push((true, Slot::new(value), Attrs::default()));
@@ -91,7 +96,7 @@ impl<'a> Row<'a> {
                         .attrs(&attrs.without(&["scope"]))
                         .child(value)
                 } else {
-                    el::td().child(value)
+                    el::td().attrs(attrs).child(value)
                 }
             })),
             &self.attrs,

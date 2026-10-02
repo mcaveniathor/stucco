@@ -1,5 +1,66 @@
 # Changelog
 
+## Unreleased
+
+- `FormState::from_urlencoded` parses a form body (dropping `_csrf`), and
+  `FormState::field_errors` lists fields with errors.
+- `Validator` checks a submitted `FormState` and builds typed values, or returns
+  the state with one message per invalid field.
+- `ErrorSummary` lists a failed submission's errors above the form, links them
+  to their controls, and takes focus on load.
+- Collections look finished by default: the filter bar is a card built from
+  the standard inputs, selects and buttons, with all controls one height; range
+  filters sit side by side and stack with visible labels in narrow containers;
+  the table is a card with a muted header row, sort indicators, end-aligned
+  tabular numbers, and enumeration values shown as tags (`.st-tag[data-value]`);
+  the result count and pagination share a footer row. Filter and sort labels
+  come from column labels (`FilterBar::column_label`), and the reset link now
+  reads "Clear" in the bar and "Clear filters" in the empty state.
+- `Col::display` formats a column's cells without changing how it sorts or
+  filters; `Row::cell_with_attrs` sets attributes on a data cell.
+- The application shell has a fixed-width sidebar that stacks on narrow
+  screens, styled navigation links (with `aria-current="page"`), a surface
+  header and a quieter footer. `PageHeader` wraps its description in
+  `.st-page-header-description`.
+- Pagination links are bordered buttons with hover and current states.
+- Text inputs and selects share `--st-control-h` as a fixed height.
+- `ResultCount` says "Showing 1 result" instead of "Showing 1 results".
+- Fieldsets and radio groups no longer reset their margins, so layout
+  primitives space them like any other child.
+- Pages emit `theme-color` meta tags for the light and dark background.
+- Buttons scale to 0.96 while pressed; danger buttons keep their tint on
+  hover; controls set `touch-action: manipulation`; icons read their stroke
+  width from `--st-icon-stroke` (default 2).
+- Panel titles render at the `lg` size; `PageHeader::size` and
+  `SectionHeader::size` set a heading's size independently of its level;
+  keyboard keys in `Kbd` are spaced.
+- `DESIGN.md` records the design language and default tokens.
+- `Theme::seeded(u64)` and `Theme::seeded_str(&str)` derive a complete theme
+  (hues, tint, fonts, type scale, spacing, radius, density and personality)
+  from a seed. Every seed passes the contrast checks; the mapping is pinned by
+  a test and changes only in minor releases.
+- The `Seeded` trait (`from_rng`, `seeded`, `seeded_str`) is implemented by
+  `Theme` and every option: `Palette` (new: accent, neutral hue and tint, ink),
+  `Fonts`, `TypeScale`, `Radius`, `Density` and the six personality enums.
+  Each option draws from its own named fork of a `SeedRng`, so
+  `Radius::seeded(s)` equals the radius `Theme::seeded(s)` picks, and adding
+  options never reshuffles existing ones. `Theme::palette` applies a palette.
+- Style personality options on `Theme`: `elevation`, `table_style`,
+  `control_style`, `header_style`, `heading_weight` and `button_shape`. They
+  emit tokens (`--st-card-shadow`, `--st-table-rule`, `--st-control-bg`, …)
+  that the component CSS reads, so markup is unchanged. Defaults reproduce the
+  previous look.
+- Invalid inputs show a ring instead of a thicker border, so they no longer
+  shift layout.
+- Themes now also check `text` and `text-muted` against `accent-soft`; a custom
+  theme with a very dark or saturated soft accent can now fail `build`.
+- `stucco-tower`: the `Submission` axum extractor (415 for other content types)
+  and the `SeeOther` 303 redirect for post-redirect-get.
+- docs.rs now labels items that require a cargo feature.
+- Document that the reserved `overlay` feature is enabled by default and adds nothing yet.
+- CI checks each cargo feature on its own and runs `cargo-semver-checks` against
+  the published release.
+
 ## 0.1.0 — 2026-10-02
 
 Initial release:

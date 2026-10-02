@@ -1,5 +1,5 @@
 @layer stucco.components {
-  .st-heading { font-weight: 650; line-height: 1.2; letter-spacing: -0.01em; color: var(--st-text); }
+  .st-heading { font-weight: var(--st-heading-weight); line-height: 1.2; letter-spacing: var(--st-heading-tracking); color: var(--st-text); }
   .st-heading[data-size="xs"], .st-text[data-size="xs"] { font-size: var(--st-text-xs); }
   .st-heading[data-size="sm"], .st-text[data-size="sm"] { font-size: var(--st-text-sm); }
   .st-heading[data-size="md"], .st-text[data-size="md"] { font-size: var(--st-text-base); }
@@ -24,7 +24,7 @@
     background: var(--st-surface-raised); color: var(--st-text);
     padding: 0.1em 0.35em; border-radius: var(--st-radius-sm);
   }
-  .st-kbd { font-family: var(--st-font-mono); font-size: 0.85em; white-space: nowrap; }
+  .st-kbd { display: inline-flex; align-items: baseline; gap: 0.2em; font-family: var(--st-font-mono); font-size: 0.85em; white-space: nowrap; }
   .st-kbd > kbd {
     font-family: inherit; padding: 0.1em 0.4em; border: 1px solid var(--st-border-strong);
     border-block-end-width: 2px; border-radius: var(--st-radius-sm); background: var(--st-surface);

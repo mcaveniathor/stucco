@@ -49,7 +49,7 @@ for (const scheme of ["light", "dark"] as const) {
     else await page.keyboard.press("Tab");
     await expect(skip).toBeFocused();
     await page.keyboard.press("Enter");
-    expect(new URL(page.url()).hash).toBe("#main");
+    await expect(page).toHaveURL(/#main$/);
   });
 }
 test("server collections add no behavior module", async ({ page }) => {

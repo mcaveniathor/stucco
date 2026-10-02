@@ -90,6 +90,40 @@ async fn main() -> std::io::Result<()> {
 The [hello example](https://github.com/mcaveniathor/stucco/tree/main/examples/hello)
 also demonstrates fragment responses.
 
+## Themes
+
+Fourteen presets cover common looks, each in light and dark. For anything
+else, build a `Theme`, or derive a whole one from a seed:
+
+```rust
+use stucco::Bundle;
+use stucco::theme::{Elevation, Fonts, Preset, Radius, Seeded, TableStyle, Theme};
+
+// Colours, fonts, type scale, spacing, radius, density and a style
+// personality, all from one number. The same seed always gives the same theme,
+// and seeded themes always pass the contrast checks.
+let theme = Theme::seeded(42);
+// Or hash a name, then adjust any option.
+let theme = Theme::seeded_str("acme").elevation(Elevation::Raised);
+// Every option implements `Seeded`, so you can seed options one at a time:
+// here, Slate's colours with seed 14's fonts, corners and tables.
+let theme = Theme::preset(Preset::Slate)
+    .fonts(Fonts::seeded(14))
+    .radius(Radius::seeded(14))
+    .table_style(TableStyle::seeded(14));
+let bundle = Bundle::new(theme.build().expect("contrast passes"));
+```
+
+An option seeded on its own matches what the full seeded theme chooses for it,
+because each option draws from its own named stream. Implement `Seeded` for
+your own types with `SeedRng`.
+
+The style personality changes presentation without changing markup: surface
+elevation, table rows, input style, header treatment, heading weight and
+button shape. Add more themes to a bundle with `Bundle::with_theme` and apply
+them to a subtree with `ThemeScope`. The gallery's seeded themes page shows a
+dozen seeds side by side.
+
 ## Collections and persistence
 
 Enable the `collections` feature for typed columns, a `DataTable`, native GET
@@ -158,7 +192,9 @@ to select only the families you need.
 
 The manifest also contains reserved feature names for planned families
 (`overlay`, `marketing`, `diagram`, `markdown`, `askama`, and `maud`).
-They do not yet provide those integrations or component families.
+They do not yet provide those integrations or component families. The reserved
+`overlay` name is also in the default set; it currently adds nothing beyond
+`actions`.
 
 `stucco-tower` enables `axum` and `tower-http` by default.
 `stucco-redb` enables its `tokio` collection adapter by default; disable defaults

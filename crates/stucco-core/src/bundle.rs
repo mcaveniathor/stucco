@@ -30,7 +30,7 @@ pub struct AssetFile {
 /// Every stylesheet and script a site needs, built once at startup.
 #[derive(Clone, Debug)]
 pub struct Bundle {
-    root: BuiltTheme,
+    pub(crate) root: BuiltTheme,
     named: Vec<(String, BuiltTheme)>,
     prefix: String,
     css: String,

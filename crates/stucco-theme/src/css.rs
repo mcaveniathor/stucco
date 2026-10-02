@@ -114,6 +114,9 @@ pub(crate) fn token_css(built: &BuiltTheme, scope: Scope<'_>) -> String {
             (i + 1) * 8
         );
     }
+    for (name, value) in t.personality.tokens() {
+        let _ = writeln!(css, "    --st-{name}: {value};");
+    }
     css.push_str("  }\n");
     if scope == Scope::Root {
         css.push_str("  [data-theme=\"light\"] { color-scheme: light; }\n");

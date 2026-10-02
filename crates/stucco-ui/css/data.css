@@ -1,10 +1,17 @@
 @layer stucco.components {
-  .st-card, .st-panel { padding: var(--st-space-6); border: 1px solid var(--st-border); border-radius: var(--st-radius-md); background: var(--st-surface); }
+  .st-card, .st-panel { padding: var(--st-space-6); border: 1px solid var(--st-border); border-radius: var(--st-radius-lg); background: var(--st-surface); }
+  .st-card { box-shadow: var(--st-card-shadow); }
+  .st-panel { box-shadow: var(--st-surface-shadow); }
   .st-panel-header { margin-block-end: var(--st-space-4); }
   .st-table-scroll { max-inline-size: 100%; overflow-x: auto; }
   .st-table { inline-size: 100%; border-collapse: collapse; text-align: start; }
   .st-table caption { text-align: start; font-weight: 600; padding-block: var(--st-space-4); }
-  .st-table th, .st-table td { padding: var(--st-space-3) var(--st-space-4); border-block-end: 1px solid var(--st-border); white-space: nowrap; }
-  .st-table th { background: var(--st-surface-raised); }
-  .st-result-count { color: var(--st-text-muted); }
+  .st-table th, .st-table td { padding: var(--st-space-3) var(--st-space-4); border-block-end: 1px solid var(--st-table-rule); text-align: start; vertical-align: middle; }
+  .st-table tbody tr:nth-child(even) > * { background: var(--st-table-stripe); }
+  .st-table th, .st-table td { white-space: nowrap; }
+  .st-table thead th { background: var(--st-table-head-bg); border-block-end-color: var(--st-border); color: var(--st-text-muted); font-size: var(--st-text-sm); font-weight: 600; }
+  .st-table tbody tr:last-child > * { border-block-end: 0; }
+  .st-table [data-kind="number"] { text-align: end; font-variant-numeric: tabular-nums; }
+  .st-table [data-kind="date"] { font-variant-numeric: tabular-nums; }
+  .st-result-count { color: var(--st-text-muted); font-size: var(--st-text-sm); }
 }

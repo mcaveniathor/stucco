@@ -1,7 +1,10 @@
+use crate::Variant;
+use crate::actions::{Button, ButtonLink};
+use crate::forms::{Input, Select};
 use crate::{data::ResultCount, passthrough::apply};
 use stucco_core::{
-    Attrs, Capabilities, CollectionQuery, ColumnKind, ColumnSpec, Cx, Filter, Href, Render, Window,
-    el,
+    Attrs, Capabilities, CollectionQuery, ColumnKind, ColumnSpec, Cx, Filter, Href, Render, Slot,
+    Window, el,
 };
 /// Shared state for GET collection controls.
 #[derive(Clone, Debug)]
@@ -49,17 +52,18 @@ fn search(view: &CollectionView<'_>, cx: &mut Cx) -> stucco_core::el::Element<'s
     let id = cx.id("search");
     el::div()
         .class("st-collection-control")
+        .data("control", "search")
         .child(
             el::label()
+                .class("st-collection-label")
                 .attr("for", &id)
                 .text(format!("Search {}", view.label.to_lowercase())),
         )
         .child(
-            el::input()
+            Input::search("q")
                 .id(id)
-                .attr("type", "search")
-                .attr("name", "q")
-                .attr("value", &view.query.search),
+                .value(view.query.search.clone())
+                .autocomplete("off"),
         )
 }
 fn label(key: &str) -> String {
@@ -68,6 +72,14 @@ fn label(key: &str) -> String {
         Some(c) => format!("{}{}", c.to_uppercase(), chars.as_str().replace('_', " ")),
         None => String::new(),
     }
+}
+/// The display label for column `key`: an explicit one, else derived from
+/// the key (`created_at` → "Created at").
+fn column_label(labels: &[(String, String)], key: &str) -> String {
+    labels
+        .iter()
+        .find(|(k, _)| k == key)
+        .map_or_else(|| label(key), |(_, l)| l.clone())
 }
 /// Standalone GET search, preserving other collection state.
 #[derive(Debug)]
@@ -108,7 +120,11 @@ impl Render for SearchForm<'_> {
             form = form.child(search(self.view, cx));
         }
         apply(
-            form.child(el::button().attr("type", "submit").text("Search")),
+            form.child(
+                el::div()
+                    .class("st-collection-actions")
+                    .child(Button::new("Search").submit().variant(Variant::Primary)),
+            ),
             &self.attrs,
             &["method", "action"],
         )
@@ -120,6 +136,7 @@ impl Render for SearchForm<'_> {
 pub struct FilterBar<'a> {
     attrs: Attrs,
     view: &'a CollectionView<'a>,
+    labels: Vec<(String, String)>,
 }
 impl<'a> FilterBar<'a> {
     /// Creates a filter form.
@@ -127,7 +144,14 @@ impl<'a> FilterBar<'a> {
         Self {
             attrs: Attrs::default(),
             view,
+            labels: Vec::new(),
         }
+    }
+    /// Labels the filter and sort option for column `key`. Without one, the
+    /// label is derived from the key (`created_at` → "Created at").
+    pub fn column_label(mut self, key: impl Into<String>, label: impl Into<String>) -> Self {
+        self.labels.push((key.into(), label.into()));
+        self
     }
 }
 passthrough!(FilterBar<'_>);
@@ -153,43 +177,35 @@ impl Render for FilterBar<'_> {
             let id = cx.id("filter");
             let key = format!("f.{}", col.key);
             let current = view.query.filters.get(&col.key);
+            let text = column_label(&self.labels, &col.key);
             let control = match &col.kind {
                 ColumnKind::Enumeration(options) => {
                     let selected = match current {
                         Some(Filter::Enumeration(s)) => s.as_str(),
                         _ => "",
                     };
-                    let select = el::select()
+                    let select = Select::new(&key)
                         .id(&id)
-                        .attr("name", &key)
-                        .child(el::option().attr("value", "").text("All"))
-                        .children(options.iter().map(|o| {
-                            el::option()
-                                .attr("value", o)
-                                .bool_attr("selected", o == selected)
-                                .text(o)
-                        }));
+                        .option("", "All")
+                        .options(options.iter().map(|o| (o.clone(), o.clone())))
+                        .selected(selected);
                     el::div()
                         .class("st-collection-control")
-                        .child(el::label().attr("for", &id).text(label(&col.key)))
+                        .child(collection_label(&id, text))
                         .child(select)
                 }
                 ColumnKind::Text => {
                     let value = match current {
-                        Some(Filter::Text(s)) => s.as_str(),
-                        _ => "",
+                        Some(Filter::Text(s)) => s.clone(),
+                        _ => String::new(),
                     };
                     el::div()
                         .class("st-collection-control")
-                        .child(el::label().attr("for", &id).text(label(&col.key)))
-                        .child(el::input().id(&id).attr("name", &key).attr("value", value))
+                        .child(collection_label(&id, text))
+                        .child(Input::text(&key).id(&id).value(value))
                 }
                 ColumnKind::Number | ColumnKind::Date => {
-                    let kind = if matches!(col.kind, ColumnKind::Number) {
-                        "number"
-                    } else {
-                        "date"
-                    };
+                    let number = matches!(col.kind, ColumnKind::Number);
                     let (min, max) = match current {
                         Some(Filter::Number { min, max }) => (
                             min.map(|v| v.to_string()).unwrap_or_default(),
@@ -201,50 +217,75 @@ impl Render for FilterBar<'_> {
                         ),
                         _ => (String::new(), String::new()),
                     };
+                    let bound = |bound: &str, name: &'static str, value: String| {
+                        let field_id = format!("{id}-{bound}");
+                        let input = if number {
+                            Input::number(&format!("{key}.{bound}"))
+                                .step("any")
+                                .placeholder(name)
+                        } else {
+                            Input::date(&format!("{key}.{bound}"))
+                        };
+                        [
+                            Slot::new(
+                                el::label()
+                                    .class("st-collection-bound")
+                                    .attr("for", &field_id)
+                                    .text(name),
+                            ),
+                            Slot::new(input.id(field_id).value(value)),
+                        ]
+                    };
                     el::fieldset()
-                        .class("st-collection-range")
-                        .child(el::legend().text(label(&col.key)))
-                        .children([("min", "From", min), ("max", "To", max)].into_iter().map(
-                            |(bound, text, value)| {
-                                let field_id = format!("{id}-{bound}");
-                                let input = el::input()
-                                    .id(&field_id)
-                                    .attr("type", kind)
-                                    .attr("name", format!("{key}.{bound}"))
-                                    .attr("value", value);
-                                let input = if kind == "number" {
-                                    input.attr("step", "any")
-                                } else {
-                                    input
-                                };
-                                el::div()
-                                    .child(el::label().attr("for", &field_id).text(text))
-                                    .child(input)
-                            },
-                        ))
+                        .class("st-collection-control st-collection-range")
+                        .child(el::legend().class("st-collection-label").text(text))
+                        .child(
+                            el::div()
+                                .class("st-collection-range-inputs")
+                                .children(bound("min", "From", min))
+                                .child(
+                                    el::span()
+                                        .class("st-collection-range-sep")
+                                        .aria("hidden", "true")
+                                        .text("–"),
+                                )
+                                .children(bound("max", "To", max)),
+                        )
                 }
                 ColumnKind::Custom => continue,
             };
             form = form.child(control);
         }
-        form = form
-            .child(SortControl::new(view))
-            .child(PageSizeSelect::new(view));
-        form = form
-            .child(el::button().attr("type", "submit").text("Apply filters"))
-            .child(
-                el::a()
-                    .href(view.query.clone().reset().link(&view.action))
-                    .text("Reset filters"),
-            );
+        let mut sort = SortControl::new(view);
+        sort.labels.clone_from(&self.labels);
+        form = form.child(sort).child(PageSizeSelect::new(view)).child(
+            el::div()
+                .class("st-collection-actions")
+                .child(
+                    ButtonLink::new("Clear", view.query.clone().reset().link(&view.action))
+                        .variant(Variant::Ghost),
+                )
+                .child(
+                    Button::new("Apply filters")
+                        .submit()
+                        .variant(Variant::Primary),
+                ),
+        );
         apply(form, &self.attrs, &["method", "action"]).render(cx);
     }
+}
+fn collection_label(id: &str, text: String) -> stucco_core::el::Element<'static> {
+    el::label()
+        .class("st-collection-label")
+        .attr("for", id)
+        .text(text)
 }
 /// Sort selection inside a parent GET form.
 #[derive(Debug)]
 pub struct SortControl<'a> {
     attrs: Attrs,
     view: &'a CollectionView<'a>,
+    labels: Vec<(String, String)>,
 }
 impl<'a> SortControl<'a> {
     /// Creates sort controls.
@@ -252,7 +293,13 @@ impl<'a> SortControl<'a> {
         Self {
             attrs: Attrs::default(),
             view,
+            labels: Vec::new(),
         }
+    }
+    /// Labels the sort option for column `key` (see [`FilterBar::column_label`]).
+    pub fn column_label(mut self, key: impl Into<String>, label: impl Into<String>) -> Self {
+        self.labels.push((key.into(), label.into()));
+        self
     }
 }
 passthrough!(SortControl<'_>);
@@ -265,33 +312,35 @@ impl Render for SortControl<'_> {
         let id = cx.id("sort");
         let dir = cx.id("direction");
         let query = self.view.query;
-        let select = el::select()
+        let sort = Select::new("sort")
             .id(&id)
-            .attr("name", "sort")
-            .child(el::option().attr("value", "").text("Default"))
-            .children(self.view.capabilities.sortable.iter().map(|k| {
-                el::option()
-                    .attr("value", k)
-                    .bool_attr("selected", query.sort.as_ref() == Some(k))
-                    .text(label(k))
-            }));
+            .option("", "Default")
+            .options(
+                self.view
+                    .capabilities
+                    .sortable
+                    .iter()
+                    .map(|k| (k.clone(), column_label(&self.labels, k))),
+            )
+            .selected(query.sort.clone().unwrap_or_default());
+        let direction = Select::new("dir")
+            .id(&dir)
+            .options([("asc", "Ascending"), ("desc", "Descending")])
+            .selected(query.direction.as_str());
         apply(
             el::div()
-                .class("st-collection-control")
-                .child(el::label().attr("for", &id).text("Sort by"))
-                .child(select)
-                .child(el::label().attr("for", &dir).text("Direction"))
+                .class("st-collection-sort")
                 .child(
-                    el::select().id(dir).attr("name", "dir").children(
-                        [("asc", "Ascending"), ("desc", "Descending")]
-                            .into_iter()
-                            .map(|(k, v)| {
-                                el::option()
-                                    .attr("value", k)
-                                    .bool_attr("selected", query.direction.as_str() == k)
-                                    .text(v)
-                            }),
-                    ),
+                    el::div()
+                        .class("st-collection-control")
+                        .child(collection_label(&id, "Sort by".into()))
+                        .child(sort),
+                )
+                .child(
+                    el::div()
+                        .class("st-collection-control")
+                        .child(collection_label(&dir, "Direction".into()))
+                        .child(direction),
                 ),
             &self.attrs,
             &[],
@@ -324,17 +373,13 @@ impl Render for PageSizeSelect<'_> {
         apply(
             el::div()
                 .class("st-collection-control")
-                .child(el::label().attr("for", &id).text("Rows per page"))
+                .data("control", "per-page")
+                .child(collection_label(&id, "Rows per page".into()))
                 .child(
-                    el::select()
+                    Select::new("per")
                         .id(id)
-                        .attr("name", "per")
-                        .children(sizes.into_iter().map(|n| {
-                            el::option()
-                                .attr("value", n.to_string())
-                                .bool_attr("selected", n == per)
-                                .text(n.to_string())
-                        })),
+                        .options(sizes.into_iter().map(|n| (n.to_string(), n.to_string())))
+                        .selected(per.to_string()),
                 ),
             &self.attrs,
             &[],
