@@ -1,7 +1,28 @@
 # Changelog
 
-## Unreleased
+## 0.2.1 — 2026-10-02
 
+Interactive components arrive: dialogs, menus, toasts, tooltips and tabs,
+built on native HTML so they work with little or no script. This release
+also fixes headers with shaped edges clipping their menus, empty table pages
+losing their pagination, and a caching header. No 0.2.0 API was removed or
+changed incompatibly.
+
+- The `overlay` family (on by default) adds `Dialog`, `Menu`, `Toast` and
+  `Tooltip`, built on native `<dialog>`, the popover API and invoker
+  commands. One behaviour script, loaded only where they are used, adds
+  invoker commands and outside-click closing to browsers without them,
+  anchors menus under their buttons from their first frame, makes toasts
+  dismissible and lets Escape hide tooltips. All four are in the prelude.
+- `Tabs` (navigation) are links to sections of a page, each with its own
+  URL, styled as tabs.
+- A dialog's link opener opens the dialog only on a plain primary click;
+  Ctrl/Cmd, Shift, Alt and middle clicks, links with a `target`, and clicks
+  another handler already cancelled follow the link as usual.
+- `AppShell`'s header no longer clips what opens out of it, such as a
+  menu or dropdown panel, when the theme gives it a shaped edge. The fill,
+  pattern, blur and edge are painted on a layer behind the header's content,
+  and the header sits above the content that follows it.
 - A `DataTable` page with no rows still shows its pagination, so a visitor
   past the last page (from a stale link, or after deleting the last row)
   can get back with their search and filters kept. `Pagination` links back
@@ -10,23 +31,10 @@
 - Page and fragment responses send `Vary: Stucco-Request, Stucco-Target`,
   since negotiation reads both, so a cache can't serve a full page cached
   for an invalid fragment request in place of a fragment.
-- A dialog's link opener opens the dialog only on a plain primary click;
-  Ctrl/Cmd, Shift, Alt and middle clicks, links with a `target`, and clicks
-  another handler already cancelled follow the link as usual.
-- The `overlay` family (on by default) adds `Dialog`, `Menu`, `Toast` and
-  `Tooltip`, built on native `<dialog>`, the popover API and invoker
-  commands. One behaviour script, loaded only where they are used, adds
-  invoker commands and outside-click closing to browsers without them,
-  anchors menus under their buttons, makes toasts dismissible and lets
-  Escape hide tooltips.
-- `Tabs` (navigation) are links to sections of a page, each with its own
-  URL, styled as tabs.
-- The gallery has an Overlays page, and the browser tests cover each
-  component, the fallback script, and accessibility with them open.
-- `AppShell`'s header no longer clips what opens out of it, such as a
-  menu or dropdown panel, when the theme gives it a shaped edge. The fill,
-  pattern, blur and edge are painted on a layer behind the header's content,
-  and the header sits above the content that follows it.
+- The gallery has an Overlays page and a working Tabs example, a page per
+  tab, and the documentation site's gallery pages carry the site's
+  navigation. The browser tests now cover each
+  overlay, and the site in Chromium, Firefox and WebKit.
 
 ## 0.2.0 — 2026-10-02
 
