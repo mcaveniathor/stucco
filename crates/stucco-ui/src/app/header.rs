@@ -52,7 +52,11 @@ impl Render for PageHeader<'_> {
                 .class("st-page-header")
                 .child(self.breadcrumbs.as_ref())
                 .child(Heading::new(self.level, &self.title))
-                .child(self.description.as_ref())
+                .child(
+                    self.description
+                        .as_ref()
+                        .map(|d| el::div().class("st-page-header-description").child(d)),
+                )
                 .child(self.actions.as_ref()),
             &self.attrs,
             &[],

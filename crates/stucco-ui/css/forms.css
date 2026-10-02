@@ -1,6 +1,6 @@
 @layer stucco.components {
   .st-form > * + * { margin-block-start: var(--st-space-4); }
-  .st-fieldset { border: 1px solid var(--st-border); border-radius: var(--st-radius-md); padding: var(--st-space-4); margin: 0; min-inline-size: 0; }
+  .st-fieldset { border: 1px solid var(--st-border); border-radius: var(--st-radius-md); padding: var(--st-space-4); min-inline-size: 0; }
   .st-fieldset > * + * { margin-block-start: var(--st-space-4); }
   .st-legend { font-weight: 600; padding-inline: var(--st-space-1); color: var(--st-text); }
   .st-field-hint { font-size: var(--st-text-sm); color: var(--st-text-muted); }
@@ -23,6 +23,7 @@
     border: 1px solid var(--st-border-strong); border-radius: var(--st-radius-md);
     font: inherit;
   }
+  .st-input, .st-select { block-size: var(--st-control-h); padding-block: 0; }
   .st-textarea { resize: vertical; }
   .st-input::placeholder, .st-textarea::placeholder { color: var(--st-text-muted); }
   .st-input:disabled, .st-textarea:disabled, .st-select:disabled { opacity: 0.55; cursor: not-allowed; }
@@ -43,6 +44,6 @@
   .st-input-group > .st-input:not(:first-child):not(:last-child) { border-radius: 0; }
   .st-checkbox, .st-radio { display: flex; align-items: center; gap: var(--st-space-2); color: var(--st-text); cursor: pointer; }
   .st-checkbox > input, .st-radio > input { inline-size: 1.125em; block-size: 1.125em; margin: 0; accent-color: var(--st-accent); }
-  .st-radio-group { border: 0; padding: 0; margin: 0; min-inline-size: 0; display: flex; flex-direction: column; gap: var(--st-space-2); }
+  .st-radio-group { border: 0; padding: 0; min-inline-size: 0; display: flex; flex-direction: column; gap: var(--st-space-2); }
   .st-radio-group > .st-legend { padding: 0; margin-block-end: var(--st-space-1); }
 }

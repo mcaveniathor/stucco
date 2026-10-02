@@ -8,6 +8,25 @@
   the state with one message per invalid field.
 - `ErrorSummary` lists a failed submission's errors above the form, links them
   to their controls, and takes focus on load.
+- Collections look finished by default: the filter bar is a card built from
+  the standard inputs, selects and buttons, with all controls one height; range
+  filters sit side by side and stack with visible labels in narrow containers;
+  the table is a card with a muted header row, sort indicators, end-aligned
+  tabular numbers, and enumeration values shown as tags (`.st-tag[data-value]`);
+  the result count and pagination share a footer row. Filter and sort labels
+  come from column labels (`FilterBar::column_label`), and the reset link now
+  reads "Clear" in the bar and "Clear filters" in the empty state.
+- `Col::display` formats a column's cells without changing how it sorts or
+  filters; `Row::cell_with_attrs` sets attributes on a data cell.
+- The application shell has a fixed-width sidebar that stacks on narrow
+  screens, styled navigation links (with `aria-current="page"`), a surface
+  header and a quieter footer. `PageHeader` wraps its description in
+  `.st-page-header-description`.
+- Pagination links are bordered buttons with hover and current states.
+- Text inputs and selects share `--st-control-h` as a fixed height.
+- `ResultCount` says "Showing 1 result" instead of "Showing 1 results".
+- Fieldsets and radio groups no longer reset their margins, so layout
+  primitives space them like any other child.
 - `stucco-tower`: the `Submission` axum extractor (415 for other content types)
   and the `SeeOther` 303 redirect for post-redirect-get.
 - docs.rs now labels items that require a cargo feature.
