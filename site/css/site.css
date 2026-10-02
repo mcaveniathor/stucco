@@ -1,6 +1,6 @@
 @layer stucco.utilities {
   /* Header: brand, navigation and the theme menu on one wrapping row. */
-  .st-app-header:has(.site-header) { padding-block: var(--st-space-3); }
+  .st-app-header:has(.site-header) { padding-block: var(--st-space-3) calc(var(--st-space-3) + var(--st-header-edge, 0px)); }
   .site-header { display: flex; flex-wrap: wrap; align-items: center; gap: var(--st-space-2) var(--st-space-4); }
   .site-header > .site-brand { font-size: var(--st-text-lg); font-weight: 750; letter-spacing: -0.02em; color: var(--st-text); text-decoration: none; padding: var(--st-space-1) 0; }
   .site-nav { display: flex; flex-wrap: wrap; gap: var(--st-space-1); margin-inline-start: auto; }

@@ -422,6 +422,8 @@ pub enum ShadowStyle {
     Hard,
 }
 
+use crate::ornament::{HeaderEdge, Pattern, Relief};
+
 /// Every personality choice; the default reproduces stucco's base look.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub(crate) struct Personality {
@@ -450,11 +452,17 @@ pub(crate) struct Personality {
     pub(crate) material: Material,
     pub(crate) backdrop: Backdrop,
     pub(crate) shadows: ShadowStyle,
+    pub(crate) relief: Relief,
+    pub(crate) pattern: Pattern,
+    pub(crate) edge: HeaderEdge,
+    /// Varies the ornaments' light, layout and rhythm.
+    pub(crate) motif: u32,
 }
 
 impl Personality {
     /// `(token, value)` pairs, without the `--st-` prefix.
-    pub(crate) fn tokens(&self) -> Vec<(&'static str, &'static str)> {
+    /// `ornament_scale` is how strongly the relief and pattern are drawn.
+    pub(crate) fn tokens(&self, ornament_scale: f64) -> Vec<(&'static str, String)> {
         let (surface_shadow, card_shadow) = match self.elevation {
             Elevation::Flat => ("0 0 transparent", "0 0 transparent"),
             Elevation::Outlined => ("0 0 transparent", "var(--st-shadow-1)"),
@@ -793,7 +801,7 @@ impl Personality {
                 "0 6px 0 color-mix(in oklch, var(--st-shadow-ink) 16%, transparent)",
             ],
         };
-        vec![
+        let tokens = [
             // Shadows darken in both schemes; the text colour would glow in dark.
             (
                 "shadow-ink",
@@ -877,6 +885,19 @@ impl Personality {
             ("surface-edge", edge),
             ("panel-edge", panel_edge),
             ("backdrop", self.backdrop.image()),
-        ]
+        ];
+        let (mask, edge_pad, rule) = self.edge.tokens(self.motif);
+        let ornaments = [
+            ("relief", self.relief.image(self.motif, ornament_scale)),
+            ("pattern", self.pattern.image(self.motif, ornament_scale)),
+            ("header-mask", mask),
+            ("header-edge", edge_pad.to_owned()),
+            ("header-rule", rule.to_owned()),
+        ];
+        tokens
+            .into_iter()
+            .map(|(name, value)| (name, value.to_owned()))
+            .chain(ornaments)
+            .collect()
     }
 }

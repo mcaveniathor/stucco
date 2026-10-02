@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- Three ornament options drawn as generated SVG, each seedable and in
+  `ThemeSpec`, the CLI and the playground (`relief`, `pattern`, `edge`):
+  - `Relief` (Flat, Venetian, Trowel, Skip) lights a raised plaster surface
+    on the page background;
+  - `Pattern` (Plain, Dots, Grid, Contours, Waves) draws a faint motif
+    behind the application header;
+  - `HeaderEdge` (Straight, Wave, Zigzag, Torn) shapes the header's bottom
+    edge.
+  `Theme::motif_seed` varies the relief's light, the pattern's layout and
+  contours, and the edge's rhythm; seeded themes take it from their seed.
+  `build` fits the relief's and pattern's strength to the theme's contrast,
+  and both go under `prefers-contrast: more`. Defaults reproduce the
+  previous look, and existing seeds keep every option they had.
 - Three personality options for transparency and depth, each seedable and
   in `ThemeSpec`, the CLI and the playground (`material`, `backdrop`,
   `shadows`):
