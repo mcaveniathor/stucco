@@ -289,7 +289,7 @@ dependencies = [
 
 [[package]]
 name = "gallery"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "insta",
  "stucco",
@@ -331,7 +331,7 @@ dependencies = [
 
 [[package]]
 name = "hello"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "axum",
  "stucco",
@@ -547,7 +547,7 @@ checksum = "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe"
 
 [[package]]
 name = "orders"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "axum",
  "form_urlencoded",
@@ -775,7 +775,7 @@ checksum = "bbbb5d9659141646ae647b42fe094daf6c6192d1620870b449d9557f748b2daa"
 
 [[package]]
 name = "site"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "gallery",
  "pulldown-cmark",
@@ -784,7 +784,7 @@ dependencies = [
 
 [[package]]
 name = "site-wasm"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "stucco-theme",
 ]
@@ -834,7 +834,7 @@ checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
 
 [[package]]
 name = "stucco"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "stucco-core",
  "stucco-macros",
@@ -845,7 +845,7 @@ dependencies = [
 
 [[package]]
 name = "stucco-cli"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "clap",
  "stucco-theme",
@@ -853,7 +853,7 @@ dependencies = [
 
 [[package]]
 name = "stucco-core"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "form_urlencoded",
  "inventory",
@@ -862,7 +862,7 @@ dependencies = [
 
 [[package]]
 name = "stucco-macros"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -871,7 +871,7 @@ dependencies = [
 
 [[package]]
 name = "stucco-redb"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "base64",
  "postcard",
@@ -885,11 +885,11 @@ dependencies = [
 
 [[package]]
 name = "stucco-theme"
-version = "0.2.0"
+version = "0.2.1"
 
 [[package]]
 name = "stucco-tower"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "axum",
  "bytes",
@@ -908,7 +908,7 @@ dependencies = [
 
 [[package]]
 name = "stucco-ui"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "form_urlencoded",
  "stucco-core",
