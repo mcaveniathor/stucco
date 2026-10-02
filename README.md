@@ -192,8 +192,6 @@ npm test
 
 See the [release guide](https://github.com/mcaveniathor/stucco/blob/main/RELEASING.md)
 for package verification, dependency order, and the first crates.io release.
-Design documents are in
-[docs/superpowers/specs](https://github.com/mcaveniathor/stucco/tree/main/docs/superpowers/specs).
 
 ## License
 
