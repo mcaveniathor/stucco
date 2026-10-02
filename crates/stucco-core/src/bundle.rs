@@ -94,6 +94,11 @@ impl Bundle {
         self
     }
 
+    /// The normalised URL prefix assets are served under (default `/_stucco/`).
+    pub fn url_prefix(&self) -> &str {
+        &self.prefix
+    }
+
     /// URL of the site-wide stylesheet.
     pub fn stylesheet_url(&self) -> &str {
         &self.stylesheet_url
@@ -257,6 +262,15 @@ mod tests {
     #[should_panic(expected = "invalid theme name")]
     fn theme_names_are_validated() {
         let _ = Bundle::new(Preset::Slate).with_theme("x\"] { } body", Preset::Iris);
+    }
+
+    #[test]
+    fn url_prefix_reports_the_normalised_prefix() {
+        assert_eq!(Bundle::new(Preset::Slate).url_prefix(), "/_stucco/");
+        assert_eq!(
+            Bundle::new(Preset::Slate).prefix("/assets").url_prefix(),
+            "/assets/"
+        );
     }
 
     #[test]

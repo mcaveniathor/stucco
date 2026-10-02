@@ -1,0 +1,13 @@
+//! Tower integration for stucco: serve `Bundle` assets, return pages and
+//! fragments, negotiate between them, and apply the standard middleware.
+//!
+//! The component crates stay free of HTTP; this crate is where stucco meets
+//! a server. The `axum` and `tower-http` features (on by default) add axum
+//! integration and the standard layer stack.
+
+#![forbid(unsafe_code)]
+#![deny(missing_docs)]
+
+mod assets;
+
+pub use assets::{AssetService, FallbackFuture, WithFallback};
