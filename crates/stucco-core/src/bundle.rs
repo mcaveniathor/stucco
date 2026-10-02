@@ -47,7 +47,13 @@ const JS_MIME: &str = "text/javascript; charset=utf-8";
 const RUNTIME_JS: &str = include_str!("../js/runtime.js");
 
 impl Bundle {
-    /// A bundle whose root theme is `theme`.
+    /// A bundle whose root theme is `theme`: a preset, a built theme, or a
+    /// [`Theme`](stucco_theme::Theme), which is built here.
+    ///
+    /// # Panics
+    ///
+    /// If `theme` is a `Theme` that fails its contrast checks; use
+    /// [`Bundle::try_new`] to handle that.
     pub fn new(theme: impl Into<BuiltTheme>) -> Bundle {
         let mut b = Bundle {
             root: theme.into(),
@@ -61,6 +67,19 @@ impl Bundle {
         };
         b.build();
         b
+    }
+
+    /// A bundle for `theme`, or the report of the contrast checks it fails.
+    ///
+    /// ```
+    /// use stucco_core::Bundle;
+    /// use stucco_theme::Theme;
+    ///
+    /// assert!(Bundle::try_new(Theme::seeded(7)).is_ok());
+    /// assert!(Bundle::try_new(Theme::seeded(7).min_contrast(30.0)).is_err());
+    /// ```
+    pub fn try_new(theme: stucco_theme::Theme) -> Result<Bundle, stucco_theme::ContrastReport> {
+        theme.build().map(Bundle::new)
     }
 
     /// Adds a named theme, applied with `data-st-theme="<name>"`.
@@ -325,5 +344,20 @@ mod tests {
         let css = b.css_for(&cx.finish().1);
         assert!(css.contains(".st-unreg") && !css.contains(".st-styled"));
         assert!(css.contains("@layer stucco.base"));
+    }
+
+    #[test]
+    fn a_theme_is_built_into_a_bundle() {
+        let seeded = stucco_theme::Theme::seeded(3);
+        let built = Bundle::new(seeded.clone().build().unwrap());
+        assert_eq!(Bundle::new(seeded.clone()).css(), built.css());
+        assert_eq!(Bundle::try_new(seeded).unwrap().css(), built.css());
+        assert!(Bundle::try_new(stucco_theme::Theme::seeded(3).min_contrast(30.0)).is_err());
+    }
+
+    #[test]
+    #[should_panic(expected = "fails its contrast checks")]
+    fn a_failing_theme_panics_with_its_report() {
+        let _ = Bundle::new(stucco_theme::Theme::seeded(3).min_contrast(30.0));
     }
 }
