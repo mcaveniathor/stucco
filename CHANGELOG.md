@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- `#[derive(Columns)]` (the new `stucco-macros` crate, through `stucco`'s
+  `derive` feature) builds a row type's data table columns from its fields,
+  with `#[col(...)]` for the kind, key, label, value, display and controls.
+  The `Columns` trait's `columns()` go to `DataTable::columns`, and its
+  `column_specs()` to the query parser, so the two always agree.
+  `Col::spec` exposes a column's key and kind.
+- The orders example derives its columns.
 - `Stack::of`, and `of` on every layout container, takes all the children in
   one call: one item, or a tuple of up to twelve.
 - A `Theme` can go straight into `Bundle::new` (and `Router::stucco`): it is

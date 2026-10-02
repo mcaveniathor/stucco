@@ -58,7 +58,7 @@ async fn list(
     let raw = raw.unwrap_or_default();
     let pages = form_urlencoded::parse(raw.as_bytes()).any(|(k, v)| k == "mode" && v == "pages");
     let source = if pages { &state.pages } else { &state.cursor };
-    match source.load(&raw, &source::columns(), &context).await {
+    match source.load(&raw, &Order::column_specs(), &context).await {
         Ok(orders) => {
             let table = DataTable::from_collection(&orders, "Orders")
                 .action(if pages {
@@ -66,35 +66,7 @@ async fn list(
                 } else {
                     "/orders"
                 })
-                .column(Col::number("id", "ID", |row: &Order| row.id as f64).sortable())
-                .column(
-                    Col::text("customer", "Customer", |row: &Order| row.customer.clone())
-                        .sortable()
-                        .searchable(),
-                )
-                .column(
-                    Col::enumeration(
-                        "status",
-                        "Status",
-                        ["pending", "paid", "shipped"]
-                            .map(|s| (s.into(), s.into()))
-                            .to_vec(),
-                        |row: &Order| row.status.clone(),
-                    )
-                    .filter(),
-                )
-                .column(
-                    Col::number("total", "Total", |row: &Order| {
-                        row.total_cents as f64 / 100.0
-                    })
-                    .display(|row: &Order| {
-                        format!("${}.{:02}", row.total_cents / 100, row.total_cents % 100)
-                    })
-                    .filter(),
-                )
-                .column(
-                    Col::date("created", "Created", |row: &Order| row.created.clone()).filter(),
-                );
+                .columns(Order::columns());
             cx.title("Orders — stucco").app(
                 AppShell::new()
                     .header(

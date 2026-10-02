@@ -1,20 +1,9 @@
 use crate::model::Order;
-use stucco::{Capabilities, CollectionQuery, ColumnKind, ColumnSpec, Filter, Window};
+use stucco::collections::Columns;
+use stucco::{Capabilities, CollectionQuery, ColumnSpec, Filter, Window};
 use stucco_redb::{CollectionMapping, ScanRequest};
 pub(crate) struct OrdersMapping {
     pub pages: bool,
-}
-pub(crate) fn columns() -> Vec<ColumnSpec> {
-    vec![
-        ColumnSpec::new("id", ColumnKind::Number),
-        ColumnSpec::new("customer", ColumnKind::Text),
-        ColumnSpec::new(
-            "status",
-            ColumnKind::Enumeration(["pending", "paid", "shipped"].map(String::from).to_vec()),
-        ),
-        ColumnSpec::new("total", ColumnKind::Number),
-        ColumnSpec::new("created", ColumnKind::Date),
-    ]
 }
 impl CollectionMapping<Order> for OrdersMapping {
     fn capabilities(&self) -> Capabilities {
@@ -27,7 +16,7 @@ impl CollectionMapping<Order> for OrdersMapping {
         }
     }
     fn columns(&self) -> Vec<ColumnSpec> {
-        columns()
+        Order::column_specs()
     }
     fn scan_request(&self, q: &CollectionQuery) -> ScanRequest {
         ScanRequest {

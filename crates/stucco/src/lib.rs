@@ -28,6 +28,16 @@ pub use stucco_core::{
 };
 pub use stucco_ui::*;
 
+/// Server collections: native GET controls and typed table columns. With
+/// the `derive` feature, `#[derive(Columns)]` builds a row type's columns
+/// from its fields.
+#[cfg(feature = "collections")]
+pub mod collections {
+    #[cfg(feature = "derive")]
+    pub use stucco_macros::Columns;
+    pub use stucco_ui::collections::*;
+}
+
 /// Serving stucco from axum and Tower (the `stucco-tower` crate): asset
 /// serving, page and fragment responses, request negotiation, form
 /// submissions and the standard layers.
@@ -76,7 +86,7 @@ pub mod prelude {
     #[cfg(feature = "app")]
     pub use crate::app::{AppShell, Footer, PageHeader};
     #[cfg(feature = "collections")]
-    pub use crate::collections::{Col, DataTable};
+    pub use crate::collections::{Col, Columns, DataTable};
     #[cfg(feature = "data")]
     pub use crate::data::{Card, Panel, Row, Table};
     #[cfg(feature = "feedback")]
