@@ -5,5 +5,7 @@
 #![deny(missing_docs)]
 
 mod color;
+mod scale;
 
 pub use color::{Color, contrast};
+pub use scale::{Scale, Scheme};
