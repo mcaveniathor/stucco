@@ -87,6 +87,8 @@ The [theme playground](../playground.html) runs the same Rust code, compiled to 
 - **CSS**: the full token stylesheet, for use outside Rust or alongside your own styles.
 - **JSON**: every colour role's light and dark value.
 
+The `stucco` command-line tool exports the same formats; see [Command line](cli.html).
+
 The Theme menu at the top of this site applies any preset or a random theme to the whole site, including the gallery.
 
 ## Custom styles

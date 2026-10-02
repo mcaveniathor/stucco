@@ -10,5 +10,4 @@ publish = false
 [dependencies]
 stucco = { workspace = true, features = ["icons", "collections"] }
 gallery = { path = "../gallery" }
-site-wasm = { path = "wasm" }
 pulldown-cmark = { version = "0.13", default-features = false, features = ["html"] }

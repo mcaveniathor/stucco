@@ -17,6 +17,7 @@ cargo add tokio --features macros,rt-multi-thread,net
 | `stucco` | The facade: components, pages, themes | 1.85 |
 | `stucco-tower` | Axum responses, asset serving, form extraction, middleware | 1.85 |
 | `stucco-redb` | Embedded storage with typed tables and indexes | 1.90 |
+| `stucco-cli` | The `stucco` command: generate and export themes | 1.85 |
 
 ## Render a page
 

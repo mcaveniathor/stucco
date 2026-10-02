@@ -131,6 +131,15 @@ button shape. Add more themes to a bundle with `Bundle::with_theme` and apply
 them to a subtree with `ThemeScope`. The gallery's seeded themes page shows a
 dozen seeds side by side.
 
+## Themes from the command line
+
+`cargo install stucco-cli` installs the `stucco` command, which prints any
+preset, seeded or random theme as CSS, Rust, or JSON:
+
+```sh
+stucco theme --seed 42 --radius round -f rust
+```
+
 ## Collections and persistence
 
 Enable the `collections` feature for typed columns, a `DataTable`, native GET
@@ -177,6 +186,7 @@ schema migrations, and mutation endpoints belong to the application.
 | `stucco-ui` | Component implementations | 1.85 |
 | `stucco-tower` | Tower services, Axum responses, and collection sources | 1.85 |
 | `stucco-redb` | Optional redb 4.3 storage adapter | 1.90 |
+| `stucco-cli` | The `stucco` command for generating themes | 1.85 |
 
 ## Features
 

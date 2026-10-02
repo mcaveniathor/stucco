@@ -11,6 +11,7 @@ mod presets;
 mod roles;
 mod scale;
 mod seed;
+pub mod spec;
 mod theme;
 
 pub use color::{Color, contrast};
