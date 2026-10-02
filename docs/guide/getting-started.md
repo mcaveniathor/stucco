@@ -18,6 +18,7 @@ cargo add tokio --features macros,rt-multi-thread,net
 | `stucco-tower` | Axum responses, asset serving, form extraction, middleware (also `stucco::server` with the `axum` feature) | 1.85 |
 | `stucco-redb` | Embedded storage with typed tables and indexes | 1.90 |
 | `stucco-cli` | The `stucco` command: generate and export themes | 1.85 |
+| `stucco-macros` | `#[derive(Columns)]`, used through `stucco`'s `derive` feature | 1.85 |
 
 ## Render a page
 

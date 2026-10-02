@@ -34,6 +34,49 @@ let table = DataTable::from_page(&page, "Orders")
     .column(Col::date("created", "Created", |o: &Order| o.created.clone()).filter());
 ```
 
+## Columns from a struct
+
+With the `derive` feature, `#[derive(Columns)]` builds the columns from a row type's fields instead, one per field in order. The same columns then give the query parser its column list, so the table and the parser can't disagree:
+
+```toml
+stucco = { version = "0.1", features = ["derive"] }
+```
+
+```rust
+use stucco::prelude::*;
+
+#[derive(Columns)]
+struct Order {
+    #[col(label = "ID", sortable)]
+    id: u64,
+    #[col(sortable, searchable)]
+    customer: String,
+    #[col(enumeration("pending", "paid", "shipped"), filter)]
+    status: String,
+    #[col(key = "total", label = "Total", value = dollars, display = money, filter)]
+    total_cents: u64,
+    #[col(date, filter)]
+    created: String,
+}
+
+fn dollars(o: &Order) -> f64 { o.total_cents as f64 / 100.0 }
+fn money(o: &Order) -> String { format!("${}.{:02}", o.total_cents / 100, o.total_cents % 100) }
+
+let table = DataTable::from_collection(&orders, "Orders").columns(Order::columns());
+let specs = Order::column_specs(); // for CollectionQuery::parse or CollectionSource::load
+```
+
+A field's kind comes from its type, numbers for numeric primitives and text for strings, or from `#[col(text)]`, `#[col(number)]`, `#[col(date)]` or `#[col(enumeration(...))]`. A field whose kind can't be told from its type is a compile error that says which options to add.
+
+| Option | Effect |
+| --- | --- |
+| `key = "k"` | The query key (default: the field name) |
+| `label = "L"` | The heading (default: the field name as words, so `total_cents` is "Total cents") |
+| `value = path` | A function giving the value that sorts and filters, in place of the field |
+| `display = path` | A function giving how cells read |
+| `sortable`, `searchable`, `filter` | Enable that control |
+| `skip` | No column for this field |
+
 | Column | Filter control | Display |
 | --- | --- | --- |
 | `Col::text` | Text input; can join shared search | As text |

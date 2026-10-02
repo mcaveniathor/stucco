@@ -18,6 +18,7 @@ stucco-core.workspace = true
 stucco-theme.workspace = true
 stucco-ui.workspace = true
 stucco-tower = { workspace = true, optional = true }
+stucco-macros = { workspace = true, optional = true }
 
 [features]
 default = ["layout", "typography", "actions", "forms", "feedback", "navigation", "overlay", "data", "app"]
@@ -40,6 +41,8 @@ maud = []
 # Serve pages from axum handlers: `Router::stucco`, `PageCx` and `Document`
 # in the prelude, and `stucco::server` for the rest of `stucco-tower`.
 axum = ["dep:stucco-tower"]
+# `#[derive(Columns)]` for data table rows.
+derive = ["collections", "dep:stucco-macros"]
 
 [package.metadata.docs.rs]
 all-features = true

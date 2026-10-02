@@ -50,6 +50,12 @@ impl<'a, T: 'a> DataTable<'a, T> {
         self.columns.push(col);
         self
     }
+    /// Adds several columns, such as a row type's
+    /// [`Columns::columns`](super::Columns::columns).
+    pub fn columns(mut self, cols: impl IntoIterator<Item = Col<'a, T>>) -> Self {
+        self.columns.extend(cols);
+        self
+    }
     /// Current query.
     pub fn query(mut self, q: &'a CollectionQuery) -> Self {
         self.query = Some(q);
