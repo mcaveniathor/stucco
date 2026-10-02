@@ -1,6 +1,8 @@
 //! The palette page: every preset's scales and roles, light and dark.
 
+use stucco::layout::SkipLink;
 use stucco::theme::Preset;
+use stucco::typography::Link;
 use stucco::{Bundle, Page, Render, el};
 
 const SCALES: [&str; 6] = ["neutral", "accent", "success", "warning", "danger", "info"];
@@ -9,15 +11,18 @@ const SCALES: [&str; 6] = ["neutral", "accent", "success", "warning", "danger", 
 pub fn palette_page(bundle: &Bundle) -> String {
     let presets = Preset::ALL.map(preset_section);
     Page::new(bundle, "Palettes — stucco gallery")
-        .body(
+        .body((
+            SkipLink::new(),
             el::main()
+                .id("main")
                 .class("g-page")
+                .child(Link::new("← Gallery", "index.html"))
                 .child(el::h1().text("Palettes"))
                 .child(el::p().class("g-lead").text(
                     "Each preset's six 12-step scales and its semantic roles, in light and dark.",
                 ))
                 .children(presets),
-        )
+        ))
         .render()
 }
 

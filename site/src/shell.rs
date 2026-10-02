@@ -4,7 +4,7 @@
 use stucco::actions::{Button, ButtonLink};
 use stucco::app::{AppShell, Footer};
 use stucco::forms::{Field, Select};
-use stucco::layout::Cluster;
+use stucco::layout::{Cluster, SkipLink};
 use stucco::theme::Preset;
 use stucco::{Bundle, Page, Raw, Render, Space, Variant, el, to_html};
 
@@ -17,6 +17,8 @@ pub enum Section {
     Guide,
     /// The theme playground.
     Playground,
+    /// The component gallery.
+    Gallery,
     /// Anything else.
     Other,
 }
@@ -120,21 +122,45 @@ impl Site {
             .render()
     }
 
-    /// Adds the site's head markup and a floating theme menu to a page
-    /// rendered elsewhere (the gallery).
+    /// Adds the site's head markup and header (navigation and the theme
+    /// menu) to a page rendered elsewhere (the gallery).
     pub fn with_chrome(&self, html: &str) -> String {
         let head_end = html.find("</head>").expect("pages have a head");
         let body_end = html.rfind("</body>").expect("pages have a body");
+        let body_start = html[head_end..]
+            .find("<body")
+            .and_then(|i| html[head_end + i..].find('>').map(|j| head_end + i + j + 1))
+            .expect("pages have a body");
+        // The page's skip link comes first, wherever the page put it (an
+        // application shell keeps it inside its frame), then the site header.
+        const SKIP: &str = r#"<a class="st-skip-link""#;
+        let skip = html[body_start..].find(SKIP).map(|i| {
+            let start = body_start + i;
+            start..start + html[start..].find("</a>").expect("links close") + "</a>".len()
+        });
         let mut out = String::with_capacity(html.len() + 4096);
         out.push_str(&html[..head_end]);
         out.push_str(&self.head());
-        out.push_str(&html[head_end..body_end]);
-        // Last in the body, so the page's skip link stays the first stop.
+        out.push_str(&html[head_end..body_start]);
+        match &skip {
+            Some(range) => out.push_str(&html[range.clone()]),
+            None => out.push_str(&to_html(&SkipLink::new())),
+        }
+        // A named region rather than a second banner beside the page's own.
         out.push_str(&to_html(
-            &el::aside()
-                .aria("label", "Site theme")
-                .child(theme_menu(self, true)),
+            &el::div()
+                .class("site-bar")
+                .attr("role", "region")
+                .aria("label", "stucco site")
+                .child(self.header(Section::Gallery)),
         ));
+        match skip {
+            Some(range) => {
+                out.push_str(&html[body_start..range.start]);
+                out.push_str(&html[range.end..body_end]);
+            }
+            None => out.push_str(&html[body_start..body_end]),
+        }
         out.push_str(&html[body_end..]);
         out
     }
@@ -161,7 +187,7 @@ impl Site {
                         "playground.html",
                         section == Section::Playground,
                     ))
-                    .child(link("Gallery", "gallery/", false))
+                    .child(link("Gallery", "gallery/", section == Section::Gallery))
                     .child(link("API", "api/stucco/", false))
                     .child(
                         el::a()
@@ -169,7 +195,7 @@ impl Site {
                             .text("GitHub"),
                     ),
             )
-            .child(theme_menu(self, false))
+            .child(theme_menu(self))
     }
 
     fn footer(&self) -> impl Render + 'static {
@@ -205,14 +231,10 @@ impl Site {
 
 /// The theme menu: a disclosure with the theme and scheme pickers. Hidden
 /// until the site script runs, because it needs JavaScript to work.
-pub fn theme_menu(site: &Site, floating: bool) -> impl Render + 'static {
+pub fn theme_menu(site: &Site) -> impl Render + 'static {
     let presets = Preset::ALL.map(|p| (p.name().to_owned(), title_case(p.name())));
     el::details()
-        .class(if floating {
-            "site-theme site-theme-floating"
-        } else {
-            "site-theme"
-        })
+        .class("site-theme")
         .bool_attr("hidden", true)
         .data("site-theme", "menu")
         .child(el::summary().text("Theme"))

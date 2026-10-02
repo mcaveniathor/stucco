@@ -49,15 +49,36 @@ pub fn page(site: &Site) -> String {
                         .data("pg-action", "clear"),
                 ),
         );
-    let options = Fieldset::new("Options").children(OPTIONS.iter().map(|option| {
-        Field::new(
-            option.label,
-            Select::new(option.key)
-                .id(format!("pg-{}", option.key))
-                .option("", "From the base")
-                .options(option.choices.iter().map(|c| (c.value, c.label))),
+    // "Base" shows the base's choice once the script runs: "Base (Soft)".
+    let options = Fieldset::new("Options").child(el::div().class("site-pg-options").children(
+        OPTIONS.iter().map(|option| {
+            Field::new(
+                option.label,
+                Select::new(option.key)
+                    .id(format!("pg-{}", option.key))
+                    .option("", "Base")
+                    .options(option.choices.iter().map(|c| (c.value, c.label))),
+            )
+        }),
+    ));
+    let actions = Stack::new()
+        .space(Space::S2)
+        .child(
+            Cluster::new()
+                .space(Space::S2)
+                .child(
+                    Button::new("Use on this site")
+                        .variant(Variant::Primary)
+                        .data("pg-action", "apply"),
+                )
+                .child(Button::new("Copy link").data("pg-action", "link")),
         )
-    }));
+        .child(
+            el::p()
+                .id("pg-status")
+                .class("site-pg-status")
+                .aria("live", "polite"),
+        );
     let controls = Form::get(site.url("playground.html"))
         .id("pg-form")
         .class("site-pg-controls")
@@ -65,23 +86,8 @@ pub fn page(site: &Site) -> String {
             Stack::new()
                 .space(Space::S5)
                 .child(base)
-                .child(options)
-                .child(
-                    Cluster::new()
-                        .space(Space::S2)
-                        .child(
-                            Button::new("Use on this site")
-                                .variant(Variant::Primary)
-                                .data("pg-action", "apply"),
-                        )
-                        .child(Button::new("Copy link").data("pg-action", "link")),
-                )
-                .child(
-                    el::p()
-                        .id("pg-status")
-                        .class("site-pg-status")
-                        .aria("live", "polite"),
-                ),
+                .child(actions)
+                .child(options),
         );
     let preview = el::section()
         .class("site-pg-preview")
