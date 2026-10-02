@@ -43,25 +43,31 @@ pub fn bundle() -> Bundle {
         .with_theme(themes_page::MIXED, themes_page::mixed())
 }
 
+/// Every gallery page as `(file name, HTML)`, rendered with `bundle` (which
+/// must contain the gallery's named themes; see [`bundle`]).
+pub fn pages(bundle: &Bundle) -> Vec<(String, String)> {
+    let mut pages = vec![
+        ("index.html".to_owned(), index::index_page(bundle)),
+        ("palette.html".to_owned(), palette::palette_page(bundle)),
+        ("themes.html".to_owned(), themes_page::page(bundle)),
+        ("layout.html".to_owned(), layout_page::page(bundle)),
+        ("typography.html".to_owned(), typography_page::page(bundle)),
+        ("actions.html".to_owned(), actions_page::page(bundle)),
+        ("forms.html".to_owned(), forms_page::page(bundle)),
+        (
+            "collections.html".to_owned(),
+            collections_page::page(bundle),
+        ),
+        ("app.html".to_owned(), collections_page::app_page(bundle)),
+    ];
+    pages.extend(fixtures::fixtures(bundle));
+    pages
+}
+
 /// Writes every page and bundle file under `dir`.
 pub fn write_site(dir: &Path) -> io::Result<()> {
     let bundle = bundle();
-    let mut pages = vec![
-        ("index.html".to_owned(), index::index_page(&bundle)),
-        ("palette.html".to_owned(), palette::palette_page(&bundle)),
-        ("themes.html".to_owned(), themes_page::page(&bundle)),
-        ("layout.html".to_owned(), layout_page::page(&bundle)),
-        ("typography.html".to_owned(), typography_page::page(&bundle)),
-        ("actions.html".to_owned(), actions_page::page(&bundle)),
-        ("forms.html".to_owned(), forms_page::page(&bundle)),
-        (
-            "collections.html".to_owned(),
-            collections_page::page(&bundle),
-        ),
-        ("app.html".to_owned(), collections_page::app_page(&bundle)),
-    ];
-    pages.extend(fixtures::fixtures(&bundle));
-    for (name, html) in pages {
+    for (name, html) in pages(&bundle) {
         write(&dir.join(name), html.as_bytes())?;
     }
     for path in bundle.paths() {

@@ -19,7 +19,7 @@ jobs:
       - run: cargo doc --workspace --all-features --no-deps
         env:
           RUSTDOCFLAGS: -D warnings
-      - run: cargo publish --dry-run --workspace --exclude gallery --exclude hello --exclude orders --all-features
+      - run: cargo publish --dry-run --workspace --exclude gallery --exclude hello --exclude orders --exclude site --exclude site-wasm --all-features
   clippy:
     runs-on: ubuntu-latest
     steps:
@@ -41,7 +41,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: obi1kenobi/cargo-semver-checks-action@v2
         with:
-          exclude: gallery,hello,orders
+          exclude: gallery,hello,orders,site,site-wasm
   msrv:
     runs-on: ubuntu-latest
     steps:

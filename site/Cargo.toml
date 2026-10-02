@@ -1,0 +1,14 @@
+[package]
+name = "site"
+description = "Generates the stucco documentation site: landing page, guide, playground, gallery."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+stucco = { workspace = true, features = ["icons", "collections"] }
+gallery = { path = "../gallery" }
+site-wasm = { path = "wasm" }
+pulldown-cmark = { version = "0.13", default-features = false, features = ["html"] }

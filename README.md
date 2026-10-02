@@ -6,6 +6,9 @@ builders. Search, filters, sorting, and pagination can work through native GET
 requests without JavaScript.
 
 Stucco **0.1.0** is available on [crates.io](https://crates.io/crates/stucco).
+The [documentation site](https://mcaveniathor.github.io/stucco/) has the guide,
+a theme playground with Rust, CSS and JSON export, the component gallery and
+the API reference.
 The public API is experimental. Install the crates below, or run the examples
 from this repository.
 
