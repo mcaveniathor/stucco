@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- `stucco-cli`, the `stucco` command: `stucco theme` prints a preset, seeded,
+  named or random theme as token CSS (optionally scoped), Rust builder code,
+  JSON colour roles, a query string or a summary, with a flag for every
+  option; `stucco presets` and `stucco options` list the choices.
+- `stucco_theme::spec` (re-exported as `stucco::theme::spec`): `ThemeSpec`
+  describes a theme as a base (preset, seed or name) plus option overrides,
+  parses and writes query strings such as `seed=42&radius=round`, builds the
+  `Theme`, and writes the Rust code for it. `tokens_json` exports colour roles.
+  The playground and the CLI both use it.
 - `FormState::from_urlencoded` parses a form body (dropping `_csrf`), and
   `FormState::field_errors` lists fields with errors.
 - `Validator` checks a submitted `FormState` and builds typed values, or returns

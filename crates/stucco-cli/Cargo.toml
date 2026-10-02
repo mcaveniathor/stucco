@@ -1,0 +1,22 @@
+[package]
+name = "stucco-cli"
+description = "The stucco command-line tool: generate, inspect and export stucco themes."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+include.workspace = true
+readme = "README.md"
+documentation = "https://mcaveniathor.github.io/stucco/guide/cli.html"
+keywords = ["ui", "theme", "css", "cli"]
+categories = ["command-line-utilities", "web-programming"]
+
+[[bin]]
+name = "stucco"
+path = "src/main.rs"
+
+[dependencies]
+stucco-theme.workspace = true
+clap = { version = "4.5", default-features = false, features = ["std", "help", "usage", "error-context", "suggestions", "color"] }
