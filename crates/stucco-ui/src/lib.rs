@@ -6,6 +6,8 @@
 
 #[macro_use]
 mod passthrough;
+#[cfg(feature = "actions")]
+pub mod actions;
 mod common;
 pub mod icon;
 #[cfg(feature = "layout")]
@@ -24,6 +26,8 @@ pub fn ui_assets() -> Vec<&'static Asset> {
     let mut assets: Vec<&'static Asset> = vec![&icon::ICON];
     #[cfg(feature = "layout")]
     assets.push(&layout::LAYOUT);
+    #[cfg(feature = "actions")]
+    assets.push(&actions::ACTIONS);
     #[cfg(feature = "typography")]
     assets.push(&typography::TYPOGRAPHY);
     assets
