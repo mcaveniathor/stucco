@@ -47,8 +47,7 @@ macro_rules! passthrough {
         feature = "layout",
         feature = "typography",
         feature = "actions",
-        feature = "forms",
-        feature = "icons"
+        feature = "forms"
     )),
     allow(dead_code)
 )]

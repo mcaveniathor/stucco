@@ -71,3 +71,77 @@ fn layout_stylesheet_covers_every_value() {
         );
     }
 }
+
+#[test]
+fn sidebar_orders_side_and_main() {
+    let html = to_html(&Sidebar::new("nav", "content").right());
+    assert_eq!(
+        html,
+        r#"<div class="st-sidebar" data-side="right" data-side-width="xs" data-space="4"><div>nav</div><div>content</div></div>"#
+    );
+}
+
+#[test]
+fn separators_have_the_right_semantics() {
+    assert_eq!(to_html(&Separator::new()), r#"<hr class="st-separator">"#);
+    assert_eq!(
+        to_html(&Separator::new().decorative()),
+        r#"<div class="st-separator" role="none"></div>"#
+    );
+}
+
+#[test]
+fn skip_link_targets_main_by_default() {
+    assert_eq!(
+        to_html(&SkipLink::new()),
+        r##"<a class="st-skip-link" href="#main">Skip to main content</a>"##
+    );
+}
+
+#[test]
+fn visually_hidden_text_stays_in_the_accessibility_tree() {
+    assert_eq!(
+        to_html(&VisuallyHidden::new("a <b>")),
+        r#"<span class="st-sr-only">a &lt;b&gt;</span>"#
+    );
+}
+
+#[test]
+fn surface_levels_and_padding() {
+    assert_eq!(
+        to_html(
+            &Surface::new()
+                .level(Level::Raised)
+                .padding(Space::S6)
+                .child("x")
+        ),
+        r#"<div class="st-surface" data-level="raised" data-padding="6" data-border>x</div>"#
+    );
+}
+
+#[test]
+fn theme_scope_sets_scheme_and_named_theme() {
+    let html = to_html(
+        &ThemeScope::new()
+            .scheme(crate::ColorScheme::Dark)
+            .named("brand")
+            .child("x"),
+    );
+    assert_eq!(
+        html,
+        r#"<div class="st-theme-scope" data-theme="dark" data-st-theme="brand">x</div>"#
+    );
+}
+
+#[test]
+#[cfg(debug_assertions)]
+#[should_panic(expected = "invalid theme name")]
+fn theme_scope_validates_names() {
+    let _ = ThemeScope::new().named("Bad Name");
+}
+
+#[test]
+fn switcher_limit_is_clamped() {
+    assert!(to_html(&Switcher::new().limit(9)).contains(r#"data-limit="6""#));
+    assert!(to_html(&Switcher::new().limit(0)).contains(r#"data-limit="2""#));
+}

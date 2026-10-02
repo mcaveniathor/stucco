@@ -39,13 +39,23 @@ mod center;
 mod cluster;
 mod container;
 mod grid;
+mod sidebar;
+mod simple;
 mod stack;
+mod surface;
+mod switcher;
+mod theme_scope;
 
 pub use center::Center;
 pub use cluster::{Align, Cluster, Justify};
 pub use container::Container;
 pub use grid::Grid;
+pub use sidebar::Sidebar;
+pub use simple::{Separator, SkipLink, VisuallyHidden};
 pub use stack::Stack;
+pub use surface::{Level, Surface};
+pub use switcher::Switcher;
+pub use theme_scope::ThemeScope;
 
 #[cfg(test)]
 mod tests;
