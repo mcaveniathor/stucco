@@ -1,0 +1,14 @@
+[package]
+name = "site-wasm"
+description = "The documentation site's theme engine, compiled to WebAssembly for the playground."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+stucco-theme.workspace = true
