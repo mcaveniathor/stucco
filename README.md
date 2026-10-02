@@ -5,9 +5,9 @@ CSS. Compose layouts, forms, tables, and application shells with ordinary Rust
 builders. Search, filters, sorting, and pagination can work through native GET
 requests without JavaScript.
 
-Stucco is preparing its first **0.1.0** release. The public API is experimental;
-the installation instructions below apply once the crates are published.
-For now, run the examples from this repository.
+Stucco **0.1.0** is available on [crates.io](https://crates.io/crates/stucco).
+The public API is experimental. Install the crates below, or run the examples
+from this repository.
 
 ## What is included
 
@@ -25,7 +25,7 @@ and storage.
 
 ## Render a page
 
-After publication, add:
+Add:
 
 ```toml
 [dependencies]

@@ -1,8 +1,8 @@
 # Changelog
 
-## 0.1.0 — unreleased
+## 0.1.0 — 2026-10-02
 
-Initial release preparation:
+Initial release:
 
 - OKLCH themes, semantic color tokens, presets, and contrast validation.
 - Escaped HTML rendering, checked URLs, page/fragment output, and asset bundles.
