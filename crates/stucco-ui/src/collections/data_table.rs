@@ -122,6 +122,13 @@ impl<T> Render for DataTable<'_, T> {
                 bar.column_label(c.spec.key.clone(), c.label.clone())
             })
         });
+        let offset_pages = total.filter(|_| caps.offset);
+        let pagination = |page: &CollectionPage<T>| {
+            Pagination::new(self.action.clone(), query)
+                .label(format!("{} pagination", self.caption))
+                .cursors(page.next.clone(), page.prev.clone())
+                .total(offset_pages)
+        };
         let mut root = el::div().class("st-data-table").child(filters);
         if self.rows.is_empty() {
             let empty = EmptyState::new("No results");
@@ -135,6 +142,11 @@ impl<T> Render for DataTable<'_, T> {
                     ),
                 None => empty,
             });
+            // An empty page past the end still links back to the pages that
+            // have rows, keeping the search and filters.
+            if let Some(page) = self.page {
+                root = root.child(pagination(page));
+            }
         } else {
             let mut header = Row::new();
             for c in &self.columns {
@@ -205,12 +217,7 @@ impl<T> Render for DataTable<'_, T> {
                 .class("st-data-table-footer")
                 .child(LiveRegion::new().child(ResultCount::new(self.rows.len(), total, offset)));
             if let Some(page) = self.page {
-                footer = footer.child(
-                    Pagination::new(self.action.clone(), query)
-                        .label(format!("{} pagination", self.caption))
-                        .cursors(page.next.clone(), page.prev.clone())
-                        .total(total.filter(|_| caps.offset)),
-                );
+                footer = footer.child(pagination(page));
             }
             root = root.child(table).child(footer);
         }

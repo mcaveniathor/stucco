@@ -30,7 +30,7 @@ test("fragment requests get only the target, uncached, varying on the request ki
   const res = await request.get("/?q=Grace", {
     headers: { "Stucco-Request": "fragment", "Stucco-Target": "greeting" },
   });
-  expect(res.headers()["vary"]).toBe("Stucco-Request");
+  expect(res.headers()["vary"]).toBe("Stucco-Request, Stucco-Target");
   expect(res.headers()["cache-control"]).toBe("no-store");
   const html = await res.text();
   expect(html).toContain("Hello, Grace!");
