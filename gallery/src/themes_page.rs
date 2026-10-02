@@ -7,10 +7,11 @@ use stucco::forms::{Field, Input, Select};
 use stucco::layout::{Cluster, Grid, Stack};
 use stucco::navigation::NavLink;
 use stucco::theme::{
-    ControlStyle, Finish, Fonts, HeaderStyle, LinkStyle, Preset, Radius, Seeded, TableStyle, Theme,
+    ButtonDepth, ControlStyle, Finish, Fonts, HeaderStyle, LabelStyle, LinkStyle, Preset, Radius,
+    Seeded, TableStyle, Theme,
 };
 use stucco::typography::{Heading, Link, Text};
-use stucco::{Attrs, Bundle, Measure, Render, Size, Space, Tone, Variant, el};
+use stucco::{Attrs, Bundle, Measure, Render, Size, Space, Tone, Variant, el, icon};
 
 use crate::shell::{component_page, section};
 
@@ -51,6 +52,8 @@ pub fn mixed() -> stucco::theme::BuiltTheme {
         .header_style(HeaderStyle::seeded(14))
         .link_style(LinkStyle::seeded(14))
         .finish(Finish::seeded(14))
+        .button_depth(ButtonDepth::seeded(14))
+        .label_style(LabelStyle::seeded(14))
         .build()
         .expect("Slate's colours pass with any personality")
 }
@@ -197,9 +200,17 @@ fn sample(name: &'static str, scheme: &'static str, label: &'static str) -> impl
                 .child(
                     Cluster::new()
                         .space(Space::S2)
-                        .child(Button::new("Save changes").variant(Variant::Primary))
+                        .child(
+                            Button::new("Save")
+                                .variant(Variant::Primary)
+                                .icon(icon::CHECK),
+                        )
                         .child(Button::new("Cancel"))
-                        .child(Button::new("Delete").variant(Variant::Danger)),
+                        .child(
+                            Button::new("Delete")
+                                .variant(Variant::Danger)
+                                .icon(icon::TRASH_2),
+                        ),
                 )
                 .child(
                     Grid::new()

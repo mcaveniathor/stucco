@@ -99,10 +99,6 @@ pub(crate) fn token_css(built: &BuiltTheme, scope: Scope<'_>) -> String {
     };
     let _ = writeln!(css, "    --st-control-h: {h}; --st-pad-scale: {pad};");
     css.push_str(
-        "    --st-duration-fast: 120ms; --st-duration: 200ms; --st-duration-slow: 320ms; \
-         --st-ease: cubic-bezier(.2,0,0,1);\n",
-    );
-    css.push_str(
         "    --st-z-dropdown: 100; --st-z-sticky: 200; --st-z-overlay: 300; --st-z-toast: 400;\n",
     );
     for (i, pct) in [8, 12, 18].iter().enumerate() {

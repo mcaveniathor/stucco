@@ -19,9 +19,9 @@ use std::fmt::{self, Write};
 use std::str::FromStr;
 
 use crate::{
-    BuiltTheme, ButtonShape, ControlStyle, CornerStyle, Density, Elevation, Finish, FocusStyle,
-    HeaderStyle, HeadingWeight, LinkStyle, NavStyle, PanelStyle, Preset, Radius, Scheme,
-    ShellLayout, TableStyle, Theme,
+    BuiltTheme, ButtonDepth, ButtonShape, ControlStyle, CornerStyle, Density, Elevation, Finish,
+    FocusStyle, HeaderStyle, HeadingWeight, IconWeight, LabelStyle, LineWeight, LinkStyle, Motion,
+    NavStyle, PanelStyle, Preset, Radius, Scheme, ShellLayout, TableStyle, Theme,
 };
 
 /// One choice for an option.
@@ -233,6 +233,58 @@ pub const OPTIONS: &[OptionInfo] = &[
             choice("squircle", "Squircle"),
             choice("bevel", "Bevel"),
             choice("hand", "Hand"),
+        ],
+    },
+    OptionInfo {
+        key: "lines",
+        label: "Line weight",
+        ty: "LineWeight",
+        method: "line_weight",
+        choices: &[choice("fine", "Fine"), choice("heavy", "Heavy")],
+    },
+    OptionInfo {
+        key: "depth",
+        label: "Button depth",
+        ty: "ButtonDepth",
+        method: "button_depth",
+        choices: &[
+            choice("flat", "Flat"),
+            choice("raised", "Raised"),
+            choice("offset", "Offset"),
+        ],
+    },
+    OptionInfo {
+        key: "labels",
+        label: "Labels",
+        ty: "LabelStyle",
+        method: "label_style",
+        choices: &[
+            choice("plain", "Plain"),
+            choice("caps", "Caps"),
+            choice("strong", "Strong"),
+        ],
+    },
+    OptionInfo {
+        key: "icons",
+        label: "Icon weight",
+        ty: "IconWeight",
+        method: "icon_weight",
+        choices: &[
+            choice("light", "Light"),
+            choice("regular", "Regular"),
+            choice("bold", "Bold"),
+        ],
+    },
+    OptionInfo {
+        key: "motion",
+        label: "Motion",
+        ty: "Motion",
+        method: "motion",
+        choices: &[
+            choice("smooth", "Smooth"),
+            choice("snappy", "Snappy"),
+            choice("gentle", "Gentle"),
+            choice("springy", "Springy"),
         ],
     },
 ];
@@ -685,6 +737,21 @@ fn apply(theme: Theme, key: &str, value: &str) -> Theme {
         ("corners", "squircle") => theme.corner_style(CornerStyle::Squircle),
         ("corners", "bevel") => theme.corner_style(CornerStyle::Bevel),
         ("corners", "hand") => theme.corner_style(CornerStyle::Hand),
+        ("lines", "fine") => theme.line_weight(LineWeight::Fine),
+        ("lines", "heavy") => theme.line_weight(LineWeight::Heavy),
+        ("depth", "flat") => theme.button_depth(ButtonDepth::Flat),
+        ("depth", "raised") => theme.button_depth(ButtonDepth::Raised),
+        ("depth", "offset") => theme.button_depth(ButtonDepth::Offset),
+        ("labels", "plain") => theme.label_style(LabelStyle::Plain),
+        ("labels", "caps") => theme.label_style(LabelStyle::Caps),
+        ("labels", "strong") => theme.label_style(LabelStyle::Strong),
+        ("icons", "light") => theme.icon_weight(IconWeight::Light),
+        ("icons", "regular") => theme.icon_weight(IconWeight::Regular),
+        ("icons", "bold") => theme.icon_weight(IconWeight::Bold),
+        ("motion", "smooth") => theme.motion(Motion::Smooth),
+        ("motion", "snappy") => theme.motion(Motion::Snappy),
+        ("motion", "gentle") => theme.motion(Motion::Gentle),
+        ("motion", "springy") => theme.motion(Motion::Springy),
         _ => theme,
     }
 }
@@ -768,6 +835,31 @@ fn current(theme: &Theme, key: &str) -> &'static str {
             CornerStyle::Squircle => "squircle",
             CornerStyle::Bevel => "bevel",
             CornerStyle::Hand => "hand",
+        },
+        "lines" => match p.lines {
+            LineWeight::Fine => "fine",
+            LineWeight::Heavy => "heavy",
+        },
+        "depth" => match p.depth {
+            ButtonDepth::Flat => "flat",
+            ButtonDepth::Raised => "raised",
+            ButtonDepth::Offset => "offset",
+        },
+        "labels" => match p.labels {
+            LabelStyle::Plain => "plain",
+            LabelStyle::Caps => "caps",
+            LabelStyle::Strong => "strong",
+        },
+        "icons" => match p.icons {
+            IconWeight::Light => "light",
+            IconWeight::Regular => "regular",
+            IconWeight::Bold => "bold",
+        },
+        "motion" => match p.motion {
+            Motion::Smooth => "smooth",
+            Motion::Snappy => "snappy",
+            Motion::Gentle => "gentle",
+            Motion::Springy => "springy",
         },
         _ => unreachable!("only known keys are looked up"),
     }

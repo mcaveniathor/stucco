@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- Five more personality options, each seedable and in `ThemeSpec`, the CLI
+  and the playground (`lines`, `depth`, `labels`, `icons`, `motion`):
+  - `LineWeight` (Fine, Heavy) sets the width of outlines and rules through
+    `--st-line`;
+  - `ButtonDepth` (Flat, Raised, Offset) gives buttons a shadow and a
+    matching press;
+  - `LabelStyle` (Plain, Caps, Strong) styles table column headings, the
+    sidebar's heading and collection control labels;
+  - `IconWeight` (Light, Regular, Bold) sets the icon stroke;
+  - `Motion` (Smooth, Snappy, Gentle, Springy) sets transition durations and
+    easing; reduced motion still turns transitions off.
+  The motion tokens now come from the theme's personality. Defaults
+  reproduce the previous look, and existing seeds keep every option they
+  had.
 - `AppShell` separates primary navigation from the sidebar: `link` and
   `links` add a flat list of `NavLink`s in a `<nav>` landmark (named with
   `nav_label`, default "Main"), and `sidebar` holds section navigation or a

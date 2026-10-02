@@ -4,8 +4,9 @@ use std::fmt;
 
 use crate::color::{luminance_ratio, srgb_luminance};
 use crate::personality::{
-    ButtonShape, ControlStyle, CornerStyle, Elevation, Finish, FocusStyle, HeaderStyle,
-    HeadingWeight, LinkStyle, NavStyle, PanelStyle, Personality, ShellLayout, TableStyle,
+    ButtonDepth, ButtonShape, ControlStyle, CornerStyle, Elevation, Finish, FocusStyle,
+    HeaderStyle, HeadingWeight, IconWeight, LabelStyle, LineWeight, LinkStyle, Motion, NavStyle,
+    PanelStyle, Personality, ShellLayout, TableStyle,
 };
 use crate::roles::{INK_ACCENT, Kind, PAIRS, ROLES, STATUS, Source};
 use crate::seed::Palette;
@@ -299,6 +300,36 @@ impl Theme {
     /// The shape of the corners of cards, panels and other large surfaces.
     pub fn corner_style(mut self, style: CornerStyle) -> Theme {
         self.personality.corners = style;
+        self
+    }
+
+    /// The weight of rules and borders.
+    pub fn line_weight(mut self, weight: LineWeight) -> Theme {
+        self.personality.lines = weight;
+        self
+    }
+
+    /// How buttons stand off the page.
+    pub fn button_depth(mut self, depth: ButtonDepth) -> Theme {
+        self.personality.depth = depth;
+        self
+    }
+
+    /// How small labels such as table column headings look.
+    pub fn label_style(mut self, style: LabelStyle) -> Theme {
+        self.personality.labels = style;
+        self
+    }
+
+    /// The stroke width of icons.
+    pub fn icon_weight(mut self, weight: IconWeight) -> Theme {
+        self.personality.icons = weight;
+        self
+    }
+
+    /// How quickly, and with what feel, things move.
+    pub fn motion(mut self, motion: Motion) -> Theme {
+        self.personality.motion = motion;
         self
     }
 
