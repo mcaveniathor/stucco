@@ -6,8 +6,8 @@ use crate::{
     passthrough::apply,
 };
 use stucco_core::{
-    Attrs, Capabilities, CollectionPage, CollectionQuery, ColumnKind, Cx, Direction, Href, Render,
-    Window, el,
+    Attrs, Capabilities, Collection, CollectionPage, CollectionQuery, ColumnKind, Cx, Direction,
+    Href, Render, Window, el,
 };
 /// Server-rendered collection table with native GET controls.
 #[derive(Debug)]
@@ -38,6 +38,12 @@ impl<'a, T: 'a> DataTable<'a, T> {
     /// Uses a page's rows and metadata without duplicated state.
     pub fn from_page(page: &'a CollectionPage<T>, caption: impl Into<String>) -> Self {
         Self::new(&page.rows, caption).page(page)
+    }
+    /// Uses a loaded collection's rows, query and capabilities.
+    pub fn from_collection(collection: &'a Collection<T>, caption: impl Into<String>) -> Self {
+        Self::from_page(&collection.page, caption)
+            .query(&collection.query)
+            .capabilities(&collection.capabilities)
     }
     /// Adds a column.
     pub fn column(mut self, col: Col<'a, T>) -> Self {

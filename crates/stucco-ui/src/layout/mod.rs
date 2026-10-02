@@ -5,12 +5,17 @@
 use stucco_core::el::{self, Element};
 use stucco_core::{Asset, register_asset};
 
-/// Generates `.child()`, `.children()` and `.as_tag()` (plus passthrough
+/// Generates `::of()`, `.child()`, `.children()` and `.as_tag()` (plus passthrough
 /// methods) for a layout struct with `children: Vec<Slot<'a>>` and `tag: Tag`
 /// fields.
 macro_rules! container_methods {
     ($ty:ident) => {
         impl<'a> $ty<'a> {
+            /// A new container holding `children`: one item, or a tuple of
+            /// up to twelve, such as `(heading, text, button)`.
+            pub fn of(children: impl stucco_core::Render + 'a) -> Self {
+                Self::new().child(children)
+            }
             /// Appends a child.
             pub fn child(mut self, child: impl stucco_core::Render + 'a) -> Self {
                 self.children.push(stucco_core::Slot::new(child));

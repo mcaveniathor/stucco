@@ -63,6 +63,18 @@ pub struct Capabilities {
     /// Whether numbered offsets are supported.
     pub offset: bool,
 }
+/// A loaded collection: the query parsed from a request, the backend's
+/// capabilities, and the page of rows they produced. Hand it to a data
+/// table, which needs all three.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Collection<T> {
+    /// The query parsed from the request.
+    pub query: CollectionQuery,
+    /// What the backend supports.
+    pub capabilities: Capabilities,
+    /// The rows the query produced.
+    pub page: CollectionPage<T>,
+}
 /// Owned rows and navigation metadata from one query.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CollectionPage<T> {

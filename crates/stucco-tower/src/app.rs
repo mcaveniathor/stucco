@@ -10,9 +10,9 @@ use http::request::Parts;
 use stucco_core::{
     AssetRequirements, Attrs, Bundle, Cx, Meta, Page, Raw, Render, WithBody, render_fragment,
 };
-use stucco_theme::{BuiltTheme, Preset};
+use stucco_theme::{BuiltTheme, Preset, Theme};
 
-use crate::{FragmentResponse, PageResponse, RequestContext};
+use crate::{FragmentResponse, PageResponse, RequestContext, RequestKind};
 #[cfg(feature = "tower-http")]
 use crate::{LayerConfig, assets_router, with_standard_layers};
 
@@ -42,6 +42,14 @@ impl IntoBundle for Preset {
 }
 
 impl IntoBundle for BuiltTheme {
+    fn into_bundle(self) -> Arc<Bundle> {
+        Arc::new(Bundle::new(self))
+    }
+}
+
+/// Builds the theme; panics with the contrast report if it fails, like
+/// [`Bundle::new`].
+impl IntoBundle for Theme {
     fn into_bundle(self) -> Arc<Bundle> {
         Arc::new(Bundle::new(self))
     }
@@ -93,6 +101,7 @@ impl StuccoRouter for axum::Router {
 pub struct PageCx {
     bundle: Arc<Bundle>,
     context: RequestContext,
+    kind: RequestKind,
 }
 
 impl PageCx {
@@ -102,6 +111,7 @@ impl PageCx {
         PageCx {
             bundle: bundle.into_bundle(),
             context: RequestContext::default(),
+            kind: RequestKind::Full,
         }
     }
 
@@ -135,6 +145,62 @@ impl PageCx {
     pub fn context(&self) -> &RequestContext {
         &self.context
     }
+
+    /// Whether the request wants a full page or one fragment.
+    pub fn kind(&self) -> &RequestKind {
+        &self.kind
+    }
+
+    /// Answers the request with a full page or, for an enhanced request,
+    /// one of the fragments named with [`Respond::fragment`]. Only the
+    /// output that is sent gets rendered; a request for any other fragment
+    /// gets the full page.
+    ///
+    /// ```
+    /// use stucco_core::el;
+    /// use stucco_tower::PageCx;
+    ///
+    /// async fn index(page: PageCx) -> axum::response::Response {
+    ///     let count = 3;
+    ///     page.respond()
+    ///         .fragment("count", || el::p().id("count").text(count.to_string()))
+    ///         .page(|| page.title("Counter").body(el::main().id("main").text("…")))
+    /// }
+    /// ```
+    pub fn respond(&self) -> Respond<'_> {
+        Respond {
+            cx: self,
+            chosen: None,
+        }
+    }
+}
+
+/// Chooses between a page and its fragments; see [`PageCx::respond`].
+#[derive(Debug)]
+#[must_use = "finish with `page`, which makes the response"]
+pub struct Respond<'p> {
+    cx: &'p PageCx,
+    chosen: Option<FragmentResponse>,
+}
+
+impl Respond<'_> {
+    /// Answers a fragment request for element `id` with `content`, rendered
+    /// only if this is the fragment requested.
+    pub fn fragment<R: Render>(mut self, id: &str, content: impl FnOnce() -> R) -> Self {
+        let wanted = matches!(&self.cx.kind, RequestKind::Fragment { target } if target == id);
+        if self.chosen.is_none() && wanted {
+            self.chosen = Some(self.cx.fragment(id, &content()));
+        }
+        self
+    }
+
+    /// Answers everything else with the page `page` builds.
+    pub fn page(self, page: impl FnOnce() -> Document) -> Response {
+        match self.chosen {
+            Some(fragment) => IntoResponse::into_response(fragment),
+            None => page().into_response(),
+        }
+    }
 }
 
 impl<S: Send + Sync> FromRequestParts<S> for PageCx {
@@ -149,6 +215,7 @@ impl<S: Send + Sync> FromRequestParts<S> for PageCx {
         Ok(PageCx {
             bundle,
             context: RequestContext::from_parts(parts),
+            kind: RequestKind::from_parts(parts),
         })
     }
 }
@@ -368,6 +435,41 @@ mod tests {
         assert_eq!(document, page);
         assert!(document.contains(".note { color: red }"));
         assert!(document.contains("<li>&lt;second&gt;</li>"));
+    }
+
+    #[tokio::test]
+    async fn respond_renders_only_what_is_asked_for() {
+        async fn index(page: PageCx) -> Response {
+            page.respond()
+                .fragment("count", || el::p().id("count").text("3"))
+                .fragment("never", || -> el::Element<'static> {
+                    panic!("only the requested fragment renders")
+                })
+                .page(|| {
+                    page.title("Counter")
+                        .body(el::main().id("main").text("page"))
+                })
+        }
+        let app = Router::new().route("/", get(index)).stucco(Preset::Slate);
+        let request = |target: Option<&str>| {
+            let mut req = Request::builder().uri("/");
+            if let Some(target) = target {
+                req = req
+                    .header(stucco_core::behavior::HEADER_REQUEST, "fragment")
+                    .header(stucco_core::behavior::HEADER_TARGET, target);
+            }
+            req.body(Body::empty()).unwrap()
+        };
+        let text = |res: Response| async move {
+            String::from_utf8(res.into_body().collect().await.unwrap().to_bytes().to_vec()).unwrap()
+        };
+        let full = text(app.clone().oneshot(request(None)).await.unwrap()).await;
+        assert!(full.contains("<main id=\"main\">page</main>"));
+        let part = text(app.clone().oneshot(request(Some("count"))).await.unwrap()).await;
+        assert!(part.contains("<p id=\"count\">3</p>"));
+        assert!(!part.contains("<main"));
+        let other = text(app.oneshot(request(Some("missing"))).await.unwrap()).await;
+        assert!(other.contains("<main id=\"main\">page</main>"));
     }
 
     #[tokio::test]
