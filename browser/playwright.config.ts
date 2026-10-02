@@ -25,6 +25,17 @@ export default defineConfig({
       timeout: 300_000,
     },
     {
+      // The documentation site, with its theme engine compiled to WebAssembly.
+      command: [
+        "cargo build -q -p site-wasm --target wasm32-unknown-unknown --profile wasm",
+        "cargo run -q -p site -- ../target/site --base / --wasm ../target/wasm32-unknown-unknown/wasm/site_wasm.wasm",
+        "node serve.mjs ../target/site 4182",
+      ].join(" && "),
+      url: "http://localhost:4182/index.html",
+      reuseExistingServer: !process.env.CI,
+      timeout: 600_000,
+    },
+    {
       command: "cargo run -q -p hello",
       env: { PORT: "4180" },
       url: "http://localhost:4180/",

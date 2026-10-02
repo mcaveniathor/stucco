@@ -1,4 +1,4 @@
-// Minimal static file server for the generated gallery: node serve.mjs <dir> <port>
+// Minimal static file server for the generated gallery and site: node serve.mjs <dir> <port>
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize, resolve } from "node:path";
@@ -10,6 +10,7 @@ const types = {
   ".css": "text/css; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".svg": "image/svg+xml",
+  ".wasm": "application/wasm",
 };
 
 createServer(async (req, res) => {
