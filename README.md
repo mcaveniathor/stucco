@@ -5,7 +5,7 @@ CSS. Compose layouts, forms, tables, and application shells with ordinary Rust
 builders. Search, filters, sorting, and pagination can work through native GET
 requests without JavaScript.
 
-Stucco **0.1.0** is available on [crates.io](https://crates.io/crates/stucco).
+Stucco **0.2.0** is available on [crates.io](https://crates.io/crates/stucco).
 The [documentation site](https://mcaveniathor.github.io/stucco/) has the guide,
 a theme playground with Rust, CSS and JSON export, the component gallery and
 the API reference.
@@ -32,7 +32,7 @@ Add:
 
 ```toml
 [dependencies]
-stucco = "0.1"
+stucco = "0.2"
 ```
 
 ```rust
@@ -66,7 +66,7 @@ Turn on the `axum` feature, and add `axum = "0.8"` and
 `tokio = { version = "1", features = ["macros", "rt-multi-thread", "net"] }`:
 
 ```toml
-stucco = { version = "0.1", features = ["axum"] }
+stucco = { version = "0.2", features = ["axum"] }
 ```
 
 ```rust,no_run
@@ -154,7 +154,7 @@ Enable the `collections` feature for typed columns, a `DataTable`, native GET
 controls, and cursor or numbered pagination:
 
 ```toml
-stucco = { version = "0.1", features = ["collections"] }
+stucco = { version = "0.2", features = ["collections"] }
 ```
 
 ```rust

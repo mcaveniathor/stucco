@@ -165,7 +165,9 @@ fn new_writes_a_starter_app() {
     let plain = root.join("plain");
     stdout(&["new", plain.to_str().unwrap()]);
     let manifest = std::fs::read_to_string(plain.join("Cargo.toml")).unwrap();
-    assert!(manifest.contains("stucco = { version = \"0.1\""));
+    let version = env!("CARGO_PKG_VERSION");
+    let minor = version.rsplit_once('.').unwrap().0;
+    assert!(manifest.contains(&format!("stucco = {{ version = \"{minor}\"")));
     let main = std::fs::read_to_string(plain.join("src/main.rs")).unwrap();
     assert!(main.contains(".stucco(Preset::Slate)"));
 

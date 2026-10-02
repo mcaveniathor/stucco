@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 — 2026-10-02
+
+Applications get easier to start and write: one-call axum setup, page
+shortcuts, a fuller prelude, derived table columns and an app generator.
+Themes can be seeded, and gain twenty-eight personality options, including
+generated SVG ornaments, with a playground and a command-line tool. No 0.1
+API was removed or changed incompatibly.
 
 - `stucco new` writes a starter axum app: a theme (a preset, a seed, a name
   or random), a shared layout with navigation, a home page and a table with
