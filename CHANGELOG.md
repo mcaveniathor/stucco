@@ -12,6 +12,10 @@
   URL, styled as tabs.
 - The gallery has an Overlays page, and the browser tests cover each
   component, the fallback script, and accessibility with them open.
+- `AppShell`'s header no longer clips what opens out of it, such as a
+  menu or dropdown panel, when the theme gives it a shaped edge. The fill,
+  pattern, blur and edge are painted on a layer behind the header's content,
+  and the header sits above the content that follows it.
 
 ## 0.2.0 — 2026-10-02
 
