@@ -9,5 +9,7 @@
 #![deny(missing_docs)]
 
 mod assets;
+mod response;
 
 pub use assets::{AssetService, FallbackFuture, WithFallback};
+pub use response::{FragmentResponse, PageResponse};
