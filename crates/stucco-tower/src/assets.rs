@@ -52,13 +52,17 @@ impl AssetService {
             return builder
                 .status(StatusCode::NOT_FOUND)
                 .header(CONTENT_TYPE, "text/plain; charset=utf-8")
-                .body(Full::new(Bytes::from_static(b"not found")))
+                .body(if req.method() == Method::HEAD {
+                    Full::default()
+                } else {
+                    Full::new(Bytes::from_static(b"not found"))
+                })
                 .expect("valid response");
         };
         let builder = builder
             .header(ETAG, file.etag.as_str())
             .header(CACHE_CONTROL, IMMUTABLE);
-        if if_none_match(req.headers().get(IF_NONE_MATCH), &file.etag) {
+        if if_none_match(req.headers().get_all(IF_NONE_MATCH), &file.etag) {
             return builder
                 .status(StatusCode::NOT_MODIFIED)
                 .body(Full::default())
@@ -81,13 +85,16 @@ impl AssetService {
 const IMMUTABLE: &str = "public, max-age=31536000, immutable";
 
 /// Whether an `If-None-Match` header matches `etag` (lists, weak tags and `*`).
-fn if_none_match(header: Option<&http::HeaderValue>, etag: &str) -> bool {
-    let Some(value) = header.and_then(|h| h.to_str().ok()) else {
-        return false;
-    };
-    value.split(',').map(str::trim).any(|candidate| {
-        candidate == "*" || candidate.strip_prefix("W/").unwrap_or(candidate) == etag
-    })
+/// Repeated header lines form one comma-separated list (RFC 9110 §5.3).
+fn if_none_match(headers: http::header::GetAll<'_, http::HeaderValue>, etag: &str) -> bool {
+    headers
+        .iter()
+        .filter_map(|h| h.to_str().ok())
+        .flat_map(|v| v.split(','))
+        .map(str::trim)
+        .any(|candidate| {
+            candidate == "*" || candidate.strip_prefix("W/").unwrap_or(candidate) == etag
+        })
 }
 
 impl<B> Service<Request<B>> for AssetService {
@@ -128,11 +135,16 @@ where
     }
 
     fn call(&mut self, req: Request<B>) -> Self::Future {
-        if req
-            .uri()
-            .path()
-            .starts_with(self.assets.bundle.url_prefix())
-        {
+        let path = req.uri().path();
+        let prefix = self.assets.bundle.url_prefix();
+        // With a root prefix every path is "under" it, so only actual bundle
+        // files are assets; everything else must still reach the app.
+        let is_asset = if prefix == "/" {
+            self.assets.bundle.get(path).is_some()
+        } else {
+            path.starts_with(prefix)
+        };
+        if is_asset {
             let res = self.assets.answer(&req);
             FallbackFuture::Asset { res: Some(res) }
         } else {

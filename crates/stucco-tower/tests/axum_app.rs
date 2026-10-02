@@ -67,8 +67,36 @@ async fn oversized_bodies_are_413() {
     assert_eq!(res.status(), 413);
 }
 
+#[tokio::test]
+async fn configured_body_limit_can_exceed_axums_default() {
+    let config = LayerConfig {
+        body_limit: 4 * 1024 * 1024,
+        ..LayerConfig::default()
+    };
+    let router = app(Arc::new(Bundle::new(Preset::Slate)), &config);
+    for size in [3 * 1024 * 1024, config.body_limit] {
+        let res = router
+            .clone()
+            .oneshot(req("POST", "/echo", "x".repeat(size)))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), 200, "{size} bytes should be accepted");
+        let body = axum::body::to_bytes(res.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        assert_eq!(body.as_ref(), size.to_string().as_bytes());
+    }
+    let res = router
+        .oneshot(req("POST", "/echo", "x".repeat(config.body_limit + 1)))
+        .await
+        .unwrap();
+    assert_eq!(res.status(), 413);
+}
+
 #[tokio::test(start_paused = true)]
-async fn slow_handlers_time_out_with_408() {
+async fn slow_handlers_time_out_with_503() {
+    // 408 would invite clients and proxies to retry a possibly-committed
+    // mutation; 503 says the server, not the client, ran out of time.
     let config = LayerConfig {
         timeout: Duration::from_secs(1),
         ..LayerConfig::default()
@@ -77,7 +105,55 @@ async fn slow_handlers_time_out_with_408() {
         .oneshot(req("GET", "/slow", Body::empty()))
         .await
         .unwrap();
-    assert_eq!(res.status(), 408);
+    assert_eq!(res.status(), 503);
+    assert_eq!(res.headers()["x-content-type-options"], "nosniff");
+}
+
+#[tokio::test]
+async fn every_response_is_nosniff() {
+    let bundle = Arc::new(Bundle::new(Preset::Slate));
+    let config = LayerConfig {
+        body_limit: 4,
+        ..LayerConfig::default()
+    };
+    for (method, uri, body) in [
+        ("GET", "/no-such-route", String::new()),
+        ("POST", "/echo", "too long".to_owned()),
+        ("DELETE", "/", String::new()),
+    ] {
+        let res = app(bundle.clone(), &config)
+            .oneshot(req(method, uri, body))
+            .await
+            .unwrap();
+        assert_eq!(
+            res.headers()["x-content-type-options"],
+            "nosniff",
+            "{method} {uri}"
+        );
+    }
+}
+
+#[tokio::test]
+async fn well_formed_request_ids_are_kept_and_others_replaced() {
+    let bundle = Arc::new(Bundle::new(Preset::Slate));
+    let with_id = |id: &str| {
+        Request::builder()
+            .uri("/")
+            .header("x-request-id", id)
+            .body(Body::empty())
+            .unwrap()
+    };
+    let kept = app(bundle.clone(), &LayerConfig::default())
+        .oneshot(with_id("abc-123.X_y"))
+        .await
+        .unwrap();
+    assert_eq!(kept.headers()["x-request-id"], "abc-123.X_y");
+    let replaced = app(bundle, &LayerConfig::default())
+        .oneshot(with_id("evil<script>"))
+        .await
+        .unwrap();
+    let id = replaced.headers()["x-request-id"].to_str().unwrap();
+    assert!(!id.contains('<') && !id.is_empty(), "{id}");
 }
 
 #[test]

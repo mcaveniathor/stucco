@@ -78,6 +78,22 @@ async fn serves_hashed_assets_with_immutable_caching() {
 }
 
 #[tokio::test]
+async fn unknown_asset_head_preserves_get_headers_without_a_body() {
+    let svc = AssetService::new(Arc::new(Bundle::new(Preset::Slate)));
+    let get = svc
+        .clone()
+        .oneshot(req("GET", "/_stucco/nope.css"))
+        .await
+        .unwrap();
+    let head = svc.oneshot(req("HEAD", "/_stucco/nope.css")).await.unwrap();
+    assert_eq!(get.status(), 404);
+    assert_eq!(head.status(), get.status());
+    assert_eq!(head.headers(), get.headers());
+    assert_eq!(body(get).await, b"not found");
+    assert!(body(head).await.is_empty());
+}
+
+#[tokio::test]
 async fn conditional_requests_return_304() {
     let bundle = Arc::new(Bundle::new(Preset::Slate));
     let url = bundle.stylesheet_url().to_owned();
@@ -163,4 +179,68 @@ async fn fallback_readiness_is_delegated() {
     let mut svc = AssetService::new(bundle).fallback(NeverReady);
     let mut cx = Context::from_waker(std::task::Waker::noop());
     assert!(Service::<Request<String>>::poll_ready(&mut svc, &mut cx).is_pending());
+}
+
+#[tokio::test]
+async fn a_root_prefix_still_reaches_the_fallback_for_non_asset_paths() {
+    let bundle = Arc::new(Bundle::new(Preset::Slate).prefix("/"));
+    let url = bundle.stylesheet_url().to_owned();
+    assert!(url.starts_with("/stucco."));
+    let css = AssetService::new(bundle.clone())
+        .fallback(Teapot)
+        .oneshot(req("GET", &url))
+        .await
+        .unwrap();
+    assert_eq!(css.status(), 200);
+    let app = AssetService::new(bundle)
+        .fallback(Teapot)
+        .oneshot(req("GET", "/orders"))
+        .await
+        .unwrap();
+    assert_eq!(app.status(), 418);
+}
+
+#[tokio::test]
+async fn a_custom_prefix_is_respected() {
+    let bundle = Arc::new(Bundle::new(Preset::Slate).prefix("/assets"));
+    let url = bundle.stylesheet_url().to_owned();
+    let svc = AssetService::new(bundle).fallback(Teapot);
+    assert_eq!(
+        svc.clone()
+            .oneshot(req("GET", &url))
+            .await
+            .unwrap()
+            .status(),
+        200
+    );
+    assert_eq!(
+        svc.clone()
+            .oneshot(req("GET", "/assets/nope.css"))
+            .await
+            .unwrap()
+            .status(),
+        404
+    );
+    assert_eq!(
+        svc.oneshot(req("GET", "/_stucco/x"))
+            .await
+            .unwrap()
+            .status(),
+        418
+    );
+}
+
+#[tokio::test]
+async fn repeated_if_none_match_lines_are_one_list() {
+    let bundle = Arc::new(Bundle::new(Preset::Slate));
+    let url = bundle.stylesheet_url().to_owned();
+    let etag = bundle.get(&url).unwrap().etag;
+    let request = Request::builder()
+        .uri(&url)
+        .header("if-none-match", "\"other\"")
+        .header("if-none-match", etag.as_str())
+        .body(String::new())
+        .unwrap();
+    let res = AssetService::new(bundle).oneshot(request).await.unwrap();
+    assert_eq!(res.status(), 304);
 }
