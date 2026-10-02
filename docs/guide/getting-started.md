@@ -20,6 +20,17 @@ cargo add tokio --features macros,rt-multi-thread,net
 | `stucco-cli` | The `stucco` command: generate and export themes | 1.85 |
 | `stucco-macros` | `#[derive(Columns)]`, used through `stucco`'s `derive` feature | 1.85 |
 
+## Start from a template
+
+The CLI can write a working app for you, with a theme, a shared layout, a home page and a table:
+
+```sh
+cargo install stucco-cli
+stucco new my-app && cd my-app && cargo run
+```
+
+The rest of this page builds the same pieces by hand.
+
 ## Render a page
 
 Components implement `Render`. A `Bundle` holds your theme and the hashed CSS and scripts components need, and a `Page` turns a body into a complete document:
@@ -84,6 +95,7 @@ cargo run -p gallery -- target/gallery   # every component, as static pages
 
 ## Where to go next
 
+- [Recipes](recipes.html) answers common "how do I…?" questions in a few lines each.
 - [Components](components.html) explains how components are built and composed.
 - [Forms](forms.html) covers submission, validation and error display.
 - [Collections](collections.html) builds searchable, filterable tables.

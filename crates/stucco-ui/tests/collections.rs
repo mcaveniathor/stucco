@@ -104,3 +104,28 @@ fn date_and_numeric_ranges_render_native_inputs() {
     assert!(html.contains("name=\"f.amount.min\""));
     assert!(html.contains("name=\"f.created.max\""));
 }
+
+#[test]
+fn rows_without_a_source_get_no_filter_bar() {
+    let rows = ["Ada", "Grace"];
+    let col = || Col::text("name", "Name", |n: &&str| (*n).into()).sortable();
+    let plain = to_html(&DataTable::new(&rows, "Names").column(col()));
+    assert!(!plain.contains("st-filter-bar"));
+    assert!(
+        !plain.contains("<a href"),
+        "no sort links without capabilities"
+    );
+    let empty: [&str; 0] = [];
+    let none = to_html(&DataTable::new(&empty, "Names").column(col()));
+    assert!(none.contains("No results") && !none.contains("Clear filters"));
+    let caps = Capabilities {
+        sortable: vec!["name".into()],
+        ..Capabilities::default()
+    };
+    let sourced = to_html(
+        &DataTable::new(&rows, "Names")
+            .capabilities(&caps)
+            .column(col()),
+    );
+    assert!(sourced.contains("st-filter-bar"));
+}
