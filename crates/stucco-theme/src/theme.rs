@@ -6,6 +6,7 @@ use crate::personality::{
     ButtonShape, ControlStyle, Elevation, HeaderStyle, HeadingWeight, Personality, TableStyle,
 };
 use crate::roles::{INK_ACCENT, Kind, PAIRS, ROLES, STATUS, Source};
+use crate::seed::Palette;
 use crate::{Color, Scale, Scheme, contrast};
 
 /// Font stacks for body text and code.
@@ -158,6 +159,16 @@ impl Theme {
     pub fn accent(mut self, color: Color) -> Theme {
         self.accent_hue = color.h;
         self.accent_chroma = color.c;
+        self
+    }
+
+    /// Applies every colour choice in `palette`: accent, neutral hue and
+    /// tint, and the ink accent.
+    pub fn palette(mut self, palette: Palette) -> Theme {
+        self = self.accent(palette.accent);
+        self.neutral_hue = palette.neutral_hue;
+        self.neutral_tint = palette.neutral_tint;
+        self.accent_from_neutral = palette.ink;
         self
     }
 

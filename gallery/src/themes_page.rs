@@ -5,7 +5,7 @@ use stucco::actions::Button;
 use stucco::data::{Card, Row, Table};
 use stucco::forms::{Field, Input, Select};
 use stucco::layout::{Cluster, Grid, Stack};
-use stucco::theme::Theme;
+use stucco::theme::{ControlStyle, Fonts, HeaderStyle, Preset, Radius, Seeded, TableStyle, Theme};
 use stucco::typography::{Heading, Text};
 use stucco::{Attrs, Bundle, Measure, Render, Size, Space, Tone, Variant, el};
 
@@ -34,37 +34,62 @@ pub fn seeded(seed: u64) -> stucco::theme::BuiltTheme {
         .expect("seeded themes always build")
 }
 
-/// One section per seed.
+/// The named theme that mixes Slate's colours with seeded options.
+pub const MIXED: &str = "slate-seed-14";
+
+/// Slate's palette with fonts, corners and personality seeded from 14, one
+/// option at a time.
+pub fn mixed() -> stucco::theme::BuiltTheme {
+    Theme::preset(Preset::Slate)
+        .fonts(Fonts::seeded(14))
+        .radius(Radius::seeded(14))
+        .control_style(ControlStyle::seeded(14))
+        .table_style(TableStyle::seeded(14))
+        .header_style(HeaderStyle::seeded(14))
+        .build()
+        .expect("Slate's colours pass with any personality")
+}
+
+/// One section per seed, then a mixed theme.
 pub fn page(bundle: &Bundle) -> String {
+    let seeds = SEEDS.map(|(seed, name)| section(&format!("Theme::seeded({seed})"), panels(name)));
+    let mixed = section(
+        "Slate with options seeded from 14",
+        Stack::new()
+            .space(Space::S3)
+            .child(
+                Text::new(
+                    "Every option implements Seeded, so a preset can take its fonts, \
+                     corners, inputs, tables and header from a seed while keeping its colours.",
+                )
+                .tone(Tone::Muted),
+            )
+            .child(panels(MIXED)),
+    );
     component_page(
         bundle,
         "Seeded themes",
         "Theme::seeded(n) derives colours, fonts, scale, radius, density and a style \
          personality from one number. The same seed always gives the same theme.",
-        SEEDS.map(|(seed, name)| {
-            section(
-                &format!("Theme::seeded({seed})"),
-                el::div()
-                    .class("g-panels")
-                    .attr("data-st-theme", name)
-                    .child(sample(seed, "light", "Light"))
-                    .child(sample(seed, "dark", "Dark")),
-            )
-        }),
+        seeds.into_iter().chain([mixed]),
     )
 }
 
-fn sample(seed: u64, scheme: &'static str, label: &'static str) -> impl Render + 'static {
+fn panels(name: &'static str) -> impl Render + 'static {
+    el::div()
+        .class("g-panels")
+        .attr("data-st-theme", name)
+        .child(sample(name, "light", "Light"))
+        .child(sample(name, "dark", "Dark"))
+}
+
+fn sample(name: &'static str, scheme: &'static str, label: &'static str) -> impl Render + 'static {
     let orders = [
         ("1042", "Paid", "$48.00"),
         ("1043", "Pending", "$12.50"),
         ("1044", "Shipped", "$230.10"),
     ];
-    let mut table = Table::new(format!(
-        "Recent orders, seed {seed}, {}",
-        label.to_lowercase()
-    ))
-    .header(
+    let mut table = Table::new(format!("Recent orders, {name}, {}", label.to_lowercase())).header(
         Row::new()
             .header("Order")
             .header("Status")

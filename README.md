@@ -97,16 +97,26 @@ else, build a `Theme`, or derive a whole one from a seed:
 
 ```rust
 use stucco::Bundle;
-use stucco::theme::{Elevation, TableStyle, Theme};
+use stucco::theme::{Elevation, Fonts, Preset, Radius, Seeded, TableStyle, Theme};
 
 // Colours, fonts, type scale, spacing, radius, density and a style
 // personality, all from one number. The same seed always gives the same theme,
 // and seeded themes always pass the contrast checks.
 let theme = Theme::seeded(42);
 // Or hash a name, then adjust any option.
-let theme = Theme::seeded_str("acme").elevation(Elevation::Raised).table_style(TableStyle::Striped);
+let theme = Theme::seeded_str("acme").elevation(Elevation::Raised);
+// Every option implements `Seeded`, so you can seed options one at a time:
+// here, Slate's colours with seed 14's fonts, corners and tables.
+let theme = Theme::preset(Preset::Slate)
+    .fonts(Fonts::seeded(14))
+    .radius(Radius::seeded(14))
+    .table_style(TableStyle::seeded(14));
 let bundle = Bundle::new(theme.build().expect("contrast passes"));
 ```
+
+An option seeded on its own matches what the full seeded theme chooses for it,
+because each option draws from its own named stream. Implement `Seeded` for
+your own types with `SeedRng`.
 
 The style personality changes presentation without changing markup: surface
 elevation, table rows, input style, header treatment, heading weight and
