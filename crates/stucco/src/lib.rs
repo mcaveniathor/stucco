@@ -21,6 +21,8 @@ pub use stucco_core::{
     register_asset, render_fn, render_fragment, to_html,
 };
 
+pub use stucco_ui::*;
+
 /// Themes: colours, scales, presets and contrast validation.
 pub mod theme {
     pub use stucco_theme::{
