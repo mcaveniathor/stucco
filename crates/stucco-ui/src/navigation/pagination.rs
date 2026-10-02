@@ -48,11 +48,14 @@ impl Render for Pagination {
         let mut nav = el::nav().class("st-pagination").aria("label", &self.label);
         if let (Some(total), Window::Offset { page }) = (self.total, &self.query.window) {
             let per = u64::from(self.query.per_page.max(1));
-            let count = total.div_ceil(per);
-            if count <= 1 {
+            // At least one page, so an empty collection still links to page 1.
+            let count = total.div_ceil(per).max(1);
+            let current = (*page).max(1);
+            // One page and on it: nothing to link to. Past the end (a stale
+            // link, or the last row was deleted), the links lead back.
+            if count == 1 && current == 1 {
                 return;
             }
-            let current = (*page).max(1);
             let mut pages = std::collections::BTreeSet::from([1, count]);
             for n in current.saturating_sub(2)..=current.saturating_add(2).min(count) {
                 if n > 0 && n <= count {

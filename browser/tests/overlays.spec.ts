@@ -37,6 +37,43 @@ test("a link opener opens the dialog in place", async ({ page }) => {
   expect(new URL(page.url()).hash).toBe("");
 });
 
+test("a link opener leaves modified and handled clicks to the browser", async ({ page }) => {
+  await page.goto("/overlays.html");
+  const taken = await page.evaluate(() => {
+    const link = document.querySelector("a[data-st-opens]")!;
+    const dialog = document.getElementById(link.getAttribute("data-st-opens")!) as HTMLDialogElement;
+    // Runs after the overlay's document listener: records whether it took
+    // the click, then cancels navigation so the page stays put.
+    let took = false;
+    window.addEventListener("click", (e) => {
+      took = e.defaultPrevented;
+      e.preventDefault();
+    });
+    const click = (init: MouseEventInit, before?: (e: Event) => void) => {
+      if (before) link.addEventListener("click", before, { once: true });
+      link.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, ...init }));
+      const result = { took, opened: dialog.open };
+      dialog.close();
+      return result;
+    };
+    return {
+      plain: click({}),
+      ctrl: click({ ctrlKey: true }),
+      meta: click({ metaKey: true }),
+      shift: click({ shiftKey: true }),
+      alt: click({ altKey: true }),
+      middle: click({ button: 1 }),
+      handled: click({}, (e) => e.preventDefault()),
+    };
+  });
+  expect(taken.plain).toEqual({ took: true, opened: true });
+  for (const kind of ["ctrl", "meta", "shift", "alt", "middle"] as const) {
+    expect(taken[kind], kind).toEqual({ took: false, opened: false });
+  }
+  // Another handler cancelled it first: the dialog stays shut.
+  expect(taken.handled).toEqual({ took: true, opened: false });
+});
+
 test("a menu opens under its button and closes on Escape", async ({ page }) => {
   await page.goto("/overlays.html");
   const button = page.getByRole("button", { name: "Actions" });
