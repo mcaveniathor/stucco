@@ -32,13 +32,13 @@ pub use stucco_ui::*;
 pub mod theme {
     pub use stucco_theme::{
         BuiltTheme, ButtonShape, Color, ContrastFailure, ContrastReport, ControlStyle, Density,
-        Elevation, Fonts, HeaderStyle, HeadingWeight, Palette, Preset, Radius, Scale, Scheme,
-        Scope, SeedRng, Seeded, TableStyle, Theme, TypeScale, contrast,
+        Elevation, Fonts, HeaderStyle, HeadingWeight, Palette, Preset, Radius, Random, Scale,
+        Scheme, Scope, SeedRng, Seeded, TableStyle, Theme, TypeScale, contrast, random_seed,
     };
 }
 
 /// The most common imports.
 pub mod prelude {
-    pub use crate::theme::{Preset, Seeded, Theme};
+    pub use crate::theme::{Preset, Random, Seeded, Theme};
     pub use crate::{Bundle, Cx, Page, Render, el};
 }
