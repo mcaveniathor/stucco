@@ -15,8 +15,9 @@ to find a page. Numbered mode at /orders?mode=pages deliberately reads all
 matching records and counts them before slicing: it is for small collections,
 not a scalable counted-query engine.
 
-Amounts are stored and filtered in integer cents; the table labels that unit
-explicitly. No mutation, authentication, or authorization endpoints are included.
+Amounts are stored in integer cents. The Total column displays and filters
+in dollars; `Col::display` formats the value without changing how it sorts or
+filters. No mutation, authentication, or authorization endpoints are included.
 Opaque cursors are locators, not authorization tokens.
 
 Core/components/Tower retain Rust 1.85. This example and stucco-redb require

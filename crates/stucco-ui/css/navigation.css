@@ -1,5 +1,14 @@
 @layer stucco.components {
-  .st-pagination { display: flex; flex-wrap: wrap; gap: var(--st-space-3); padding-block: var(--st-space-4); }
-  .st-pagination a { padding: var(--st-space-2) var(--st-space-3); border: 1px solid var(--st-border); border-radius: var(--st-radius-md); }
-  .st-pagination a[aria-current="page"] { background: var(--st-accent); color: var(--st-on-accent); }
+  .st-pagination { display: flex; flex-wrap: wrap; align-items: center; gap: var(--st-space-1); padding-block: var(--st-space-4); }
+  .st-pagination a {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-inline-size: calc(var(--st-control-h) * 0.9); block-size: calc(var(--st-control-h) * 0.9);
+    padding-inline: var(--st-space-3); border: 1px solid var(--st-border); border-radius: var(--st-radius-md);
+    background: var(--st-surface); color: var(--st-text); font-weight: 550; text-decoration: none;
+    font-variant-numeric: tabular-nums;
+    transition: background-color var(--st-duration-fast) var(--st-ease), border-color var(--st-duration-fast) var(--st-ease);
+  }
+  .st-pagination a:hover { background: var(--st-hover); border-color: var(--st-border-strong); }
+  .st-pagination a[aria-current="page"] { background: var(--st-accent); border-color: var(--st-accent); color: var(--st-on-accent); }
+  .st-pagination > span { padding-inline: var(--st-space-1); color: var(--st-text-muted); }
 }

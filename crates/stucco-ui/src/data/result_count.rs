@@ -32,7 +32,10 @@ impl Render for ResultCount {
                 offset.saturating_add(self.shown as u64).min(total)
             )
         } else {
-            format!("Showing {} results", self.shown)
+            match self.shown {
+                1 => "Showing 1 result".into(),
+                n => format!("Showing {n} results"),
+            }
         };
         apply(
             el::p().class("st-result-count").text(text),

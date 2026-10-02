@@ -82,7 +82,7 @@ fn empty_and_unsupported_operations_have_useful_fallbacks() {
             ),
     );
     assert!(html.contains("No results"));
-    assert!(html.contains("Reset filters"));
+    assert!(html.contains("Clear filters"));
     assert!(!html.contains("name=\"q\""));
     assert!(!html.contains("aria-sort"));
 }
