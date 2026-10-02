@@ -99,22 +99,9 @@ pub(crate) fn token_css(built: &BuiltTheme, scope: Scope<'_>) -> String {
     };
     let _ = writeln!(css, "    --st-control-h: {h}; --st-pad-scale: {pad};");
     css.push_str(
-        "    --st-duration-fast: 120ms; --st-duration: 200ms; --st-duration-slow: 320ms; \
-         --st-ease: cubic-bezier(.2,0,0,1);\n",
-    );
-    css.push_str(
         "    --st-z-dropdown: 100; --st-z-sticky: 200; --st-z-overlay: 300; --st-z-toast: 400;\n",
     );
-    for (i, pct) in [8, 12, 18].iter().enumerate() {
-        let _ = writeln!(
-            css,
-            "    --st-shadow-{}: 0 {}px {}px color-mix(in oklch, var(--st-neutral-12) {pct}%, transparent);",
-            i + 1,
-            (i + 1) * 2,
-            (i + 1) * 8
-        );
-    }
-    for (name, value) in t.personality.tokens() {
+    for (name, value) in t.personality.tokens(built.ornament_scale) {
         let _ = writeln!(css, "    --st-{name}: {value};");
     }
     css.push_str("  }\n");

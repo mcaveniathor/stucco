@@ -5,7 +5,15 @@
     --st-app-side-pad: max(var(--st-space-1), calc(var(--st-app-gutter) - var(--st-space-3)));
     min-block-size: 100dvh; display: flex; flex-direction: column; container-type: inline-size;
   }
-  .st-app-header { padding: var(--st-space-6) var(--st-app-gutter); background: var(--st-header-bg); border-block-end: 1px solid var(--st-header-border); }
+  /* The header's fill carries the theme's pattern; a shaped edge masks its bottom and replaces the rule. */
+  .st-app-header {
+    padding: var(--st-space-6) var(--st-app-gutter); padding-block-end: calc(var(--st-space-6) + var(--st-header-edge, 0px));
+    -webkit-mask: var(--st-header-mask, none); mask: var(--st-header-mask, none);
+    background: var(--st-pattern, none) var(--st-header-bg); -webkit-backdrop-filter: var(--st-surface-blur, none); backdrop-filter: var(--st-surface-blur, none); border-block-end: var(--st-header-rule, var(--st-line, 1px)) solid var(--st-header-border);
+  }
+  @media (prefers-contrast: more), (forced-colors: active) {
+    .st-app-header { background-image: none; }
+  }
   /* A grid of the primary links (nav), the sidebar (side) and main, arranged by the theme's shell layout. */
   .st-app-body {
     flex: 1; display: grid; min-inline-size: 0; container-type: inline-size;
@@ -16,23 +24,26 @@
   .st-app-nav {
     grid-area: nav; display: flex; flex-direction: var(--st-shell-nav-direction); flex-wrap: wrap; gap: 2px;
     padding: var(--st-shell-nav-pad-block) var(--st-app-side-pad); background: var(--st-shell-side-bg);
+    -webkit-backdrop-filter: var(--st-surface-blur, none); backdrop-filter: var(--st-surface-blur, none);
     border: 0 solid var(--st-border);
     border-inline-end-width: var(--st-shell-nav-rule-inline); border-block-end-width: var(--st-shell-nav-rule-block);
   }
   .st-app-sidebar {
     grid-area: side; padding: var(--st-space-4) var(--st-app-side-pad);
-    background: var(--st-shell-side-bg); border-inline-end: 1px solid var(--st-border);
+    background: var(--st-shell-side-bg); -webkit-backdrop-filter: var(--st-surface-blur, none); backdrop-filter: var(--st-surface-blur, none);
+    border-inline-end: var(--st-line, 1px) solid var(--st-border);
   }
   .st-app-main { grid-area: main; min-inline-size: 0; padding: var(--st-space-6) var(--st-app-gutter) var(--st-space-10); }
   /* Narrow shells stack everything; the primary links wrap in a row. */
   @container (width < 37.5rem) {
     .st-app-body { grid-template: "nav" auto "side" auto "main" 1fr / minmax(0, 1fr); }
-    .st-app-nav { flex-direction: row; padding-block: var(--st-space-2); border-inline-end-width: 0; border-block-end-width: 1px; }
-    .st-app-sidebar { border-inline-end: 0; border-block-end: 1px solid var(--st-border); }
+    .st-app-nav { flex-direction: row; padding-block: var(--st-space-2); border-inline-end-width: 0; border-block-end-width: var(--st-line, 1px); }
+    .st-app-sidebar { border-inline-end: 0; border-block-end: var(--st-line, 1px) solid var(--st-border); }
   }
   .st-app-sidebar summary {
     padding: var(--st-space-2) var(--st-space-3); border-radius: var(--st-radius-md);
-    font-size: var(--st-text-sm); font-weight: 600; color: var(--st-text-muted); cursor: pointer;
+    font-size: var(--st-text-sm); font-weight: var(--st-label-weight, 600); color: var(--st-label-color, var(--st-text-muted)); cursor: pointer;
+    text-transform: var(--st-label-case, none); letter-spacing: var(--st-label-tracking, normal);
   }
   .st-app-sidebar summary:hover { color: var(--st-text); }
   .st-app-sidebar nav { display: flex; flex-direction: column; gap: 2px; margin-block-start: var(--st-space-1); }
@@ -63,6 +74,6 @@
   .st-page-header-description { color: var(--st-text-muted); }
   .st-footer {
     padding: var(--st-space-5) var(--st-app-gutter, var(--st-space-6));
-    border-block-start: 1px solid var(--st-border); color: var(--st-text-muted); font-size: var(--st-text-sm);
+    border-block-start: var(--st-line, 1px) var(--st-rule-style, solid) var(--st-border); color: var(--st-text-muted); font-size: var(--st-text-sm);
   }
 }

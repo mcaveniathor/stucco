@@ -3,9 +3,12 @@
 use std::fmt;
 
 use crate::color::{luminance_ratio, srgb_luminance};
+use crate::ornament::{HeaderEdge, PATTERN_GREY, Pattern, Relief};
 use crate::personality::{
-    ButtonShape, ControlStyle, CornerStyle, Elevation, Finish, FocusStyle, HeaderStyle,
-    HeadingWeight, LinkStyle, NavStyle, PanelStyle, Personality, ShellLayout, TableStyle,
+    Backdrop, ButtonDepth, ButtonShape, ControlStyle, CornerStyle, Elevation, Finish, FocusStyle,
+    HeaderStyle, HeadingFont, HeadingWeight, IconWeight, LabelStyle, Leading, LineWeight,
+    LinkStyle, Material, Motion, NavStyle, PanelStyle, Personality, RuleStyle, ShadowStyle,
+    ShellLayout, TableStyle, TagStyle,
 };
 use crate::roles::{INK_ACCENT, Kind, PAIRS, ROLES, STATUS, Source};
 use crate::seed::Palette;
@@ -302,6 +305,104 @@ impl Theme {
         self
     }
 
+    /// The weight of rules and borders.
+    pub fn line_weight(mut self, weight: LineWeight) -> Theme {
+        self.personality.lines = weight;
+        self
+    }
+
+    /// How buttons stand off the page.
+    pub fn button_depth(mut self, depth: ButtonDepth) -> Theme {
+        self.personality.depth = depth;
+        self
+    }
+
+    /// How small labels such as table column headings look.
+    pub fn label_style(mut self, style: LabelStyle) -> Theme {
+        self.personality.labels = style;
+        self
+    }
+
+    /// The stroke width of icons.
+    pub fn icon_weight(mut self, weight: IconWeight) -> Theme {
+        self.personality.icons = weight;
+        self
+    }
+
+    /// How quickly, and with what feel, things move.
+    pub fn motion(mut self, motion: Motion) -> Theme {
+        self.personality.motion = motion;
+        self
+    }
+
+    /// The typeface of headings.
+    pub fn heading_font(mut self, font: HeadingFont) -> Theme {
+        self.personality.heading_font = font;
+        self
+    }
+
+    /// The line height of running text.
+    pub fn leading(mut self, leading: Leading) -> Theme {
+        self.personality.leading = leading;
+        self
+    }
+
+    /// How tags are drawn.
+    pub fn tag_style(mut self, style: TagStyle) -> Theme {
+        self.personality.tags = style;
+        self
+    }
+
+    /// The pattern of dividing rules.
+    pub fn rule_style(mut self, style: RuleStyle) -> Theme {
+        self.personality.rules = style;
+        self
+    }
+
+    /// What large surfaces are made of.
+    pub fn material(mut self, material: Material) -> Theme {
+        self.personality.material = material;
+        self
+    }
+
+    /// Soft accent colour behind the page.
+    pub fn backdrop(mut self, backdrop: Backdrop) -> Theme {
+        self.personality.backdrop = backdrop;
+        self
+    }
+
+    /// How shadows are drawn.
+    pub fn shadow_style(mut self, style: ShadowStyle) -> Theme {
+        self.personality.shadows = style;
+        self
+    }
+
+    /// A raised plaster relief on the page background.
+    pub fn relief(mut self, relief: Relief) -> Theme {
+        self.personality.relief = relief;
+        self
+    }
+
+    /// A faint pattern behind the application header.
+    pub fn pattern(mut self, pattern: Pattern) -> Theme {
+        self.personality.pattern = pattern;
+        self
+    }
+
+    /// The shape of the application header's bottom edge.
+    pub fn header_edge(mut self, edge: HeaderEdge) -> Theme {
+        self.personality.edge = edge;
+        self
+    }
+
+    /// Varies the ornaments: the relief's light and plaster, the pattern's
+    /// spacing and contours, and the rhythm of a shaped header edge.
+    /// Seeded themes take it from their seed; other themes use 0.
+    pub fn motif_seed(mut self, seed: u32) -> Theme {
+        self.personality.motif = seed;
+        self
+    }
+
     /// Minimum contrast for text roles (default 4.5, WCAG AA).
     pub fn min_contrast(mut self, ratio: f64) -> Theme {
         self.min_contrast = ratio;
@@ -335,9 +436,10 @@ impl Theme {
                 }
             }
         }
-        let built = BuiltTheme {
+        let mut built = BuiltTheme {
             theme: self,
             scales,
+            ornament_scale: 1.0,
         };
         let mut failures = Vec::new();
         for scheme in Scheme::BOTH {
@@ -360,31 +462,26 @@ impl Theme {
                 }
             }
         }
-        // A textured finish pulls the page background towards mid-grey by
-        // up to its strongest opacity (browsers blend in gamma-encoded
-        // sRGB), so text on the page must also clear that point.
-        let alpha = built.theme.personality.finish.max_alpha();
-        if alpha > 0.0 {
-            for scheme in Scheme::BOTH {
-                for (fg, _, kind) in PAIRS.iter().filter(|(_, bg, _)| *bg == "bg") {
-                    let required = match kind {
-                        Kind::Text => built.theme.min_contrast,
-                        Kind::Ui => 3.0,
-                    };
-                    let fg_c = built.role(scheme, fg).expect("pair roles exist");
-                    let bg_c = built.role(scheme, "bg").expect("bg exists");
-                    let grain = bg_c.to_srgb().map(|v| v * (1.0 - alpha) + 0.5 * alpha);
-                    let ratio = luminance_ratio(fg_c.luminance(), srgb_luminance(grain));
-                    if ratio < required {
-                        failures.push(ContrastFailure {
-                            fg,
-                            bg: "bg with finish",
-                            scheme,
-                            ratio,
-                            required,
-                        });
+        // The relief and the header pattern are as strong as the theme's
+        // contrast allows, up to their full strength: if text or controls
+        // would fail on them, both fade together until nothing does.
+        if !built.texture_failures(1.0).is_empty() {
+            let floor = built.texture_failures(0.0);
+            if floor.is_empty() {
+                let (mut ok, mut bad) = (0.0, 1.0);
+                for _ in 0..12 {
+                    let mid = (ok + bad) / 2.0;
+                    if built.texture_failures(mid).is_empty() {
+                        ok = mid;
+                    } else {
+                        bad = mid;
                     }
                 }
+                built.ornament_scale = ok;
+            } else {
+                // The backdrop, the finish or the material fail on their own.
+                built.ornament_scale = 0.0;
+                failures.extend(floor);
             }
         }
         let t = &built.theme;
@@ -404,6 +501,12 @@ impl Theme {
             Err(ContrastReport { failures, invalid })
         }
     }
+}
+
+/// `top` at `alpha` over `under`, blended as browsers do, in gamma-encoded
+/// sRGB.
+fn mix(top: [f64; 3], under: [f64; 3], alpha: f64) -> [f64; 3] {
+    [0, 1, 2].map(|i| top[i] * alpha + under[i] * (1.0 - alpha))
 }
 
 /// The accent step used for hover: lighter than step 9 under black text,
@@ -430,6 +533,9 @@ pub enum Scope<'a> {
 pub struct BuiltTheme {
     pub(crate) theme: Theme,
     pub(crate) scales: Vec<(&'static str, Scale)>,
+    /// How strongly the relief and the header pattern are drawn, from 0 to
+    /// 1, fitted to the theme's contrast by [`Theme::build`].
+    pub(crate) ornament_scale: f64,
 }
 
 impl BuiltTheme {
@@ -458,6 +564,108 @@ impl BuiltTheme {
                 }
             }
         })
+    }
+
+    /// Contrast failures on the textured page, translucent surfaces and the
+    /// patterned header, with the relief and pattern drawn at `scale`.
+    fn texture_failures(&self, scale: f64) -> Vec<ContrastFailure> {
+        let p = &self.theme.personality;
+        let mut failures = Vec::new();
+        let opacity = p.material.opacity();
+        for scheme in Scheme::BOTH {
+            let page = self.page_colours(scheme, scale);
+            let surface = self.role(scheme, "surface").expect("surface exists");
+            // Text on the page, past the plain background already checked.
+            let mut behind: Vec<(&'static str, &'static str, [f64; 3])> = page
+                .iter()
+                .skip(1)
+                .map(|&(label, c)| ("bg", label, c))
+                .collect();
+            // Translucent surfaces show every page colour through.
+            if opacity < 1.0 {
+                behind.extend(page.iter().map(|&(_, c)| {
+                    (
+                        "surface",
+                        "translucent surface",
+                        mix(surface.to_srgb(), c, opacity),
+                    )
+                }));
+            }
+            // A header pattern's lines can run under the header's text, on
+            // any of the fills a header can have.
+            let alpha = p.pattern.alpha() * scale;
+            if alpha > 0.0 {
+                let grey = [PATTERN_GREY; 3];
+                for on in ["surface", "accent-soft"] {
+                    let fill = self.role(scheme, on).expect("role exists").to_srgb();
+                    behind.push((on, "header with pattern", mix(grey, fill, alpha)));
+                }
+                for &(_, c) in &page {
+                    behind.push(("bg", "header with pattern", mix(grey, c, alpha)));
+                }
+            }
+            for (on, label, colour) in behind {
+                for (fg, _, kind) in PAIRS.iter().filter(|(_, bg, _)| *bg == on) {
+                    let required = match kind {
+                        Kind::Text => self.theme.min_contrast,
+                        Kind::Ui => 3.0,
+                    };
+                    let fg_c = self.role(scheme, fg).expect("pair roles exist");
+                    let ratio = luminance_ratio(fg_c.luminance(), srgb_luminance(colour));
+                    if ratio < required {
+                        failures.push(ContrastFailure {
+                            fg,
+                            bg: label,
+                            scheme,
+                            ratio,
+                            required,
+                        });
+                    }
+                }
+            }
+        }
+        failures
+    }
+
+    /// The colours the page background can show, as sRGB: the plain
+    /// background, then its strongest blends with the backdrop, the relief
+    /// (drawn at `scale`) and the finish's grain, each labelled for
+    /// contrast reports.
+    pub(crate) fn page_colours(&self, scheme: Scheme, scale: f64) -> Vec<(&'static str, [f64; 3])> {
+        let p = &self.theme.personality;
+        let bg = self.role(scheme, "bg").expect("bg exists").to_srgb();
+        let mut colours = vec![("bg", bg)];
+        let backdrop = p.backdrop.max_alpha();
+        if backdrop > 0.0 {
+            let soft = self
+                .role(scheme, "accent-soft")
+                .expect("accent-soft exists")
+                .to_srgb();
+            colours.push(("bg with backdrop", mix(soft, bg, backdrop)));
+        }
+        // The relief shades the page towards its darkest and lightest greys.
+        if let Some((alpha, lo, hi)) = p.relief.extremes() {
+            let alpha = alpha * scale;
+            for i in 0..colours.len() {
+                let c = colours[i].1;
+                colours.push(("bg with relief", mix([lo; 3], c, alpha)));
+                colours.push(("bg with relief", mix([hi; 3], c, alpha)));
+            }
+        }
+        // The grain pulls the page towards mid-grey by up to its strongest
+        // opacity.
+        let grain = p.finish.max_alpha();
+        if grain > 0.0 {
+            for i in 0..colours.len() {
+                let label = if i == 0 {
+                    "bg with finish"
+                } else {
+                    "bg with finish and more"
+                };
+                colours.push((label, mix([0.5; 3], colours[i].1, grain)));
+            }
+        }
+        colours
     }
 
     /// Effective roles, with the ink-accent overrides applied.

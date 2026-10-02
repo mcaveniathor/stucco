@@ -1,9 +1,12 @@
 //! Deterministic generation from seeds: the [`Seeded`] trait, its random
 //! stream [`SeedRng`], and implementations for every theme option.
 
+use crate::ornament::{HeaderEdge, Pattern, Relief};
 use crate::personality::{
-    ButtonShape, ControlStyle, CornerStyle, Elevation, Finish, FocusStyle, HeaderStyle,
-    HeadingWeight, LinkStyle, NavStyle, PanelStyle, ShellLayout, TableStyle,
+    Backdrop, ButtonDepth, ButtonShape, ControlStyle, CornerStyle, Elevation, Finish, FocusStyle,
+    HeaderStyle, HeadingFont, HeadingWeight, IconWeight, LabelStyle, Leading, LineWeight,
+    LinkStyle, Material, Motion, NavStyle, PanelStyle, RuleStyle, ShadowStyle, ShellLayout,
+    TableStyle, TagStyle,
 };
 use crate::{Color, Density, Fonts, Radius, Theme, TypeScale};
 
@@ -453,12 +456,150 @@ seeded_enum!(
         (CornerStyle::Hand, 1),
     ]
 );
+seeded_enum!(
+    LineWeight,
+    "line-weight",
+    [(LineWeight::Fine, 4), (LineWeight::Heavy, 1)]
+);
+seeded_enum!(
+    ButtonDepth,
+    "button-depth",
+    [
+        (ButtonDepth::Flat, 3),
+        (ButtonDepth::Raised, 1),
+        (ButtonDepth::Offset, 1),
+    ]
+);
+seeded_enum!(
+    LabelStyle,
+    "label-style",
+    [
+        (LabelStyle::Plain, 2),
+        (LabelStyle::Caps, 1),
+        (LabelStyle::Strong, 1),
+    ]
+);
+seeded_enum!(
+    IconWeight,
+    "icon-weight",
+    [
+        (IconWeight::Light, 1),
+        (IconWeight::Regular, 3),
+        (IconWeight::Bold, 1),
+    ]
+);
+seeded_enum!(
+    Motion,
+    "motion",
+    [
+        (Motion::Smooth, 3),
+        (Motion::Snappy, 1),
+        (Motion::Gentle, 1),
+        (Motion::Springy, 1),
+    ]
+);
+seeded_enum!(
+    HeadingFont,
+    "heading-font",
+    [
+        (HeadingFont::Body, 4),
+        (HeadingFont::Serif, 1),
+        (HeadingFont::Rounded, 1),
+        (HeadingFont::Mono, 1),
+    ]
+);
+seeded_enum!(
+    Leading,
+    "leading",
+    [
+        (Leading::Tight, 1),
+        (Leading::Normal, 3),
+        (Leading::Airy, 1),
+    ]
+);
+seeded_enum!(
+    TagStyle,
+    "tag-style",
+    [
+        (TagStyle::Pill, 2),
+        (TagStyle::Square, 1),
+        (TagStyle::Outline, 1),
+    ]
+);
+seeded_enum!(
+    RuleStyle,
+    "rule-style",
+    [
+        (RuleStyle::Solid, 3),
+        (RuleStyle::Dashed, 1),
+        (RuleStyle::Dotted, 1),
+    ]
+);
+seeded_enum!(
+    Material,
+    "material",
+    [
+        (Material::Solid, 4),
+        (Material::Glass, 1),
+        (Material::Frost, 1),
+    ]
+);
+seeded_enum!(
+    Backdrop,
+    "backdrop",
+    [
+        (Backdrop::Plain, 4),
+        (Backdrop::Glow, 1),
+        (Backdrop::Wash, 1),
+    ]
+);
+seeded_enum!(
+    ShadowStyle,
+    "shadow-style",
+    [
+        (ShadowStyle::Soft, 3),
+        (ShadowStyle::Layered, 2),
+        (ShadowStyle::Tinted, 1),
+        (ShadowStyle::Hard, 1),
+    ]
+);
+seeded_enum!(
+    Relief,
+    "relief",
+    [
+        (Relief::Flat, 5),
+        (Relief::Venetian, 1),
+        (Relief::Trowel, 1),
+        (Relief::Skip, 1),
+    ]
+);
+seeded_enum!(
+    Pattern,
+    "pattern",
+    [
+        (Pattern::Plain, 5),
+        (Pattern::Dots, 1),
+        (Pattern::Grid, 1),
+        (Pattern::Contours, 1),
+        (Pattern::Waves, 1),
+    ]
+);
+seeded_enum!(
+    HeaderEdge,
+    "header-edge",
+    [
+        (HeaderEdge::Straight, 5),
+        (HeaderEdge::Wave, 1),
+        (HeaderEdge::Zigzag, 1),
+        (HeaderEdge::Torn, 1),
+    ]
+);
 
 impl Seeded for Theme {
     const STREAM: &'static str = "theme";
 
     /// Every option from its own fork of `rng`: palette, fonts, type scale,
-    /// spacing, radius, density and the thirteen personality options. Pill
+    /// spacing, radius, density and the twenty-eight personality options and the motif seed. Pill
     /// buttons become rounded on sharp themes. The result always passes
     /// [`Theme::build`].
     fn from_rng(rng: &mut SeedRng) -> Theme {
@@ -493,6 +634,22 @@ impl Seeded for Theme {
             .shell_layout(ShellLayout::from_rng(&mut rng.fork(ShellLayout::STREAM)))
             .panel_style(PanelStyle::from_rng(&mut rng.fork(PanelStyle::STREAM)))
             .corner_style(CornerStyle::from_rng(&mut rng.fork(CornerStyle::STREAM)))
+            .line_weight(LineWeight::from_rng(&mut rng.fork(LineWeight::STREAM)))
+            .button_depth(ButtonDepth::from_rng(&mut rng.fork(ButtonDepth::STREAM)))
+            .label_style(LabelStyle::from_rng(&mut rng.fork(LabelStyle::STREAM)))
+            .icon_weight(IconWeight::from_rng(&mut rng.fork(IconWeight::STREAM)))
+            .motion(Motion::from_rng(&mut rng.fork(Motion::STREAM)))
+            .heading_font(HeadingFont::from_rng(&mut rng.fork(HeadingFont::STREAM)))
+            .leading(Leading::from_rng(&mut rng.fork(Leading::STREAM)))
+            .tag_style(TagStyle::from_rng(&mut rng.fork(TagStyle::STREAM)))
+            .rule_style(RuleStyle::from_rng(&mut rng.fork(RuleStyle::STREAM)))
+            .material(Material::from_rng(&mut rng.fork(Material::STREAM)))
+            .backdrop(Backdrop::from_rng(&mut rng.fork(Backdrop::STREAM)))
+            .shadow_style(ShadowStyle::from_rng(&mut rng.fork(ShadowStyle::STREAM)))
+            .relief(Relief::from_rng(&mut rng.fork(Relief::STREAM)))
+            .pattern(Pattern::from_rng(&mut rng.fork(Pattern::STREAM)))
+            .header_edge(HeaderEdge::from_rng(&mut rng.fork(HeaderEdge::STREAM)))
+            .motif_seed(rng.fork("motif").next_u64() as u32)
     }
 
     /// The theme for `seed`; its options match each option's own
@@ -584,6 +741,21 @@ mod tests {
             assert_eq!(p.shell, ShellLayout::seeded(seed));
             assert_eq!(p.panels, PanelStyle::seeded(seed));
             assert_eq!(p.corners, CornerStyle::seeded(seed));
+            assert_eq!(p.lines, LineWeight::seeded(seed));
+            assert_eq!(p.depth, ButtonDepth::seeded(seed));
+            assert_eq!(p.labels, LabelStyle::seeded(seed));
+            assert_eq!(p.icons, IconWeight::seeded(seed));
+            assert_eq!(p.motion, Motion::seeded(seed));
+            assert_eq!(p.heading_font, HeadingFont::seeded(seed));
+            assert_eq!(p.leading, Leading::seeded(seed));
+            assert_eq!(p.tags, TagStyle::seeded(seed));
+            assert_eq!(p.rules, RuleStyle::seeded(seed));
+            assert_eq!(p.material, Material::seeded(seed));
+            assert_eq!(p.backdrop, Backdrop::seeded(seed));
+            assert_eq!(p.shadows, ShadowStyle::seeded(seed));
+            assert_eq!(p.relief, Relief::seeded(seed));
+            assert_eq!(p.pattern, Pattern::seeded(seed));
+            assert_eq!(p.edge, HeaderEdge::seeded(seed));
             let palette = Palette::seeded(seed);
             assert_eq!(theme.accent_hue, palette.accent.h);
             assert_eq!(theme.accent_from_neutral, palette.ink);
