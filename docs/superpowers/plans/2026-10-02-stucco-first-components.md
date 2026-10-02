@@ -107,7 +107,7 @@ Also update the existing `raw_text_elements_stay_escaped` test to the new expect
     - `enum Space { S0, S1, S2, S3, S4, S5, S6, S8, S10, S12 }` → `"0".."12"`.
     - `enum Size { Xs, Sm, Md, Lg, Xl, Xl2, Xl3 }` → `"xs" "sm" "md" "lg" "xl" "2xl" "3xl"`.
     - `enum Measure { Xs, Sm, Md, Lg, Xl, Prose }` → `"xs".."xl" "prose"` (20, 30, 40, 60, 75rem, 65ch).
-    - `enum Variant { Primary, Secondary, Ghost, Danger }`; `enum Tone { Default, Muted, Accent, Success, Warning, Danger, Info }`.
+    - `enum Variant { Primary, Secondary, Ghost, Danger }`; `enum Tone { Default, Muted, Accent, Success, Warning, Danger, Info }`; `enum ColorScheme { Light, Dark }`.
   - `passthrough.rs`: `macro_rules! passthrough` generating `.class .id .attr .data .aria` on a struct with an `attrs: Attrs` field; `pub(crate) fn apply(el: Element<'a>, attrs: &Attrs, reserved: &[&str]) -> Element<'a>` — `debug_assert!(conflicts.is_empty(), "reserved attribute: {…}")`, merges `attrs.without(reserved)`.
   - `pub fn ui_assets() -> Vec<&'static Asset>` (every asset the enabled features register; used by the CSS test).
   - CI: job `features` installing cargo-hack (`taiki-e/install-action@cargo-hack`) and running `cargo hack check -p stucco --each-feature --no-dev-deps` and `cargo hack test -p stucco-ui --each-feature`.
@@ -259,7 +259,7 @@ fn layout_stylesheet_covers_every_value() {
   - `VisuallyHidden::new(child)` → `<span class="st-sr-only">`.
   - `SkipLink::new()` (target `#main`, text "Skip to main content") `.target(&str)` `.text(&str)` → `<a class="st-skip-link" href="#main">`, visible on focus.
   - `Surface::new()` `.level(Level)` `enum Level { Flat, Raised, Overlay }`, `.padding(Space)`, `.border(bool)` (default true), `.radius(Size)`.
-  - `ThemeScope::new()` `.scheme(stucco_core::theme::Scheme)` (via the facade re-export path `stucco_theme::Scheme`) → `data-theme`; `.named(&'static str)` → `data-st-theme` (name validated `[a-z0-9-]+`, debug panic `"invalid theme name"`); renders a `div` with children and `color: var(--st-text); background: var(--st-bg)`.
+  - `ThemeScope::new()` `.scheme(ColorScheme)` with `enum ColorScheme { Light, Dark }` (in `common.rs`, so `stucco-ui` needs no theme dependency) → `data-theme`; `.named(&'static str)` → `data-st-theme` (name validated `[a-z0-9-]+`, debug panic `"invalid theme name"`); renders a `div` with children and `color: var(--st-text); background: var(--st-bg)`.
 - `RESERVED`: `ThemeScope` reserves `data-theme`, `data-st-theme`; `SkipLink` reserves `href`.
 
 - [ ] **Step 1: Write the failing tests:**
@@ -284,7 +284,7 @@ fn skip_link_targets_main_by_default() {
 
 #[test]
 fn theme_scope_sets_scheme_and_named_theme() {
-    let html = to_html(&ThemeScope::new().scheme(Scheme::Dark).named("brand").child("x"));
+    let html = to_html(&ThemeScope::new().scheme(ColorScheme::Dark).named("brand").child("x"));
     assert_eq!(html, r#"<div class="st-theme-scope" data-theme="dark" data-st-theme="brand">x</div>"#);
 }
 
