@@ -59,6 +59,18 @@ fn component_pages_render_every_family() {
     );
     page_snapshot("actions", gallery::actions_page::page(&bundle), &bundle);
     page_snapshot("forms", gallery::forms_page::page(&bundle), &bundle);
+    page_snapshot(
+        "collections",
+        gallery::collections_page::page(&bundle),
+        &bundle,
+    );
+    let app = gallery::collections_page::app_page(&bundle);
+    assert_eq!(app.matches("<main ").count(), 1);
+    assert!(app.contains("id=\"main\""));
+    insta::assert_snapshot!(
+        "app",
+        app.replace(bundle.stylesheet_url(), "/_stucco/stucco.HASH.css")
+    );
 }
 
 #[test]
@@ -76,6 +88,8 @@ fn index_links_every_page() {
         "typography.html",
         "actions.html",
         "forms.html",
+        "collections.html",
+        "app.html",
     ] {
         assert!(html.contains(&format!("href=\"{page}\"")), "{page}");
     }

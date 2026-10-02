@@ -1,0 +1,21 @@
+[package]
+name = "stucco-redb"
+description = "Typed embedded storage and collection sources for stucco."
+version.workspace = true
+edition.workspace = true
+rust-version = "1.90"
+license.workspace = true
+[dependencies]
+redb = "4.3"
+serde = { version = "1", features = ["derive"] }
+postcard = { version = "1", features = ["alloc"] }
+base64 = "0.22"
+stucco-core.workspace = true
+stucco-tower = { path = "../stucco-tower", version = "0.1.0", optional = true, default-features = false }
+tokio = { workspace = true, optional = true, features = ["rt", "sync"] }
+[features]
+default = ["tokio"]
+tokio = ["dep:tokio", "dep:stucco-tower"]
+[dev-dependencies]
+tempfile = "3"
+tokio = { workspace = true, features = ["macros", "rt", "sync", "time"] }

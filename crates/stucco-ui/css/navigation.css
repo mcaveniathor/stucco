@@ -1,0 +1,5 @@
+@layer stucco.components {
+  .st-pagination { display: flex; flex-wrap: wrap; gap: var(--st-space-3); padding-block: var(--st-space-4); }
+  .st-pagination a { padding: var(--st-space-2) var(--st-space-3); border: 1px solid var(--st-border); border-radius: var(--st-radius-md); }
+  .st-pagination a[aria-current="page"] { background: var(--st-accent); color: var(--st-on-accent); }
+}

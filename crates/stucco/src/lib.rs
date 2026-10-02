@@ -21,6 +21,10 @@ pub use stucco_core::{
     register_asset, render_fn, render_fragment, to_html,
 };
 
+pub use stucco_core::{
+    Capabilities, CollectionPage, CollectionQuery, ColumnKind, ColumnSpec, Cursor, Direction,
+    Filter, Window,
+};
 pub use stucco_ui::*;
 
 /// Themes: colours, scales, presets and contrast validation.

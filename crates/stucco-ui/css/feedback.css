@@ -1,0 +1,3 @@
+@layer stucco.components {
+  .st-empty-state { padding: var(--st-space-8); text-align: center; border: 1px dashed var(--st-border); }
+}

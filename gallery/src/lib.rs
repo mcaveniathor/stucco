@@ -10,6 +10,7 @@ use stucco::theme::Preset;
 use stucco::{Asset, Bundle, register_asset};
 
 pub mod actions_page;
+pub mod collections_page;
 pub mod fixtures;
 pub mod forms_page;
 pub mod index;
@@ -44,6 +45,11 @@ pub fn write_site(dir: &Path) -> io::Result<()> {
         ("typography.html".to_owned(), typography_page::page(&bundle)),
         ("actions.html".to_owned(), actions_page::page(&bundle)),
         ("forms.html".to_owned(), forms_page::page(&bundle)),
+        (
+            "collections.html".to_owned(),
+            collections_page::page(&bundle),
+        ),
+        ("app.html".to_owned(), collections_page::app_page(&bundle)),
     ];
     pages.extend(fixtures::fixtures(&bundle));
     for (name, html) in pages {

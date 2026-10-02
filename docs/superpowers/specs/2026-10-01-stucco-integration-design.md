@@ -179,8 +179,13 @@ record next to the submitted values.
 
 ### 5.5 `stucco-redb` (steps 4–5)
 
-The default storage adapter, on `redb` (pure Rust, embedded, ACID, stable 4.x;
-re-verify the version when step 4 starts). The contracts stay storage-agnostic; other
+The default storage adapter uses the latest stable `redb` (pure Rust, embedded,
+ACID; 4.3.0 verified during step-4 planning; re-verify when implementation starts).
+That release requires Rust 1.90, so `stucco-redb` and storage-consuming examples
+declare MSRV 1.90 explicitly; component crates and `stucco-tower` retain MSRV 1.85.
+CI checks these package groups with their respective toolchains. Avoid experimental
+redb features and document database-format migration requirements.
+The contracts stay storage-agnostic; other
 pure-Rust embedded stores (fjall, sled) can get adapters later.
 
 - `Store::open(path)`; typed tables via a `Table<K, V>` wrapper with

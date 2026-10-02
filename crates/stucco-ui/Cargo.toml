@@ -8,6 +8,7 @@ license.workspace = true
 
 [dependencies]
 stucco-core.workspace = true
+form_urlencoded.workspace = true
 
 [features]
 layout = []
@@ -15,3 +16,8 @@ typography = []
 actions = []
 forms = ["actions"]
 icons = []
+data = ["layout", "typography"]
+feedback = ["typography"]
+navigation = []
+app = ["layout", "navigation", "typography"]
+collections = ["data", "forms", "navigation", "feedback"]

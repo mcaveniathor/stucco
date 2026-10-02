@@ -1,0 +1,9 @@
+@layer stucco.components {
+  .st-app-shell { min-block-size: 100dvh; display: flex; flex-direction: column; }
+  .st-app-header, .st-footer { padding: var(--st-space-6); border-block-end: 1px solid var(--st-border); }
+  .st-app-body { display: flex; flex-wrap: wrap; flex: 1; gap: var(--st-space-6); min-inline-size: 0; }
+  .st-app-main { flex: 1 1 40rem; min-inline-size: 0; padding: var(--st-space-6); }
+  .st-app-sidebar { flex: 1 1 14rem; padding: var(--st-space-6); }
+  .st-page-header { margin-block-end: var(--st-space-6); }
+  .st-footer { border-block-start: 1px solid var(--st-border); border-block-end: 0; color: var(--st-text-muted); }
+}

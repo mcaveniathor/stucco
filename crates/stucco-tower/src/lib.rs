@@ -11,6 +11,7 @@
 mod assets;
 #[cfg(feature = "axum")]
 mod axum_support;
+mod collection;
 #[cfg(all(feature = "axum", feature = "tower-http"))]
 mod layers;
 mod negotiate;
@@ -19,6 +20,7 @@ mod response;
 pub use assets::{AssetService, FallbackFuture, WithFallback};
 #[cfg(feature = "axum")]
 pub use axum_support::assets_router;
+pub use collection::{CollectionSource, RequestContext, SourceError};
 #[cfg(all(feature = "axum", feature = "tower-http"))]
 pub use layers::{LayerConfig, with_standard_layers};
 pub use negotiate::{RequestKind, respond};
