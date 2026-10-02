@@ -10,6 +10,8 @@ mod common;
 pub mod icon;
 #[cfg(feature = "layout")]
 pub mod layout;
+#[cfg(feature = "typography")]
+pub mod typography;
 
 pub use common::{ColorScheme, Measure, Size, Space, Tone, Variant};
 pub use icon::{Icon, LabelledIcon};
@@ -22,5 +24,7 @@ pub fn ui_assets() -> Vec<&'static Asset> {
     let mut assets: Vec<&'static Asset> = vec![&icon::ICON];
     #[cfg(feature = "layout")]
     assets.push(&layout::LAYOUT);
+    #[cfg(feature = "typography")]
+    assets.push(&typography::TYPOGRAPHY);
     assets
 }
