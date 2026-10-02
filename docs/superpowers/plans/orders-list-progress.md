@@ -14,3 +14,5 @@ Ruling: optional adapter Tower dependency uses a direct path declaration to disa
 Task 4 complete: index atomicity, duplicate sorts, update/delete/rebuild and rollback tests passed; adapter Clippy passed.
 Ruling: expose explicitly O(n) IndexTable::all for numbered mode/maintenance — needed to exercise index integrity and small-mode scans — cost: callers must heed documented scan cost.
 Ruling: ScanRequest adds offset_mode bool — Window::Offset(page=1) also represents cursor first page, so window alone cannot select counted mode — cost: one additional configuration field.
+Task 5 complete: all storage/scan/source tests passed; no-default tests, Rust 1.90 and adapter Clippy passed.
+Task 6 complete: table/shell/count/feedback markup tests and all-feature CSS checks passed.
