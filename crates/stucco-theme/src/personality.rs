@@ -147,24 +147,26 @@ impl Finish {
     /// A tiling SVG noise image as a CSS `url()`, or `none`.
     fn image(self) -> &'static str {
         // Grey (0.5) grain whose opacity follows the noise, so the same
-        // image darkens light backgrounds and lightens dark ones.
+        // image darkens light backgrounds and lightens dark ones. The filter
+        // works in sRGB, so the grey is the 0.5 that `build` checks against
+        // (filters default to linear light, where 0.5 shows as 0.735).
         match self {
             Finish::Smooth => "none",
             Finish::Sand => concat!(
                 "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E",
-                "%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E",
+                "%3Cfilter id='f' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E",
                 "%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0.06 0 0 0 0'/%3E%3C/filter%3E",
                 "%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E\")"
             ),
             Finish::Float => concat!(
                 "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E",
-                "%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.4' numOctaves='4' stitchTiles='stitch'/%3E",
+                "%3Cfilter id='f' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.4' numOctaves='4' stitchTiles='stitch'/%3E",
                 "%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0.05 0 0 0 0'/%3E%3C/filter%3E",
                 "%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E\")"
             ),
             Finish::Knockdown => concat!(
                 "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E",
-                "%3Cfilter id='f'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.03' numOctaves='2' stitchTiles='stitch'/%3E",
+                "%3Cfilter id='f' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.03' numOctaves='2' stitchTiles='stitch'/%3E",
                 "%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0.05 0 0 0 0'/%3E%3C/filter%3E",
                 "%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E\")"
             ),

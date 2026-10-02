@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- The finish grain's filter works in sRGB, so its grey is the 0.5 that
+  `build` checks text against. It was computed in linear light, which drew
+  it as a lighter 0.735 grey: grain was slightly weaker on light pages and
+  slightly lighter than checked on dark ones.
 - Three ornament options drawn as generated SVG, each seedable and in
   `ThemeSpec`, the CLI and the playground (`relief`, `pattern`, `edge`):
   - `Relief` (Flat, Venetian, Trowel, Skip) lights a raised plaster surface
