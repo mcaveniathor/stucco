@@ -9,6 +9,8 @@ mod passthrough;
 #[cfg(feature = "actions")]
 pub mod actions;
 mod common;
+#[cfg(feature = "forms")]
+pub mod forms;
 pub mod icon;
 #[cfg(feature = "layout")]
 pub mod layout;
@@ -28,6 +30,8 @@ pub fn ui_assets() -> Vec<&'static Asset> {
     assets.push(&layout::LAYOUT);
     #[cfg(feature = "actions")]
     assets.push(&actions::ACTIONS);
+    #[cfg(feature = "forms")]
+    assets.push(&forms::FORMS);
     #[cfg(feature = "typography")]
     assets.push(&typography::TYPOGRAPHY);
     assets
