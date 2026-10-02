@@ -1,5 +1,71 @@
 # Changelog
 
+## Unreleased
+
+Complete create, edit and delete workflows: everything an admin page needs
+around a form and a table, and an orders example that uses all of it from
+browsing to deleting, without JavaScript. No 0.2 API was removed or changed
+incompatibly.
+
+- Feedback and records:
+  - `Notice` (feedback) reports an outcome or a state in a success,
+    warning, error or info tone, spelled out for screen readers. Outcomes
+    are announced (`role="status"`, or `"alert"` for warnings and errors);
+    `quiet()` notices are not.
+  - `StatusBadge`, `DescriptionList`, `Timestamp` (a `<time>` with an
+    optional time zone label) and `ActivityList` with `Activity` (data):
+    a record's status, properties and history.
+  - `Breadcrumbs` (navigation): the trail to the current page, which is
+    marked `aria-current="page"`.
+  - `Confirmation` (app, with forms): a full page that asks before acting,
+    naming the target and consequences, with a POST form and a cancel link.
+  - `PageHeader` actions are wrapped so they flow onto new lines at narrow
+    widths.
+- Forms:
+  - `FormActions`: the primary submit button first, secondary actions and
+    a cancel link.
+  - `Field::optional` adds "(optional)" to a label; `Select::disabled`,
+    `Textarea::disabled` and `Textarea::readonly`.
+  - `FormState::is_submitted` tells a submission from a form's initial
+    values, and `without_values` drops secrets before a state is logged or
+    kept. Equality now includes whether a state was submitted.
+  - `Validator::flag` reads a checkbox (missing means unchecked) and
+    `Validator::single` refuses a repeated field.
+- Feedback after a redirect: `Flash` and `IncomingFlash` (stucco-tower)
+  carry a one-time message in a short-lived cookie. `SeeOther::flash` sets
+  it; returning the `IncomingFlash` with the page deletes it.
+- Collections:
+  - `ActiveFilters` lists the search and each filter with a link that
+    removes just that one, and a "Clear all" link; `DataTable` shows it.
+  - `DataTable` tells an empty collection ("No orders yet", or your own
+    `empty(...)`), a search with no matches ("No matching orders") and a
+    page past the end ("Nothing on this page") apart. A stale or forged
+    cursor alone doesn't count as past the end.
+  - `DataTable::row_id` puts each record's key on its row, and
+    `selectable` adds a labelled checkbox per row that joins a bulk-action
+    form anywhere on the page through its `form` attribute.
+  - `Col::href` (and `#[col(link = ...)]`) links each cell, `Col::actions`
+    holds per-row actions, and `Col::wrap` lets long text wrap.
+  - `CollectionQuery::is_filtered`.
+  - Visually hidden text in table cells no longer widens the page: the
+    table's scroll region contains it.
+- `stucco::prelude` includes the new components, and with the `axum`
+  feature `Flash`, `FlashLevel`, `IncomingFlash`, `SeeOther` and
+  `Submission`; with `forms`, `FormState` and `Validator`.
+- The orders example is a complete CRUD admin: view, create, edit with
+  conflict detection, archive and restore, delete, and bulk actions, each
+  confirmed on a page of its own and reported with a flash message, and a
+  return to the exact list the user came from. Cross-site posts are
+  refused. Its records moved to a new `orders-v2` table.
+- The gallery has a Records and feedback page, and its forms and
+  collections pages show read-only, disabled, filtered, selectable and
+  no-match states. The browser tests run the orders workflow without
+  JavaScript and check its pages with axe at a 320px width.
+- The guide covers repeated values, checkboxes and malformed input, initial
+  and submitted values, conflicts and server failures, feedback after a
+  save, secrets, the collection query contract, row actions and selection,
+  and the three empty states.
+
 ## 0.2.1 — 2026-10-02
 
 Interactive components arrive: dialogs, menus, toasts, tooltips and tabs,

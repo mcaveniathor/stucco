@@ -75,7 +75,7 @@ fn label(key: &str) -> String {
 }
 /// The display label for column `key`: an explicit one, else derived from
 /// the key (`created_at` → "Created at").
-fn column_label(labels: &[(String, String)], key: &str) -> String {
+pub(super) fn column_label(labels: &[(String, String)], key: &str) -> String {
     labels
         .iter()
         .find(|(k, _)| k == key)

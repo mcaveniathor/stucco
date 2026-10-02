@@ -1,3 +1,21 @@
 @layer stucco.components {
   .st-empty-state { padding: var(--st-space-8); text-align: center; border: 1px dashed var(--st-border); }
 }
+@layer stucco.components {
+  /* Notices: a tinted box with a strong edge in the tone's colour. The text
+     ("Success:", the title, the message) carries the meaning. */
+  .st-notice {
+    --st-notice-edge: var(--st-info); --st-notice-bg: var(--st-info-soft);
+    display: flex; gap: var(--st-space-3); padding: var(--st-space-3) var(--st-space-4);
+    border: var(--st-line, 1px) solid var(--st-border); border-inline-start: 4px solid var(--st-notice-edge);
+    border-radius: var(--st-radius-md); background: var(--st-notice-bg); color: var(--st-text);
+  }
+  .st-notice[data-tone="success"] { --st-notice-edge: var(--st-success); --st-notice-bg: var(--st-success-soft); }
+  .st-notice[data-tone="warning"] { --st-notice-edge: var(--st-warning); --st-notice-bg: var(--st-warning-soft); }
+  .st-notice[data-tone="danger"] { --st-notice-edge: var(--st-danger); --st-notice-bg: var(--st-danger-soft); }
+  .st-notice-body { display: grid; gap: var(--st-space-1); min-inline-size: 0; overflow-wrap: anywhere; }
+  .st-notice-title { margin: 0; font-weight: 650; }
+  .st-notice-message > :first-child, .st-notice-message > :last-child { margin-block: 0; }
+  .st-notice-actions { display: flex; flex-wrap: wrap; gap: var(--st-space-2) var(--st-space-4); margin-block-start: var(--st-space-1); }
+  @media (forced-colors: active) { .st-notice { border-inline-start-color: CanvasText; } }
+}

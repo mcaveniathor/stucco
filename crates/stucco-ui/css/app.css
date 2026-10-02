@@ -80,6 +80,15 @@
   .st-page-header { display: flex; flex-direction: column; gap: var(--st-space-1); margin-block-end: var(--st-space-6); }
   .st-app-header .st-page-header { margin-block-end: 0; }
   .st-page-header-description { color: var(--st-text-muted); }
+  /* Page actions wrap onto new lines at narrow widths instead of overflowing. */
+  .st-page-header-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--st-space-2); margin-block-start: var(--st-space-2); }
+  .st-page-header > .st-breadcrumbs { margin-block-end: var(--st-space-1); }
+  /* Confirmation pages: the question, what it affects, what happens, then the form. */
+  .st-confirmation { display: grid; gap: var(--st-space-4); max-inline-size: 40rem; }
+  .st-confirmation > h1, .st-confirmation > h2, .st-confirmation > h3 { margin: 0; }
+  .st-confirmation-target { padding: var(--st-space-4); border: var(--st-line, 1px) solid var(--st-border); border-radius: var(--st-radius-md); background: var(--st-surface); overflow-wrap: anywhere; }
+  .st-confirmation-consequences > p { margin: 0 0 var(--st-space-1); font-weight: 600; }
+  .st-confirmation-consequences > ul { margin: 0; padding-inline-start: var(--st-space-5); }
   .st-footer {
     padding: var(--st-space-5) var(--st-app-gutter, var(--st-space-6));
     border-block-start: var(--st-line, 1px) var(--st-rule-style, solid) var(--st-border); color: var(--st-text-muted); font-size: var(--st-text-sm);

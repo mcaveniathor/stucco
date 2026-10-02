@@ -81,8 +81,8 @@ fn empty_and_unsupported_operations_have_useful_fallbacks() {
                     .searchable(),
             ),
     );
-    assert!(html.contains("No results"));
-    assert!(html.contains("Clear filters"));
+    assert!(html.contains("Nothing on this page"));
+    assert!(html.contains("Go to the first page"));
     assert!(!html.contains("name=\"q\""));
     assert!(!html.contains("aria-sort"));
 }
@@ -117,7 +117,7 @@ fn rows_without_a_source_get_no_filter_bar() {
     );
     let empty: [&str; 0] = [];
     let none = to_html(&DataTable::new(&empty, "Names").column(col()));
-    assert!(none.contains("No results") && !none.contains("Clear filters"));
+    assert!(none.contains("No names yet") && !none.contains("Clear"));
     let caps = Capabilities {
         sortable: vec!["name".into()],
         ..Capabilities::default()
@@ -164,7 +164,7 @@ fn empty_offset_page(page: u64, total: u64) -> String {
 fn an_empty_page_past_the_end_links_back_keeping_the_filters() {
     // Past the last page: links back to the pages with rows.
     let html = empty_offset_page(9, 45);
-    assert!(html.contains("No results"), "{html}");
+    assert!(html.contains("Nothing on this page"), "{html}");
     assert!(html.contains("st-pagination"), "{html}");
     assert!(html.contains("aria-label=\"Page 1\""), "{html}");
     let last = html
@@ -216,6 +216,81 @@ fn an_empty_cursor_page_keeps_its_previous_link() {
             .capabilities(&caps)
             .column(Col::text("name", "Name", |r: &Record| r.name.clone())),
     );
-    assert!(html.contains("No results"), "{html}");
+    assert!(html.contains("Nothing on this page"), "{html}");
     assert!(html.contains(">Previous</a>"), "{html}");
+}
+
+#[test]
+fn empty_collections_and_empty_searches_read_differently() {
+    let empty = CollectionPage::<Record> {
+        rows: vec![],
+        next: None,
+        prev: None,
+        total: Some(0),
+    };
+    let caps = caps();
+    let table = |q: &CollectionQuery| {
+        to_html(
+            &DataTable::from_page(&empty, "Orders")
+                .action("/orders")
+                .query(q)
+                .capabilities(&caps)
+                .empty(
+                    stucco_ui::feedback::EmptyState::new("No orders yet")
+                        .description("Create one."),
+                )
+                .column(Col::text("name", "Name", |r: &Record| r.name.clone()).searchable()),
+        )
+    };
+    let none = table(&CollectionQuery::default());
+    assert!(none.contains("No orders yet") && none.contains("Create one."));
+    assert!(!none.contains("st-active-filters") && !none.contains("Clear search"));
+    // A stale or forged cursor doesn't make an unmatched search look like
+    // the end of a list.
+    let searched = table(
+        &CollectionQuery::default()
+            .with_search("zed")
+            .with_window(Window::After(stucco_core::Cursor::new("stale").unwrap())),
+    );
+    assert!(searched.contains("No matching orders"), "{searched}");
+    assert!(searched.contains("Clear search and filters"));
+    assert!(searched.contains("Remove filter: Search “zed”"));
+    assert!(!searched.contains("Create one."));
+}
+
+#[test]
+fn rows_carry_ids_wrapping_cells_and_labelled_actions() {
+    let rows = vec![Record {
+        name: "Ada".into(),
+        status: "paid".into(),
+    }];
+    let selected = vec!["Ada".to_owned()];
+    let html = to_html(
+        &DataTable::new(&rows, "Orders")
+            .row_id(|r: &Record| r.name.clone())
+            .selectable("bulk", "id", |r| r.name.clone())
+            .selected(&selected)
+            .column(Col::text("name", "Name", |r: &Record| r.name.clone()).wrap())
+            .column(Col::actions("Actions", |r: &Record| {
+                stucco_core::Slot::new(
+                    stucco_core::el::a()
+                        .href(format!("/orders/{}/edit", r.name))
+                        .aria("label", format!("Edit {}", r.name))
+                        .text("Edit"),
+                )
+            })),
+    );
+    assert!(
+        html.contains(
+            r#"<th scope="col" data-kind="select"><span class="st-sr-only">Select</span></th>"#
+        ),
+        "{html}"
+    );
+    assert!(html.contains(r#"<tr data-row-id="Ada">"#), "{html}");
+    assert!(
+        html.contains(r#"value="Ada" aria-label="Select Ada" checked"#),
+        "{html}"
+    );
+    assert!(html.contains(r#"<td data-wrap="true">Ada</td>"#), "{html}");
+    assert!(html.contains(r#"<td data-kind="actions"><div class="st-row-actions"><a href="/orders/Ada/edit" aria-label="Edit Ada">Edit</a></div></td>"#), "{html}");
 }

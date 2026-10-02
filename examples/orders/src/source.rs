@@ -37,6 +37,11 @@ impl CollectionMapping<Order> for OrdersMapping {
         {
             return false;
         }
+        // Archived orders leave the default list; filtering by the archived
+        // status brings them back.
+        if row.archived() && !q.filters.contains_key("status") {
+            return false;
+        }
         q.filters
             .iter()
             .all(|(key, filter)| match (key.as_str(), filter) {

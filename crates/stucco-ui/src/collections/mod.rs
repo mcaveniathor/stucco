@@ -16,9 +16,11 @@
 //!     .sortable().searchable());
 //! assert!(to_html(&table).contains("Ada"));
 //! ```
+mod active_filters;
 mod column;
 mod data_table;
 mod toolbar;
+pub use active_filters::ActiveFilters;
 pub use column::Col;
 
 /// Rows that know their table columns: a [`DataTable`] takes
@@ -37,6 +39,7 @@ pub use column::Col;
 /// | `label = "L"` | The heading (default: the field name as words) |
 /// | `value = path` | A `fn(&Row) -> f64` (numbers) or `-> String` that sorts and filters, in place of the field |
 /// | `display = path` | A `fn(&Row) -> String` for how cells read |
+/// | `link = path` | A `fn(&Row) -> impl Into<Href>`: each cell links there |
 /// | `sortable`, `searchable`, `filter` | Enable that control |
 /// | `skip` | No column for this field |
 ///

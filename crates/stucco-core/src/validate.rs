@@ -47,6 +47,10 @@ impl Validator {
     /// The first submitted value for `name`, with surrounding whitespace
     /// removed. An empty or missing value is absent: it fails
     /// [`Check::required`] and passes every other check.
+    ///
+    /// A name submitted more than once uses its first value; take every
+    /// value with [`Validator::list`], or refuse repeats with
+    /// [`Validator::single`].
     pub fn text(&mut self, name: &str) -> Check<'_, String> {
         let value = self
             .state
@@ -60,6 +64,26 @@ impl Validator {
             value,
             failed: false,
         }
+    }
+
+    /// Like [`Validator::text`], but fails with `message` when `name` was
+    /// submitted more than once (a forged or duplicated field).
+    pub fn single(&mut self, name: &str, message: impl Into<String>) -> Check<'_, String> {
+        let repeated = self.state.values(name).len() > 1;
+        let check = self.text(name);
+        if repeated {
+            let mut check = check;
+            check.fail(message.into());
+            return check;
+        }
+        check
+    }
+
+    /// Whether a checkbox named `name` was checked: true when any value was
+    /// submitted for it. Browsers send nothing for an unchecked box, so a
+    /// missing name is false, never an error.
+    pub fn flag(&self, name: &str) -> bool {
+        !self.state.values(name).is_empty()
     }
 
     /// Every non-empty submitted value for `name` (checkbox groups,
@@ -309,6 +333,18 @@ mod tests {
         assert_eq!(s.errors("email"), ["Already registered"]);
         assert_eq!(s.form_errors(), ["Try again"]);
         assert_eq!(s.value("email"), Some("a@b.c"));
+    }
+
+    #[test]
+    fn repeats_and_flags_are_explicit() {
+        let mut v = Validator::new(state("a=1&a=2&b=3&agree=on"));
+        assert_eq!(v.text("a").get().as_deref(), Some("1"));
+        assert_eq!(v.single("a", "once").get(), None);
+        assert_eq!(v.single("b", "once").get().as_deref(), Some("3"));
+        assert!(v.flag("agree") && !v.flag("newsletter"));
+        let s = v.finish(|| Some(())).unwrap_err();
+        assert_eq!(s.errors("a"), ["once"]);
+        assert!(s.errors("b").is_empty());
     }
 
     #[test]

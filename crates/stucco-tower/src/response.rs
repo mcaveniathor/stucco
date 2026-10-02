@@ -1,10 +1,14 @@
 //! HTML responses for full pages and fragments.
 
 use bytes::Bytes;
-use http::header::{CACHE_CONTROL, CONTENT_TYPE, LOCATION, VARY, X_CONTENT_TYPE_OPTIONS};
+use http::header::{
+    CACHE_CONTROL, CONTENT_TYPE, LOCATION, SET_COOKIE, VARY, X_CONTENT_TYPE_OPTIONS,
+};
 use http::{HeaderValue, Response, StatusCode};
 use http_body_util::Full;
 use stucco_core::{Bundle, Href, RenderedFragment};
+
+use crate::Flash;
 
 /// A full HTML page response.
 ///
@@ -85,6 +89,7 @@ impl FragmentResponse {
 #[derive(Clone, Debug)]
 pub struct SeeOther {
     location: Href,
+    flash: Option<Flash>,
 }
 
 impl SeeOther {
@@ -94,7 +99,15 @@ impl SeeOther {
     pub fn new(location: impl Into<Href>) -> Self {
         SeeOther {
             location: location.into(),
+            flash: None,
         }
+    }
+
+    /// Shows `flash` on the page the redirect leads to (read it there with
+    /// [`IncomingFlash`](crate::IncomingFlash)).
+    pub fn flash(mut self, flash: Flash) -> Self {
+        self.flash = Some(flash);
+        self
     }
 
     /// The HTTP response.
@@ -105,10 +118,14 @@ impl SeeOther {
         } else {
             "/"
         };
-        Response::builder()
+        let mut builder = Response::builder()
             .status(StatusCode::SEE_OTHER)
             .header(LOCATION, header_safe(location))
-            .header(X_CONTENT_TYPE_OPTIONS, "nosniff")
+            .header(X_CONTENT_TYPE_OPTIONS, "nosniff");
+        if let Some(flash) = &self.flash {
+            builder = builder.header(SET_COOKIE, flash.set_cookie());
+        }
+        builder
             .body(Full::new(Bytes::new()))
             .expect("valid response")
     }

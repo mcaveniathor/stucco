@@ -9,10 +9,14 @@
 //!     .footer(ResultCount::new(1, Some(1), Some(0)));
 //! assert!(to_html(&panel).contains("<caption>Orders</caption>"));
 //! ```
+mod activity;
 mod panel;
+mod record;
 mod result_count;
 mod table;
+pub use activity::{Activity, ActivityList, Timestamp};
 pub use panel::{Card, Panel};
+pub use record::{DescriptionList, StatusBadge};
 pub use result_count::ResultCount;
 pub use table::{Row, Table};
 /// Data display stylesheet.

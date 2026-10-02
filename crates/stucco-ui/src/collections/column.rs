@@ -1,4 +1,4 @@
-use stucco_core::{ColumnKind, ColumnSpec, Slot, el};
+use stucco_core::{ColumnKind, ColumnSpec, Href, Slot, el};
 /// A typed display column; backend capabilities determine which operations appear.
 pub struct Col<'a, T> {
     pub(crate) spec: ColumnSpec,
@@ -6,6 +6,8 @@ pub struct Col<'a, T> {
     pub(crate) sortable: bool,
     pub(crate) searchable: bool,
     pub(crate) filterable: bool,
+    pub(crate) wrap: bool,
+    pub(crate) actions: bool,
     pub(crate) render: Box<dyn Fn(&T) -> Slot<'a> + 'a>,
 }
 impl<T> std::fmt::Debug for Col<'_, T> {
@@ -24,6 +26,8 @@ impl<'a, T: 'a> Col<'a, T> {
             sortable: false,
             searchable: false,
             filterable: false,
+            wrap: false,
+            actions: false,
             render: Box::new(render),
         }
     }
@@ -67,6 +71,19 @@ impl<'a, T: 'a> Col<'a, T> {
             Slot::new(el::span().class("st-tag").data("value", value).text(text))
         })
     }
+    /// Per-row actions (links or small forms), right-aligned in the last
+    /// column. Name each action for its row ("Edit order 42", with an
+    /// `aria-label` or visually hidden text) so a list of links still makes
+    /// sense out of context. Leave out actions the user is not allowed to
+    /// take; the application decides which those are, and checks again
+    /// when the action arrives.
+    pub fn actions(label: &str, get: impl Fn(&T) -> Slot<'a> + 'a) -> Self {
+        let mut col = Self::new("actions", label, ColumnKind::Custom, move |r| {
+            Slot::new(el::div().class("st-row-actions").child(get(r)))
+        });
+        col.actions = true;
+        col
+    }
     /// Arbitrary safe Render content; no implicit sorting/filtering.
     pub fn custom(key: &str, label: &str, get: impl Fn(&T) -> Slot<'a> + 'a) -> Self {
         Self::new(key, label, ColumnKind::Custom, get)
@@ -76,6 +93,32 @@ impl<'a, T: 'a> Col<'a, T> {
     /// underlying value.
     pub fn display(mut self, show: impl Fn(&T) -> String + 'a) -> Self {
         self.render = Box::new(move |r| Slot::new(show(r)));
+        self
+    }
+    /// Links each cell to `href` for its row, such as a record's name to
+    /// its page. Sorting, search and filters are unchanged. Call it after
+    /// [`Col::display`], which replaces how cells render.
+    ///
+    /// ```
+    /// use stucco_core::to_html;
+    /// use stucco_ui::collections::{Col, DataTable};
+    ///
+    /// let rows = [(7, "Ada")];
+    /// let table = DataTable::new(&rows, "Customers").column(
+    ///     Col::text("name", "Name", |r: &(u32, &str)| r.1.to_string())
+    ///         .href(|r| format!("/customers/{}", r.0)),
+    /// );
+    /// assert!(to_html(&table).contains(r#"<a href="/customers/7">Ada</a>"#));
+    /// ```
+    pub fn href<H: Into<Href>>(mut self, href: impl Fn(&T) -> H + 'a) -> Self {
+        let render = std::mem::replace(&mut self.render, Box::new(|_| Slot::new("")));
+        self.render = Box::new(move |r| Slot::new(el::a().href(href(r).into()).child(render(r))));
+        self
+    }
+    /// Lets long values wrap onto several lines instead of widening the
+    /// table (notes, descriptions, addresses).
+    pub fn wrap(mut self) -> Self {
+        self.wrap = true;
         self
     }
     /// Requests sorting if the backend supports it.

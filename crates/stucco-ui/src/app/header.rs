@@ -70,7 +70,11 @@ impl Render for PageHeader<'_> {
                         .as_ref()
                         .map(|d| el::div().class("st-page-header-description").child(d)),
                 )
-                .child(self.actions.as_ref()),
+                .child(
+                    self.actions
+                        .as_ref()
+                        .map(|a| el::div().class("st-page-header-actions").child(a)),
+                ),
             &self.attrs,
             &[],
         )

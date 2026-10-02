@@ -5,7 +5,7 @@ use stucco::layout::{Container, Grid, SkipLink, Stack};
 use stucco::typography::{Heading, Link, Text};
 use stucco::{Bundle, Measure, Page, Size, Space, Tone, el};
 
-const PAGES: [(&str, &str, &str); 10] = [
+const PAGES: [(&str, &str, &str); 11] = [
     (
         "collections.html",
         "Data and collections",
@@ -45,6 +45,11 @@ const PAGES: [(&str, &str, &str); 10] = [
         "forms.html",
         "Forms",
         "Fields, controls, validation and binding.",
+    ),
+    (
+        "records.html",
+        "Records and feedback",
+        "Notices, badges, properties, history and confirmations.",
     ),
     (
         "overlays.html",

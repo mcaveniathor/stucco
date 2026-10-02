@@ -266,6 +266,19 @@ impl CollectionQuery {
         self.window = window;
         self
     }
+    /// Whether a search or any filter narrows the results, as opposed to
+    /// showing the whole collection. An empty filtered page means "no
+    /// matches"; an empty unfiltered first page means the collection is
+    /// empty.
+    ///
+    /// ```
+    /// use stucco_core::CollectionQuery;
+    /// assert!(!CollectionQuery::default().is_filtered());
+    /// assert!(CollectionQuery::default().with_search("ada").is_filtered());
+    /// ```
+    pub fn is_filtered(&self) -> bool {
+        !self.search.is_empty() || !self.filters.is_empty()
+    }
     /// Clears search, filters and position, retaining sorting and page size.
     pub fn reset(mut self) -> Self {
         self.search.clear();

@@ -47,3 +47,23 @@
     font-size: var(--st-text-sm); font-weight: 550; line-height: 1.4; white-space: nowrap;
   }
 }
+@layer stucco.components {
+  /* Active filters: one removable chip per search or filter. */
+  .st-active-filters { display: flex; flex-wrap: wrap; align-items: center; gap: var(--st-space-2) var(--st-space-3); }
+  .st-active-filters-title { margin: 0; font-size: var(--st-text-sm); font-weight: 550; color: var(--st-label-color, var(--st-text-muted)); }
+  .st-active-filters-list { display: contents; list-style: none; }
+  .st-filter-chip {
+    display: inline-flex; align-items: center; gap: var(--st-space-2); max-inline-size: 100%; padding: 0.125em 0.5em 0.125em 0.75em;
+    border: var(--st-line, 1px) solid var(--st-border); border-radius: var(--st-tag-radius, var(--st-radius-full));
+    background: var(--st-accent-soft); color: var(--st-text); font-size: var(--st-text-sm); text-decoration: none; overflow-wrap: anywhere;
+  }
+  .st-filter-chip:hover { border-color: var(--st-border-strong); }
+  .st-filter-chip > [aria-hidden] { color: var(--st-text-muted); font-size: 1.1em; line-height: 1; }
+  .st-active-filters-clear { font-size: var(--st-text-sm); color: var(--st-accent-text); }
+  /* Long text that wraps instead of widening the table. */
+  .st-data-table td[data-wrap] { white-space: normal; min-inline-size: 16ch; max-inline-size: 40ch; overflow-wrap: anywhere; }
+  .st-data-table [data-kind="select"] { inline-size: 1%; padding-inline-end: 0; }
+  .st-row-select { inline-size: 1.125em; block-size: 1.125em; margin: 0; accent-color: var(--st-accent); }
+  .st-data-table [data-kind="actions"] { inline-size: 1%; text-align: end; }
+  .st-row-actions { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: var(--st-space-1) var(--st-space-3); }
+}
