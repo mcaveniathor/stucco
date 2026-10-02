@@ -27,6 +27,14 @@
 - `ResultCount` says "Showing 1 result" instead of "Showing 1 results".
 - Fieldsets and radio groups no longer reset their margins, so layout
   primitives space them like any other child.
+- Pages emit `theme-color` meta tags for the light and dark background.
+- Buttons scale to 0.96 while pressed; danger buttons keep their tint on
+  hover; controls set `touch-action: manipulation`; icons read their stroke
+  width from `--st-icon-stroke` (default 2).
+- Panel titles render at the `lg` size; `PageHeader::size` and
+  `SectionHeader::size` set a heading's size independently of its level;
+  keyboard keys in `Kbd` are spaced.
+- `DESIGN.md` records the design language and default tokens.
 - `stucco-tower`: the `Submission` axum extractor (415 for other content types)
   and the `SeeOther` 303 redirect for post-redirect-get.
 - docs.rs now labels items that require a cargo feature.

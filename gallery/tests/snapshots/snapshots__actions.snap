@@ -2,7 +2,7 @@
 source: gallery/tests/snapshots.rs
 expression: html
 ---
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Actions — stucco gallery</title><script>try {
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" media="(prefers-color-scheme: light)" content="oklch(99.00% 0.0012 250.00)"><meta name="theme-color" media="(prefers-color-scheme: dark)" content="oklch(16.00% 0.0012 250.00)"><title>Actions — stucco gallery</title><script>try {
   const t = localStorage.getItem("stucco-theme");
   if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
 } catch (_) {}

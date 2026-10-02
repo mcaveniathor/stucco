@@ -4,7 +4,9 @@ use stucco::app::{AppShell, Footer, PageHeader, SectionHeader};
 use stucco::collections::{Col, DataTable};
 use stucco::data::{Card, Panel, ResultCount, Row, Table};
 use stucco::navigation::Pagination;
-use stucco::{Bundle, Capabilities, CollectionPage, CollectionQuery, Cursor, Page, Window, el};
+use stucco::{
+    Bundle, Capabilities, CollectionPage, CollectionQuery, Cursor, Page, Size, Window, el,
+};
 
 /// Tables, typed controls, empty states and both pagination styles.
 pub fn page(bundle: &Bundle) -> String {
@@ -94,6 +96,7 @@ pub fn app_page(bundle: &Bundle) -> String {
                     Panel::new("Workspace").body(
                         SectionHeader::new("Recent activity")
                             .level(3)
+                            .size(Size::Md)
                             .description("No recent changes."),
                     ),
                 )

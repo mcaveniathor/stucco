@@ -8,6 +8,7 @@
   }
   :focus-visible { outline: 2px solid var(--st-focus); outline-offset: 2px; }
   a { color: var(--st-accent-text); }
+  a, button, input, select, textarea, summary, label { touch-action: manipulation; }
   code, kbd, pre, samp { font-family: var(--st-font-mono); }
   .st-sr-only {
     position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden;

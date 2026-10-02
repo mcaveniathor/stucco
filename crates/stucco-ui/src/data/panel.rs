@@ -107,7 +107,11 @@ impl Render for Panel<'_> {
                 .child(
                     el::div()
                         .class("st-panel-header")
-                        .child(Heading::new(self.level, &self.title).id(id))
+                        .child(
+                            Heading::new(self.level, &self.title)
+                                .size(crate::Size::Lg)
+                                .id(id),
+                        )
                         .child(self.description.as_ref())
                         .child(self.actions.as_ref()),
                 )
