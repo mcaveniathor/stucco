@@ -1,8 +1,7 @@
-//! Overlays and tabs.
+//! Overlays: dialogs, menus, tooltips and toasts.
 
 use stucco::actions::{Button, IconButton};
 use stucco::layout::{Cluster, Stack};
-use stucco::navigation::{NavLink, Tabs};
 use stucco::overlay::{Dialog, Menu, Toast, Tooltip};
 use stucco::typography::Text;
 use stucco::{Bundle, Render, Tone, Variant, el, icon};
@@ -61,13 +60,6 @@ pub fn page(bundle: &Bundle) -> String {
                 ),
         ),
         section(
-            "Tabs",
-            Tabs::new("Order sections")
-                .tab(NavLink::new("Details", "overlays.html").current(true))
-                .tab(NavLink::new("Items", "#items"))
-                .tab(NavLink::new("History", "#history")),
-        ),
-        section(
             "Tooltip",
             Cluster::new()
                 .child(Tooltip::new(IconButton::new(icon::PENCIL, "Edit"), "Edit"))
@@ -92,7 +84,7 @@ pub fn page(bundle: &Bundle) -> String {
     component_page(
         bundle,
         "Overlays",
-        "Dialogs, menus, tabs, tooltips and toasts, built on native HTML and enhanced by one small script.",
+        "Dialogs, menus, tooltips and toasts, built on native HTML and enhanced by one small script.",
         sections,
     )
 }

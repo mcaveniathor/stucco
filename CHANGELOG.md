@@ -12,8 +12,8 @@ changed incompatibly.
   `Tooltip`, built on native `<dialog>`, the popover API and invoker
   commands. One behaviour script, loaded only where they are used, adds
   invoker commands and outside-click closing to browsers without them,
-  anchors menus under their buttons, makes toasts dismissible and lets
-  Escape hide tooltips. All four are in the prelude.
+  anchors menus under their buttons from their first frame, makes toasts
+  dismissible and lets Escape hide tooltips. All four are in the prelude.
 - `Tabs` (navigation) are links to sections of a page, each with its own
   URL, styled as tabs.
 - A dialog's link opener opens the dialog only on a plain primary click;
@@ -31,8 +31,9 @@ changed incompatibly.
 - Page and fragment responses send `Vary: Stucco-Request, Stucco-Target`,
   since negotiation reads both, so a cache can't serve a full page cached
   for an invalid fragment request in place of a fragment.
-- The gallery has an Overlays page, and the documentation site's gallery
-  pages carry the site's navigation. The browser tests now cover each
+- The gallery has an Overlays page and a working Tabs example, a page per
+  tab, and the documentation site's gallery pages carry the site's
+  navigation. The browser tests now cover each
   overlay, and the site in Chromium, Firefox and WebKit.
 
 ## 0.2.0 — 2026-10-02

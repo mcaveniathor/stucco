@@ -89,6 +89,51 @@ test("a menu opens under its button and closes on Escape", async ({ page }) => {
   await expect(menu).toBeHidden();
 });
 
+test("a menu is under its button from its first frame", async ({ page }) => {
+  for (let i = 0; i < 3; i++) {
+    await page.goto("/overlays.html");
+    // A ResizeObserver reports after layout and before paint, so the first
+    // report with a size is where the menu is painted when it opens.
+    await page.evaluate(() => {
+      const menu = document.getElementById("order-actions")!;
+      const w = window as unknown as { firstFrame?: { x: number; y: number } };
+      new ResizeObserver(() => {
+        const r = menu.getBoundingClientRect();
+        if (r.width > 0 && !w.firstFrame) w.firstFrame = { x: r.x, y: r.y };
+      }).observe(menu);
+    });
+    const button = page.getByRole("button", { name: "Actions" });
+    await button.click();
+    await expect(page.locator("#order-actions")).toBeVisible();
+    // Visibility is a layout check; the observer reports in the next frame.
+    const first = await (
+      await page.waitForFunction(
+        () => (window as unknown as { firstFrame?: { x: number; y: number } }).firstFrame,
+      )
+    ).jsonValue();
+    const b = (await button.boundingBox())!;
+    expect(first, `load ${i + 1}`).toBeDefined();
+    expect(first!.y, `load ${i + 1}`).toBeGreaterThanOrEqual(b.y + b.height - 1);
+    expect(Math.abs(first!.x - b.x), `load ${i + 1}`).toBeLessThan(2);
+  }
+});
+
+test("tabs are links to pages that mark the current tab", async ({ page }) => {
+  await page.goto("/tabs.html");
+  const tabs = page.getByRole("navigation", { name: "Order sections" });
+  await expect(tabs.getByRole("link", { name: "Details" })).toHaveAttribute("aria-current", "page");
+  await tabs.getByRole("link", { name: "Items" }).click();
+  await expect(page).toHaveURL(/\/tabs-items\.html$/);
+  await expect(tabs.getByRole("link", { name: "Items" })).toHaveAttribute("aria-current", "page");
+  await expect(tabs.getByRole("link", { name: "Details" })).not.toHaveAttribute("aria-current", /./);
+  await expect(page.getByRole("table", { name: "Items in order 1042" })).toBeVisible();
+  await tabs.getByRole("link", { name: "History" }).click();
+  await expect(page.getByText("Shipped on 3 October")).toBeVisible();
+  // Each tab has its own URL, so the back button returns to the last one.
+  await page.goBack();
+  await expect(page).toHaveURL(/\/tabs-items\.html$/);
+});
+
 test("a tooltip shows on focus and Escape hides it", async ({ page }) => {
   await page.goto("/overlays.html");
   const tip = page.locator(".st-tooltip", { hasText: "Duplicate" });
