@@ -73,9 +73,10 @@ When validation fails, render the same form with the state bound to each field a
 
 ```rust
 use axum::response::IntoResponse;
-use stucco::forms::ErrorSummary;
-use stucco_tower::PageResponse;
+use stucco::prelude::*;
+use stucco::server::SeeOther;
 
+// In a handler that takes `page: PageCx`.
 match result {
     Ok(order) => {
         save(order).await;
@@ -85,14 +86,15 @@ match result {
         let form = Form::post("/orders")
             .child(ErrorSummary::new(&state).field("customer", "order-customer"))
             .child(Field::new("Customer", Input::text("customer").id("order-customer")).bind(&state));
-        IntoResponse::into_response(
-            PageResponse::new(render_page(form)).status(StatusCode::UNPROCESSABLE_ENTITY),
-        )
+        page.title("New order")
+            .main(form)
+            .status(StatusCode::UNPROCESSABLE_ENTITY)
+            .into_response()
     }
 }
 ```
 
-`PageResponse`, `FragmentResponse` and `SeeOther` also have an inherent `into_response` that returns a plain `http` response, which is why the axum conversion is spelled out here.
+`FragmentResponse` and `SeeOther` also have an inherent `into_response` that returns a plain `http` response, which is why the axum conversion is spelled out for `SeeOther` here.
 
 - `bind` puts the submitted value back in the control and shows the field's errors under it. Passwords are never redisplayed.
 - The summary lists form-wide errors first, then each field error as a link to its control, and takes focus when the page loads so keyboard and screen reader users hear what went wrong.
