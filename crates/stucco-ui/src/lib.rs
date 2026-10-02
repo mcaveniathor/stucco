@@ -25,11 +25,13 @@ pub mod icon;
 pub mod layout;
 #[cfg(feature = "navigation")]
 pub mod navigation;
+mod page;
 #[cfg(feature = "typography")]
 pub mod typography;
 
 pub use common::{ColorScheme, Measure, Size, Space, Tone, Variant};
 pub use icon::{Icon, LabelledIcon};
+pub use page::PageExt;
 
 use stucco_core::Asset;
 

@@ -4,18 +4,18 @@ Install stucco, render your first page, and serve it with Axum.
 
 ## Install
 
-stucco is split into crates so you only compile what you use. Most applications add the facade and, to serve pages, the Tower integration:
+stucco is split into crates so you only compile what you use. Most applications add the facade with its `axum` feature, which brings in the Tower integration:
 
 ```sh
-cargo add stucco
-cargo add stucco-tower axum
+cargo add stucco --features axum
+cargo add axum
 cargo add tokio --features macros,rt-multi-thread,net
 ```
 
 | Crate | What it does | Minimum Rust |
 | --- | --- | --- |
 | `stucco` | The facade: components, pages, themes | 1.85 |
-| `stucco-tower` | Axum responses, asset serving, form extraction, middleware | 1.85 |
+| `stucco-tower` | Axum responses, asset serving, form extraction, middleware (also `stucco::server` with the `axum` feature) | 1.85 |
 | `stucco-redb` | Embedded storage with typed tables and indexes | 1.90 |
 | `stucco-cli` | The `stucco` command: generate and export themes | 1.85 |
 
@@ -25,51 +25,48 @@ Components implement `Render`. A `Bundle` holds your theme and the hashed CSS an
 
 ```rust
 use stucco::prelude::*;
-use stucco::actions::Button;
-use stucco::layout::{Container, Stack};
-use stucco::typography::{Heading, Text};
 
 let bundle = Bundle::new(Preset::Slate);
-let content = Container::new().child(
-    Stack::new()
-        .child(Heading::new(1, "Hello, stucco"))
-        .child(Text::new("A page rendered entirely in Rust."))
-        .child(Button::new("Continue")),
-);
 let html = Page::new(&bundle, "Hello, stucco")
-    .body(el::main().id("main").child(content))
+    .main(
+        Container::new().child(
+            Stack::new()
+                .child(Heading::new(1, "Hello, stucco"))
+                .child(Text::new("A page rendered entirely in Rust."))
+                .child(Button::new("Continue")),
+        ),
+    )
     .render();
 ```
 
-The page links its stylesheet under `/_stucco/`. Serve those files with `stucco_tower::assets_router`, or write them out yourself with `Bundle::paths` and `Bundle::get`.
+`stucco::prelude` brings in the page and theme types, the everyday components and their shared enums such as `Space` and `Variant`; less common components are in their modules, such as `stucco::forms::CsrfToken`. `main` puts your content in the page's `<main id="main">` landmark, after a skip link to it, so keyboard users can jump past the header. For an application layout, `app` takes an `AppShell`, which brings its own landmark and skip link.
+
+The page links its stylesheet under `/_stucco/`. Serving with Axum, below, takes care of those files; otherwise write them out yourself with `Bundle::paths` and `Bundle::get`.
 
 ## Serve with Axum
 
-`stucco-tower` turns rendered HTML into responses, serves the bundle's assets with long-lived cache headers, and wraps your router in a standard middleware stack: request ids, `nosniff`, tracing, a body size limit and a timeout.
+One call sets up a router: `stucco` serves the bundle's assets with long-lived cache headers, wraps your routes in a standard middleware stack (request ids, `nosniff`, tracing, a body size limit and a timeout) and makes the theme available to handlers.
 
 ```rust
-use std::sync::Arc;
-use stucco::{Bundle, Page, el, theme::Preset};
-use stucco_tower::{LayerConfig, PageResponse, assets_router, with_standard_layers};
+use axum::{Router, routing::get};
+use stucco::prelude::*;
+
+async fn index(page: PageCx) -> Document {
+    page.title("Hello").main(Heading::new(1, "Hello"))
+}
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    let bundle = Arc::new(Bundle::new(Preset::Slate));
-    let html = Page::new(&bundle, "Hello")
-        .body(el::main().id("main").child(el::h1().text("Hello")))
-        .render();
-    let routes = axum::Router::new().route(
-        "/",
-        axum::routing::get(move || {
-            let html = html.clone();
-            async move { PageResponse::new(html) }
-        }),
-    );
-    let app = with_standard_layers(routes.merge(assets_router(bundle)), &LayerConfig::default());
+    let app = Router::new().route("/", get(index)).stucco(Preset::Slate);
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000").await?;
     axum::serve(listener, app).await
 }
 ```
+
+- Call `stucco` last, after your routes and `with_state`, so the setup covers every route. `stucco_with` takes a `LayerConfig` to change the body limit and timeout.
+- `PageCx` is an extractor. `title` starts a `Document`, which handlers return like any response. Set its `status` for errors, such as 422 for a form that failed validation.
+- A document renders its content as soon as you set it, so the content can borrow request data such as a query or a page of rows.
+- `PageCx::fragment` answers fragment requests; see [Progressive enhancement](enhancement.html).
 
 ## Run the examples
 

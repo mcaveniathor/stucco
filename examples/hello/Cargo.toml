@@ -8,7 +8,6 @@ license.workspace = true
 publish = false
 
 [dependencies]
-stucco.workspace = true
-stucco-tower.workspace = true
+stucco = { workspace = true, features = ["axum"] }
 axum = { workspace = true, features = ["http1", "tokio", "query"] }
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "net"] }
