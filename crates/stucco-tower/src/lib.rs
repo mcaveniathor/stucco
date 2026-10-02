@@ -5,6 +5,7 @@
 //! a server. The `axum` and `tower-http` features (on by default) add axum
 //! integration and the standard layer stack.
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 

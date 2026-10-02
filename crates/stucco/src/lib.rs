@@ -12,6 +12,7 @@
 //! assert!(html.contains("<h1>Hello</h1>"));
 //! ```
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
