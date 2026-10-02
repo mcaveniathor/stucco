@@ -15,6 +15,7 @@ use stucco::{
     app::{AppShell, Footer, PageHeader},
     collections::{Col, DataTable},
     el,
+    navigation::NavLink,
     theme::Preset,
 };
 use stucco_redb::{IndexTable, PostcardCodec, RedbCollection, Store, StoreError, U64Key};
@@ -67,14 +68,6 @@ pub fn app(db_path: &Path) -> Result<Router, StoreError> {
     ))
 }
 /// A sidebar link, marked as the current page when `current`.
-fn nav_link(href: &'static str, text: &'static str, current: bool) -> el::Element<'static> {
-    let link = el::a().href(href).text(text);
-    if current {
-        link.aria("current", "page")
-    } else {
-        link
-    }
-}
 async fn list(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
@@ -131,11 +124,9 @@ async fn list(
                             .header(PageHeader::new("Orders").description(
                                 "A persistent collection with ordinary GET navigation.",
                             ))
-                            .sidebar(
-                                el::nav()
-                                    .aria("label", "Application")
-                                    .child(nav_link("/orders", "Orders", !pages))
-                                    .child(nav_link("/orders?mode=pages", "Numbered pages", pages)),
+                            .link(NavLink::new("Orders", "/orders").current(!pages))
+                            .link(
+                                NavLink::new("Numbered pages", "/orders?mode=pages").current(pages),
                             )
                             .main(table)
                             .footer(Footer::new().child(el::p().text("Read-only demo data"))),

@@ -20,7 +20,7 @@
     .g-panel { background-image: none; }
   }
   /* The app-shell sample spans both scheme panels so a sidebar has room beside the content. */
-  .g-shell-sample { --st-app-gutter: var(--st-space-5); grid-column: 1 / -1; padding: 0; overflow: hidden; }
+  .g-shell-sample { --st-app-gutter: var(--st-space-5); min-block-size: 0; grid-column: 1 / -1; padding: 0; overflow: hidden; }
   .g-panel.g-shell-sample > *, .g-panel.g-shell-sample > .g-sample-header { margin: 0; }
   .g-shell-sample .st-app-main { padding: var(--st-space-5) var(--st-app-gutter); }
   .g-panel > .g-sample-header {

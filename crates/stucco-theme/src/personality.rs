@@ -173,14 +173,19 @@ impl Finish {
 }
 
 /// How the application shell arranges its navigation and content.
+///
+/// The shell's primary links (`AppShell::link`) follow the layout; its
+/// sidebar is always a column beside the content.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub enum ShellLayout {
-    /// A filled sidebar beside the content (default).
+    /// A filled side column with the primary links above the sidebar
+    /// (default).
     #[default]
     Sidebar,
-    /// A narrow sidebar on the page background, separated by a rule.
+    /// A narrower side column on the page background, separated by a rule.
     Rail,
-    /// Navigation in a row under the header, with full-width content.
+    /// The primary links in a row under the header; a sidebar, if any,
+    /// stays a column beside the content.
     Topbar,
 }
 
@@ -320,40 +325,50 @@ impl Personality {
             FocusStyle::Thick => ("3px", "2px"),
             FocusStyle::Snug => ("2px", "1px"),
         };
-        // (sidebar basis, fill, inline rule, block rule, nav direction,
-        // summary display, block padding)
-        let (basis, side_bg, rule_inline, rule_block, nav_dir, summary, side_pad) = match self.shell
-        {
+        // The shell body is a grid: the primary links ("nav"), the sidebar
+        // ("side") and main. `solo` areas apply when there is no sidebar.
+        // (columns, areas, solo columns, solo areas)
+        let (columns, areas, solo_columns, solo_areas) = match self.shell {
             ShellLayout::Sidebar => (
-                "15rem",
-                "var(--st-surface)",
-                "1px",
-                "0",
-                "column",
-                "list-item",
-                "var(--st-space-4)",
+                "15rem minmax(0, 1fr)",
+                "\"nav main\" \"side main\"",
+                "15rem minmax(0, 1fr)",
+                "\"nav main\" \"nav main\"",
             ),
             ShellLayout::Rail => (
-                "11rem",
-                "transparent",
-                "1px",
-                "0",
-                "column",
-                "list-item",
-                "var(--st-space-4)",
+                "11rem minmax(0, 1fr)",
+                "\"nav main\" \"side main\"",
+                "11rem minmax(0, 1fr)",
+                "\"nav main\" \"nav main\"",
             ),
             ShellLayout::Topbar => (
-                "100%",
-                "var(--st-surface)",
-                "0",
-                "1px",
-                "row",
-                "none",
-                "var(--st-space-2)",
+                "15rem minmax(0, 1fr)",
+                "\"nav nav\" \"side main\"",
+                "minmax(0, 1fr)",
+                "\"nav\" \"main\"",
             ),
         };
-        // Where the Bar nav style draws its marker: the leading edge of a
-        // column, or under the link in a row.
+        // The primary links: a column at the top of the side, or a row.
+        // (direction, block padding, inline rule, block rule, side fill)
+        let (nav_dir, nav_pad, nav_rule_inline, nav_rule_block, side_bg) = match self.shell {
+            ShellLayout::Sidebar => (
+                "column",
+                "var(--st-space-4) var(--st-space-2)",
+                "1px",
+                "0",
+                "var(--st-surface)",
+            ),
+            ShellLayout::Rail => (
+                "column",
+                "var(--st-space-4) var(--st-space-2)",
+                "1px",
+                "0",
+                "transparent",
+            ),
+            ShellLayout::Topbar => ("row", "var(--st-space-2)", "0", "1px", "var(--st-surface)"),
+        };
+        // Where the Bar nav style marks the current primary link: the
+        // leading edge in a column, under the link in a row.
         let (bar_block, bar_inline, bar_w, bar_h) = match self.shell {
             ShellLayout::Topbar => ("auto 0", "var(--st-space-3)", "auto", "3px"),
             _ => ("var(--st-space-1)", "0 auto", "3px", "auto"),
@@ -438,13 +453,15 @@ impl Personality {
             ("focus-width", focus_width),
             ("focus-offset", focus_offset),
             ("finish", self.finish.image()),
-            ("shell-sidebar-basis", basis),
-            ("shell-sidebar-bg", side_bg),
-            ("shell-sidebar-rule-inline", rule_inline),
-            ("shell-sidebar-rule-block", rule_block),
-            ("shell-sidebar-pad-block", side_pad),
+            ("shell-columns", columns),
+            ("shell-areas", areas),
+            ("shell-columns-solo", solo_columns),
+            ("shell-areas-solo", solo_areas),
             ("shell-nav-direction", nav_dir),
-            ("shell-nav-summary", summary),
+            ("shell-nav-pad-block", nav_pad),
+            ("shell-nav-rule-inline", nav_rule_inline),
+            ("shell-nav-rule-block", nav_rule_block),
+            ("shell-side-bg", side_bg),
             ("shell-bar-inset-block", bar_block),
             ("shell-bar-inset-inline", bar_inline),
             ("shell-bar-inline-size", bar_w),

@@ -7,7 +7,9 @@
 //!     .cursors(Cursor::new("next"), None);
 //! assert!(to_html(&nav).contains("after=next"));
 //! ```
+mod nav_link;
 mod pagination;
+pub use nav_link::NavLink;
 pub use pagination::Pagination;
 /// Navigation stylesheet.
 pub static NAVIGATION: stucco_core::Asset = stucco_core::Asset {

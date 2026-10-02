@@ -4,6 +4,7 @@ use stucco_ui::{
     app::{AppShell, Footer, PageHeader},
     data::{Panel, ResultCount, Row, Table},
     feedback::{EmptyState, LiveRegion},
+    navigation::NavLink,
 };
 #[test]
 fn table_preserves_native_semantics_and_escapes_values() {
@@ -30,6 +31,29 @@ fn shell_owns_one_main_and_panel_wires_its_heading() {
     assert!(html.contains("aria-labelledby=\"panel-1\""));
     assert!(html.contains("id=\"panel-1\""));
     assert_eq!(html.matches("<footer").count(), 1);
+}
+#[test]
+fn shell_marks_which_regions_it_has() {
+    let bare = to_html(&AppShell::new().main("Body"));
+    assert!(bare.contains(r#"<div class="st-app-body">"#));
+    assert!(!bare.contains("st-app-nav"));
+    let full = to_html(
+        &AppShell::new()
+            .nav_label("Primary")
+            .link(NavLink::new("Orders", "/orders").current(true))
+            .links([NavLink::new("Customers", "/customers")])
+            .sidebar("Outline")
+            .main("Body"),
+    );
+    assert!(full.contains(r#"<div class="st-app-body" data-nav data-sidebar>"#));
+    assert!(full.contains(r#"<nav class="st-app-nav" aria-label="Primary"><a href="/orders" aria-current="page">Orders</a><a href="/customers">Customers</a></nav>"#));
+    // Primary links come before the sidebar and main in reading order.
+    let (nav, side, main) = (
+        full.find("st-app-nav").unwrap(),
+        full.find("st-app-sidebar").unwrap(),
+        full.find("<main").unwrap(),
+    );
+    assert!(nav < side && side < main);
 }
 #[test]
 fn empty_counts_and_feedback_are_accessible() {
