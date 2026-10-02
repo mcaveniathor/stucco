@@ -54,7 +54,6 @@ impl From<String> for Href {
 
 /// How a multi-URL attribute separates its URLs.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(dead_code)] // used by the element builder (Task 4)
 pub(crate) enum UrlList {
     /// `srcset`: comma-separated `url [descriptor]` candidates.
     Srcset,
@@ -63,7 +62,6 @@ pub(crate) enum UrlList {
 }
 
 /// Keeps only the safe URLs of a multi-URL attribute value.
-#[allow(dead_code)] // used by the element builder (Task 4)
 pub(crate) fn filter_url_list(value: &str, kind: UrlList) -> String {
     match kind {
         UrlList::Srcset => value
