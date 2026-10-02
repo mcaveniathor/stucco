@@ -85,6 +85,19 @@ fn every_page_builds_and_every_internal_link_resolves() {
             html.contains("data-site-theme=\"menu\""),
             "{file} lacks the theme menu"
         );
+        assert!(
+            html.contains(r#"aria-label="Site""#),
+            "{file} lacks the site navigation"
+        );
+        if file.starts_with("gallery/") {
+            // The site header follows a skip link.
+            assert!(
+                html.contains(
+                    r##"<body><a class="st-skip-link" href="#main">Skip to main content</a><div class="site-bar""##
+                ),
+                "{file} lacks the site header after its skip link"
+            );
+        }
         for url in references(&html) {
             if url.starts_with("http") || url.starts_with("mailto:") {
                 continue;

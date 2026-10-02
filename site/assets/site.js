@@ -111,7 +111,9 @@ for (const menu of document.querySelectorAll('[data-site-theme="menu"]')) {
   const sync = () => {
     const saved = readSaved();
     custom.hidden = custom.disabled = !saved?.css;
-    custom.textContent = saved?.css ? `Custom: ${saved.label}` : "Custom";
+    // Seeds are up to 20 digits: keep the option short enough to read.
+    const label = saved?.label?.length > 18 ? `${saved.label.slice(0, 17)}…` : saved?.label;
+    custom.textContent = saved?.css ? `Custom: ${label}` : "Custom";
     preset.value = saved?.css ? "custom" : saved?.preset ?? "slate";
     scheme.value = root.dataset.theme ?? "system";
   };
@@ -261,7 +263,7 @@ function playground(form) {
     for (const select of options) {
       const value = result.summary[select.name];
       const choice = value && [...select.options].find((o) => o.value === value);
-      select.options[0].textContent = choice ? `From the base (${choice.textContent})` : "From the base";
+      select.options[0].textContent = choice ? `Base (${choice.textContent})` : "Base";
     }
     if (remember) history.replaceState(null, "", `?${result.query}`);
   }

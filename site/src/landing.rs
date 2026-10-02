@@ -131,6 +131,8 @@ pub fn page(site: &Site) -> String {
                 .child(
                     el::pre()
                         .class("site-code")
+                        .attr("tabindex", "0")
+                        .aria("label", "Example")
                         .child(el::code().class("language-rust").text(EXAMPLE)),
                 )
                 .child(

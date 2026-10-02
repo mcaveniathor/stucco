@@ -12,8 +12,15 @@
   .site-nav a:hover { background: var(--st-hover); }
   .site-nav a[aria-current="page"] { background: var(--st-accent-soft); color: var(--st-accent-text); }
 
-  /* Theme menu: a disclosure whose panel floats over the page. */
-  .site-theme { position: relative; }
+  /* Gallery pages: the site header above the page's own content. */
+  .site-bar {
+    padding: var(--st-space-3) var(--st-space-4); border-block-end: 1px solid var(--st-border);
+    background: var(--st-surface);
+  }
+
+  /* Theme menu: a disclosure whose panel floats over the page, anchored to
+     the header's end edge so it stays on screen wherever the button wraps. */
+  .site-header { position: relative; }
   .site-theme > summary {
     display: inline-flex; align-items: center; gap: var(--st-space-2);
     min-block-size: var(--st-control-h); padding-inline: var(--st-space-4);
@@ -33,9 +40,6 @@
   .site-theme-panel > * + * { margin-block-start: var(--st-space-3); }
   .site-theme-status { color: var(--st-text-muted); font-size: var(--st-text-sm); }
   .site-theme-status:empty { display: none; }
-  .site-theme-floating { position: fixed; inset-block-end: var(--st-space-4); inset-inline-end: var(--st-space-4); z-index: var(--st-z-overlay); }
-  .site-theme-floating > summary { box-shadow: var(--st-shadow-2); }
-  .site-theme-floating .site-theme-panel { inset-block-start: auto; inset-block-end: calc(100% + var(--st-space-2)); }
 
   /* Landing page. */
   .site-landing { max-inline-size: 72rem; margin-inline: auto; }
@@ -103,10 +107,18 @@
   .site-card-link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
   .site-link-card:hover .site-card-link { text-decoration: underline; text-underline-offset: 0.2em; }
 
-  /* Playground: controls beside the preview until the preview would get cramped. */
-  .site-pg { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--st-space-8); }
-  .site-pg-controls { flex: 1 1 18rem; }
-  .site-pg-preview { flex: 999 1 0; min-inline-size: 60%; }
+  /* Playground: controls, then the preview; side by side on wide screens,
+     where the preview stays in view while the options scroll past. */
+  .site-pg { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--st-space-8); align-items: start; }
+  .site-pg-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: var(--st-space-4) var(--st-space-3); }
+  .site-pg-options select { inline-size: 100%; }
+  @media (min-width: 64rem) {
+    .site-pg { grid-template-columns: minmax(24rem, 2fr) minmax(0, 3fr); }
+    .site-pg-preview {
+      position: sticky; inset-block-start: var(--st-space-4);
+      max-block-size: calc(100dvh - 2 * var(--st-space-4)); overflow-y: auto; overscroll-behavior: contain;
+    }
+  }
   .site-pg-status { color: var(--st-text-muted); font-size: var(--st-text-sm); }
   .site-pg-status:empty { display: none; }
   .site-notice { padding: var(--st-space-3) var(--st-space-4); border-radius: var(--st-radius-md); background: var(--st-warning-soft); color: var(--st-warning-text); }
