@@ -16,6 +16,7 @@ mod fragment;
 mod hash;
 mod href;
 mod identity;
+mod page;
 mod render;
 
 pub use asset::{Asset, AssetRef, AssetRequirements, Behavior, is_registered, registered_assets};
@@ -26,4 +27,5 @@ pub use fragment::{RenderedFragment, render_fragment};
 pub use href::Href;
 #[doc(hidden)]
 pub use inventory;
+pub use page::{Delivery, Meta, Page};
 pub use render::{Cx, Raw, Render, RenderFn, Slot, render_fn, to_html};

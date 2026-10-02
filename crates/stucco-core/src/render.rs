@@ -69,6 +69,11 @@ impl Cx {
         }
     }
 
+    /// Takes the output written so far, leaving identity and requirements.
+    pub(crate) fn take_output(&mut self) -> String {
+        std::mem::take(&mut self.out)
+    }
+
     /// Finishes rendering: the HTML and the resolved asset requirements.
     pub fn finish(self) -> (String, AssetRequirements) {
         let assets = AssetRequirements::resolve(&self.required);
