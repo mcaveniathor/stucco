@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- `stucco new` writes a starter axum app: a theme (a preset, a seed, a name
+  or random), a shared layout with navigation, a home page and a table with
+  derived columns. It takes stucco from crates.io, its repository (`--git`)
+  or a local checkout (`--stucco-path`).
+- A recipes page in the guide answers common questions in a few lines each:
+  shared layouts, forms with errors, filtered tables, partial updates, a
+  second theme, static pages and request limits.
+- `DataTable` over rows without capabilities no longer shows a filter bar
+  of controls that can't do anything, and its empty state no longer
+  suggests clearing filters.
 - `#[derive(Columns)]` (the new `stucco-macros` crate, through `stucco`'s
   `derive` feature) builds a row type's data table columns from its fields,
   with `#[col(...)]` for the kind, key, label, value, display and controls.

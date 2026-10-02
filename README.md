@@ -137,12 +137,16 @@ dozen seeds side by side.
 
 ## Themes from the command line
 
-`cargo install stucco-cli` installs the `stucco` command, which prints any
-preset, seeded or random theme as CSS, Rust, or JSON:
+`cargo install stucco-cli` installs the `stucco` command. It starts a new
+app, and prints any preset, seeded or random theme as CSS, Rust, or JSON:
 
 ```sh
+stucco new my-app --name my-app   # axum, a theme, a layout, a page and a table
 stucco theme --seed 42 --radius round -f rust
 ```
+
+The guide's [recipes](https://mcaveniathor.github.io/stucco/guide/recipes.html)
+answer common "how do I…?" questions in a few lines each.
 
 ## Collections and persistence
 

@@ -1,10 +1,12 @@
 # stucco-cli
 
-The `stucco` command: generate, inspect and export
-[stucco](https://github.com/mcaveniathor/stucco) themes.
+The `stucco` command: create [stucco](https://github.com/mcaveniathor/stucco)
+apps, and generate, inspect and export themes.
 
 ```sh
 cargo install stucco-cli
+
+stucco new my-app --name my-app             # an axum app with a derived theme
 
 stucco theme --preset pine                  # Pine's tokens as CSS
 stucco theme --seed 42 --radius round -f rust

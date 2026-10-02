@@ -115,20 +115,26 @@ impl<T> Render for DataTable<'_, T> {
         let view =
             CollectionView::new(self.action.clone(), query, &caps, &specs).label(&self.caption);
         let total = self.page.and_then(|p| p.total).filter(|_| caps.total_count);
-        let filters = self.columns.iter().fold(FilterBar::new(&view), |bar, c| {
-            bar.column_label(c.spec.key.clone(), c.label.clone())
+        // Rows handed over without a source's capabilities have nothing to
+        // search, filter or page, so they get no filter bar.
+        let filters = self.caps.map(|_| {
+            self.columns.iter().fold(FilterBar::new(&view), |bar, c| {
+                bar.column_label(c.spec.key.clone(), c.label.clone())
+            })
         });
         let mut root = el::div().class("st-data-table").child(filters);
         if self.rows.is_empty() {
-            root = root.child(
-                EmptyState::new("No results")
+            let empty = EmptyState::new("No results");
+            root = root.child(match self.caps {
+                Some(_) => empty
                     .description("Try adjusting your search or filters.")
                     .actions(
                         el::a()
                             .href(query.clone().reset().link(&self.action))
                             .text("Clear filters"),
                     ),
-            );
+                None => empty,
+            });
         } else {
             let mut header = Row::new();
             for c in &self.columns {

@@ -2,6 +2,8 @@
 
 #![forbid(unsafe_code)]
 
+mod new;
+
 use std::fs;
 use std::io::{self, Write};
 use std::path::PathBuf;
@@ -102,10 +104,11 @@ fn cli() -> Command {
                 .help("Write to FILE instead of standard output"),
         );
     Command::new("stucco")
-        .about("Generate, inspect and export stucco themes")
+        .about("Create stucco apps, and generate, inspect and export themes")
         .version(env!("CARGO_PKG_VERSION"))
         .subcommand_required(true)
         .arg_required_else_help(true)
+        .subcommand(new::command())
         .subcommand(theme)
         .subcommand(Command::new("presets").about("List the built-in presets"))
         .subcommand(
@@ -117,6 +120,7 @@ fn cli() -> Command {
 fn main() -> ExitCode {
     let matches = cli().get_matches();
     let result = match matches.subcommand() {
+        Some(("new", m)) => new::run(m),
         Some(("theme", m)) => theme(m),
         Some(("presets", _)) => presets(),
         Some(("options", _)) => options(),

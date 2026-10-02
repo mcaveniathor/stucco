@@ -1,0 +1,70 @@
+//! {{title}}: a stucco app. Run it with `cargo run`, then open
+//! http://127.0.0.1:3000.
+
+use axum::{Router, routing::get};
+use stucco::prelude::*;
+
+/// A row in the tasks table. Its fields are the table's columns; see
+/// `#[col(...)]` in the stucco docs for sorting, filtering and display.
+#[derive(Columns)]
+struct Task {
+    #[col(label = "#")]
+    id: u32,
+    title: String,
+    #[col(enumeration("todo", "doing", "done"))]
+    status: String,
+}
+
+/// Stand-in data; load yours from a database instead.
+fn tasks() -> Vec<Task> {
+    [
+        (1, "Sketch the first page", "done"),
+        (2, "Add a form", "doing"),
+        (3, "Connect a database", "todo"),
+    ]
+    .into_iter()
+    .map(|(id, title, status)| Task {
+        id,
+        title: title.into(),
+        status: status.into(),
+    })
+    .collect()
+}
+
+/// The layout every page shares: a header and the primary navigation, with
+/// the link for `current` marked as the current page.
+fn shell<'a>(current: &str) -> AppShell<'a> {
+    AppShell::new()
+        .header(PageHeader::new("{{title}}"))
+        .link(NavLink::new("Home", "/").current(current == "/"))
+        .link(NavLink::new("Tasks", "/tasks").current(current == "/tasks"))
+}
+
+async fn home(page: PageCx) -> Document {
+    page.title("{{title}}").app(shell("/").main(
+        Stack::of((
+            Heading::new(2, "Welcome"),
+            Text::new("Edit src/main.rs to change this page.").tone(Tone::Muted),
+            ButtonLink::new("See the tasks", "/tasks").variant(Variant::Primary),
+        ))
+        .space(Space::S4),
+    ))
+}
+
+async fn task_list(page: PageCx) -> Document {
+    let rows = tasks();
+    page.title("Tasks — {{title}}").app(
+        shell("/tasks").main(DataTable::new(&rows, "Tasks").columns(Task::columns())),
+    )
+}
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    let app = Router::new()
+        .route("/", get(home))
+        .route("/tasks", get(task_list))
+        .stucco({{theme}});
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000").await?;
+    println!("listening on http://{}", listener.local_addr()?);
+    axum::serve(listener, app).await
+}
