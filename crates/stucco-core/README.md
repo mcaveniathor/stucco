@@ -15,7 +15,7 @@ applications must not use it with untrusted data. `Href` rejects unsafe URL
 schemes. `CollectionQuery` validates search, sort, typed filters, and page state
 against application-provided capabilities.
 
-Minimum Rust: **1.85**. The 0.1 API is experimental.
+Minimum Rust: **1.85**. The 0.2 API is experimental.
 Most applications should use the [stucco facade](https://github.com/mcaveniathor/stucco).
 
 Licensed under MIT or Apache-2.0.

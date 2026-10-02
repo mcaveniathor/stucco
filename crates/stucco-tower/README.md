@@ -32,7 +32,7 @@ pieces `stucco` puts together.
 provide their own authentication and authorization context. The default stack
 does not implement an application's authorization policy.
 
-Minimum Rust: **1.85**. The 0.1 API is experimental.
+Minimum Rust: **1.85**. The 0.2 API is experimental.
 See [the hello example](https://github.com/mcaveniathor/stucco/tree/main/examples/hello)
 for a runnable application.
 

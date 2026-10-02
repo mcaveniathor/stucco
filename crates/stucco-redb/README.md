@@ -28,7 +28,7 @@ Cursor scans return an owned page with an unknown total. Predicates may still
 visit many records. Numbered mode deliberately materializes all matching records,
 so use it for small collections. Cursors are locators, not authorization tokens.
 
-Minimum Rust: **1.90**. The 0.1 API is experimental.
+Minimum Rust: **1.90**. The 0.2 API is experimental.
 See [the orders example](https://github.com/mcaveniathor/stucco/tree/main/examples/orders)
 for persistence, query mapping, and server-rendered controls.
 
