@@ -11,11 +11,15 @@
   .g-preset > * + * { margin-block-start: var(--st-space-3); }
   .g-panels { display: grid; gap: var(--st-space-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); }
   .g-panel {
-    background: var(--st-bg); color: var(--st-text);
+    background: var(--st-finish, none) var(--st-bg); color: var(--st-text);
     border: 1px solid var(--st-border); border-radius: var(--st-radius-lg);
     padding: var(--st-space-4); font-family: var(--st-font-sans);
   }
   .g-panel > * + * { margin-block-start: var(--st-space-3); }
+  @media (prefers-contrast: more), (forced-colors: active) {
+    .g-panel { background-image: none; }
+  }
+  .g-sample-nav { flex: none; padding: var(--st-space-2); border: 1px solid var(--st-border); border-radius: var(--st-radius-md); }
   .g-panel > .g-sample-header {
     margin: calc(-1 * var(--st-space-4)) calc(-1 * var(--st-space-4)) var(--st-space-4);
     padding: var(--st-space-3) var(--st-space-4);

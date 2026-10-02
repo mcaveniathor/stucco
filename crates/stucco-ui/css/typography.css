@@ -17,8 +17,13 @@
   .st-text[data-weight="normal"] { font-weight: 400; }
   .st-text[data-weight="medium"] { font-weight: 550; }
   .st-text[data-weight="bold"] { font-weight: 700; }
-  .st-link { color: var(--st-accent-text); text-decoration-line: underline; text-underline-offset: 0.2em; }
-  .st-link:hover { text-decoration-thickness: 2px; }
+  .st-link {
+    color: var(--st-accent-text); font-weight: var(--st-link-weight, inherit);
+    text-decoration-line: underline; text-decoration-color: var(--st-link-line, currentColor);
+    text-decoration-thickness: var(--st-link-thickness, auto); text-underline-offset: 0.2em;
+    background-image: var(--st-link-bg, none);
+  }
+  .st-link:hover { text-decoration-color: currentColor; text-decoration-thickness: var(--st-link-hover-thickness, 2px); }
   .st-code {
     font-family: var(--st-font-mono); font-size: 0.9em;
     background: var(--st-surface-raised); color: var(--st-text);

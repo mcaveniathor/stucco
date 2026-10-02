@@ -19,8 +19,8 @@ use std::fmt::{self, Write};
 use std::str::FromStr;
 
 use crate::{
-    BuiltTheme, ButtonShape, ControlStyle, Density, Elevation, HeaderStyle, HeadingWeight, Preset,
-    Radius, Scheme, TableStyle, Theme,
+    BuiltTheme, ButtonShape, ControlStyle, Density, Elevation, Finish, FocusStyle, HeaderStyle,
+    HeadingWeight, LinkStyle, NavStyle, Preset, Radius, Scheme, TableStyle, Theme,
 };
 
 /// One choice for an option.
@@ -153,6 +153,52 @@ pub const OPTIONS: &[OptionInfo] = &[
         ty: "ButtonShape",
         method: "button_shape",
         choices: &[choice("rounded", "Rounded"), choice("pill", "Pill")],
+    },
+    OptionInfo {
+        key: "links",
+        label: "Links",
+        ty: "LinkStyle",
+        method: "link_style",
+        choices: &[
+            choice("underlined", "Underlined"),
+            choice("subtle", "Subtle"),
+            choice("bold", "Bold"),
+            choice("highlight", "Highlight"),
+        ],
+    },
+    OptionInfo {
+        key: "nav",
+        label: "Current page",
+        ty: "NavStyle",
+        method: "nav_style",
+        choices: &[
+            choice("soft", "Soft"),
+            choice("solid", "Solid"),
+            choice("bar", "Bar"),
+        ],
+    },
+    OptionInfo {
+        key: "focus",
+        label: "Focus ring",
+        ty: "FocusStyle",
+        method: "focus_style",
+        choices: &[
+            choice("ring", "Ring"),
+            choice("thick", "Thick"),
+            choice("snug", "Snug"),
+        ],
+    },
+    OptionInfo {
+        key: "finish",
+        label: "Finish",
+        ty: "Finish",
+        method: "finish",
+        choices: &[
+            choice("smooth", "Smooth"),
+            choice("sand", "Sand"),
+            choice("float", "Float"),
+            choice("knockdown", "Knockdown"),
+        ],
     },
 ];
 
@@ -580,6 +626,20 @@ fn apply(theme: Theme, key: &str, value: &str) -> Theme {
         ("headings", "heavy") => theme.heading_weight(HeadingWeight::Heavy),
         ("buttons", "rounded") => theme.button_shape(ButtonShape::Rounded),
         ("buttons", "pill") => theme.button_shape(ButtonShape::Pill),
+        ("links", "underlined") => theme.link_style(LinkStyle::Underlined),
+        ("links", "subtle") => theme.link_style(LinkStyle::Subtle),
+        ("links", "bold") => theme.link_style(LinkStyle::Bold),
+        ("links", "highlight") => theme.link_style(LinkStyle::Highlight),
+        ("nav", "soft") => theme.nav_style(NavStyle::Soft),
+        ("nav", "solid") => theme.nav_style(NavStyle::Solid),
+        ("nav", "bar") => theme.nav_style(NavStyle::Bar),
+        ("focus", "ring") => theme.focus_style(FocusStyle::Ring),
+        ("focus", "thick") => theme.focus_style(FocusStyle::Thick),
+        ("focus", "snug") => theme.focus_style(FocusStyle::Snug),
+        ("finish", "smooth") => theme.finish(Finish::Smooth),
+        ("finish", "sand") => theme.finish(Finish::Sand),
+        ("finish", "float") => theme.finish(Finish::Float),
+        ("finish", "knockdown") => theme.finish(Finish::Knockdown),
         _ => theme,
     }
 }
@@ -625,6 +685,28 @@ fn current(theme: &Theme, key: &str) -> &'static str {
         "buttons" => match p.buttons {
             ButtonShape::Rounded => "rounded",
             ButtonShape::Pill => "pill",
+        },
+        "links" => match p.links {
+            LinkStyle::Underlined => "underlined",
+            LinkStyle::Subtle => "subtle",
+            LinkStyle::Bold => "bold",
+            LinkStyle::Highlight => "highlight",
+        },
+        "nav" => match p.nav {
+            NavStyle::Soft => "soft",
+            NavStyle::Solid => "solid",
+            NavStyle::Bar => "bar",
+        },
+        "focus" => match p.focus {
+            FocusStyle::Ring => "ring",
+            FocusStyle::Thick => "thick",
+            FocusStyle::Snug => "snug",
+        },
+        "finish" => match p.finish {
+            Finish::Smooth => "smooth",
+            Finish::Sand => "sand",
+            Finish::Float => "float",
+            Finish::Knockdown => "knockdown",
         },
         _ => unreachable!("only known keys are looked up"),
     }

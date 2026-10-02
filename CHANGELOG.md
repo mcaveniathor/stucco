@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Four more personality options, each seedable, in `ThemeSpec` and the CLI
+  (`links`, `nav`, `focus`, `finish`) and in the playground:
+  - `LinkStyle` (Underlined, Subtle, Bold, Highlight) for `.st-link`;
+  - `NavStyle` (Soft, Solid, Bar) for the current page in the sidebar;
+  - `FocusStyle` (Ring, Thick, Snug) for the focus outline;
+  - `Finish` (Smooth, Sand, Float, Knockdown): a plaster grain on the page
+    background. `build` checks text on the page against the grain, and the
+    grain is removed under `prefers-contrast: more` and forced colours.
+  Defaults reproduce the previous look, and existing seeds keep every option
+  they had.
 - `stucco-cli`, the `stucco` command: `stucco theme` prints a preset, seeded,
   named or random theme as token CSS (optionally scoped), Rust builder code,
   JSON colour roles, a query string or a summary, with a flag for every

@@ -2,7 +2,8 @@
 //! stream [`SeedRng`], and implementations for every theme option.
 
 use crate::personality::{
-    ButtonShape, ControlStyle, Elevation, HeaderStyle, HeadingWeight, TableStyle,
+    ButtonShape, ControlStyle, Elevation, Finish, FocusStyle, HeaderStyle, HeadingWeight,
+    LinkStyle, NavStyle, TableStyle,
 };
 use crate::{Color, Density, Fonts, Radius, Theme, TypeScale};
 
@@ -385,11 +386,50 @@ seeded_enum!(
     [(ButtonShape::Rounded, 3), (ButtonShape::Pill, 1)]
 );
 
+seeded_enum!(
+    LinkStyle,
+    "link-style",
+    [
+        (LinkStyle::Underlined, 2),
+        (LinkStyle::Subtle, 2),
+        (LinkStyle::Bold, 1),
+        (LinkStyle::Highlight, 1),
+    ]
+);
+seeded_enum!(
+    NavStyle,
+    "nav-style",
+    [
+        (NavStyle::Soft, 2),
+        (NavStyle::Solid, 1),
+        (NavStyle::Bar, 1)
+    ]
+);
+seeded_enum!(
+    FocusStyle,
+    "focus-style",
+    [
+        (FocusStyle::Ring, 2),
+        (FocusStyle::Thick, 1),
+        (FocusStyle::Snug, 1)
+    ]
+);
+seeded_enum!(
+    Finish,
+    "finish",
+    [
+        (Finish::Smooth, 3),
+        (Finish::Sand, 1),
+        (Finish::Float, 1),
+        (Finish::Knockdown, 1),
+    ]
+);
+
 impl Seeded for Theme {
     const STREAM: &'static str = "theme";
 
     /// Every option from its own fork of `rng`: palette, fonts, type scale,
-    /// spacing, radius, density and the six personality options. Pill
+    /// spacing, radius, density and the ten personality options. Pill
     /// buttons become rounded on sharp themes. The result always passes
     /// [`Theme::build`].
     fn from_rng(rng: &mut SeedRng) -> Theme {
@@ -417,6 +457,10 @@ impl Seeded for Theme {
                 &mut rng.fork(HeadingWeight::STREAM),
             ))
             .button_shape(buttons)
+            .link_style(LinkStyle::from_rng(&mut rng.fork(LinkStyle::STREAM)))
+            .nav_style(NavStyle::from_rng(&mut rng.fork(NavStyle::STREAM)))
+            .focus_style(FocusStyle::from_rng(&mut rng.fork(FocusStyle::STREAM)))
+            .finish(Finish::from_rng(&mut rng.fork(Finish::STREAM)))
     }
 
     /// The theme for `seed`; its options match each option's own
@@ -501,6 +545,10 @@ mod tests {
             if theme.radius != Radius::Sharp {
                 assert_eq!(p.buttons, ButtonShape::seeded(seed));
             }
+            assert_eq!(p.links, LinkStyle::seeded(seed));
+            assert_eq!(p.nav, NavStyle::seeded(seed));
+            assert_eq!(p.focus, FocusStyle::seeded(seed));
+            assert_eq!(p.finish, Finish::seeded(seed));
             let palette = Palette::seeded(seed);
             assert_eq!(theme.accent_hue, palette.accent.h);
             assert_eq!(theme.accent_from_neutral, palette.ink);
