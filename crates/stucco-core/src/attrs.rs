@@ -13,6 +13,8 @@ pub struct Attrs {
     pub(crate) classes: Vec<String>,
     /// `(name, Some(value))` or `(name, None)` for boolean attributes.
     pub(crate) list: Vec<(String, Option<String>)>,
+    /// Names set through `trusted_attr`; merges re-check every other value.
+    trusted: Vec<String>,
 }
 
 /// Attributes whose value is a single URL.
@@ -55,6 +57,9 @@ impl Attrs {
     pub fn trusted_attr(mut self, name: &str, value: impl Into<String>) -> Attrs {
         if valid_name(name) {
             self.set(name, Some(value.into()));
+            if !self.trusted.iter().any(|t| t == name) {
+                self.trusted.push(name.to_owned());
+            }
         }
         self
     }
@@ -123,6 +128,30 @@ impl Attrs {
         for (name, value) in &other.list {
             self.set(name, value.clone());
         }
+        for name in &other.trusted {
+            if !self.trusted.contains(name) {
+                self.trusted.push(name.clone());
+            }
+        }
+    }
+
+    /// Merges `other` onto an element's attributes, re-applying the policy
+    /// with the element's tag to every value not set through `trusted_attr`
+    /// (so passthrough cannot skip tag-specific checks such as `<object data>`).
+    pub(crate) fn merge_for_tag(&mut self, other: &Attrs, tag: &str) {
+        let checked = Attrs {
+            list: Vec::new(),
+            ..other.clone()
+        };
+        self.merge(&checked);
+        for (name, value) in &other.list {
+            match value {
+                Some(v) if !other.trusted.contains(name) => {
+                    self.set_checked(Some(tag), name, v.clone())
+                }
+                _ => self.set(name, value.clone()),
+            }
+        }
     }
 
     /// Applies the policy for `attr()`; `tag` enables element-specific rules
@@ -148,6 +177,7 @@ impl Attrs {
     }
 
     fn set(&mut self, name: &str, value: Option<String>) {
+        self.trusted.retain(|t| t != name);
         match self.list.iter_mut().find(|(n, _)| n == name) {
             Some(slot) => slot.1 = value,
             None => self.list.push((name.to_owned(), value)),

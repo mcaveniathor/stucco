@@ -2,7 +2,13 @@
 
 use crate::bundle::substitute_placeholders;
 use crate::escape::{escape_attr, escape_text};
-use crate::{Attrs, Behavior, Bundle, Cx, Href, Render, Slot};
+use crate::{Attrs, Behavior, Bundle, Cx, Href, Render, Slot, is_registered};
+
+/// Content for an inline `<script>` or `<style>`: `</` becomes `<\/` so the
+/// element cannot be closed early (valid in JS strings and CSS alike).
+fn raw_text(s: &str) -> String {
+    s.replace("</", r"<\/")
+}
 
 const THEME_INIT_JS: &str = include_str!("../js/theme_init.js");
 
@@ -170,24 +176,35 @@ impl<'b, 'a> Page<'b, 'a> {
         self.write_meta(&mut out);
         out.push_str(&format!(
             "<script{nonce}>{}</script>",
-            substitute_placeholders(THEME_INIT_JS)
+            raw_text(&substitute_placeholders(THEME_INIT_JS))
         ));
         let inline_script = |out: &mut String, js: &str| {
             out.push_str(&format!(
                 "<script type=\"module\"{nonce}>{}</script>",
-                substitute_placeholders(js)
+                raw_text(&substitute_placeholders(js))
             ));
         };
         let module_src = |out: &mut String, url: &str| {
             out.push_str("<script type=\"module\" src=\"");
             escape_attr(url, out);
-            out.push_str("\"></script>");
+            out.push_str(&format!("\"{nonce}></script>"));
         };
         match self.delivery {
             Delivery::Linked => {
                 out.push_str("<link rel=\"stylesheet\" href=\"");
                 escape_attr(self.bundle.stylesheet_url(), &mut out);
-                out.push_str("\">");
+                out.push_str(&format!("\"{nonce}>"));
+                let unregistered_css: String = required
+                    .iter()
+                    .filter(|a| !is_registered(a))
+                    .filter_map(|a| a.css)
+                    .collect();
+                if !unregistered_css.is_empty() {
+                    out.push_str(&format!(
+                        "<style{nonce}>{}</style>",
+                        raw_text(&unregistered_css)
+                    ));
+                }
                 if self.enhanced || required.behaviors().next().is_some() {
                     module_src(&mut out, self.bundle.runtime_url());
                 }
@@ -202,7 +219,7 @@ impl<'b, 'a> Page<'b, 'a> {
             Delivery::Inline => {
                 out.push_str(&format!(
                     "<style{nonce}>{}</style>",
-                    self.bundle.css_for(&required)
+                    raw_text(&self.bundle.css_for(&required))
                 ));
                 for asset in required.behaviors() {
                     if let Some(Behavior::Js(js)) = asset.behavior {
@@ -331,6 +348,51 @@ mod tests {
         let inline_tags = html.matches("<script").count() + html.matches("<style").count();
         assert_eq!(html.matches("nonce=\"n0nce\"").count(), inline_tags);
         assert!(html.contains("localStorage") && html.contains("stucco-theme"));
+    }
+
+    static UNSTYLED: Asset = Asset {
+        name: "unstyled",
+        css: Some("@layer stucco.components { .st-unstyled { color: var(--st-text); } }"),
+        behavior: None,
+        deps: &[],
+    };
+
+    #[test]
+    fn unregistered_css_is_inlined_on_linked_pages() {
+        let b = Bundle::new(Preset::Slate);
+        let html = Page::new(&b, "t")
+            .csp_nonce("n0nce")
+            .body(crate::render_fn(|cx: &mut Cx| cx.require(&UNSTYLED)))
+            .render();
+        assert!(html.contains("<style nonce=\"n0nce\">@layer stucco.components { .st-unstyled"));
+    }
+
+    static HOSTILE: Asset = Asset {
+        name: "hostile",
+        css: Some("/* </style><script>alert(1)</script> */"),
+        behavior: Some(Behavior::Js("// </script><script>alert(2)</script>")),
+        deps: &[],
+    };
+
+    #[test]
+    fn inline_style_and_script_cannot_be_closed_early() {
+        let b = Bundle::new(Preset::Slate);
+        let html = Page::new(&b, "t")
+            .delivery(Delivery::Inline)
+            .body(crate::render_fn(|cx: &mut Cx| cx.require(&HOSTILE)))
+            .render();
+        assert!(!html.contains("</style><script>alert(1)"), "{html}");
+        assert!(!html.contains("</script><script>alert(2)"), "{html}");
+    }
+
+    #[test]
+    fn linked_page_nonces_every_script_and_stylesheet() {
+        let b = Bundle::new(Preset::Slate);
+        let html = Page::new(&b, "t").csp_nonce("n0nce").body(Widget).render();
+        let tags = html.matches("<script").count()
+            + html.matches("<style").count()
+            + html.matches("<link rel=\"stylesheet\"").count();
+        assert_eq!(html.matches("nonce=\"n0nce\"").count(), tags);
     }
 
     #[test]

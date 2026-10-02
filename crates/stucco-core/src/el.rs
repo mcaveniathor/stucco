@@ -144,7 +144,8 @@ macro_rules! attr_methods {
             }
             /// Merges `attrs`: classes append, id and other attributes replace.
             pub fn attrs(mut self, attrs: &Attrs) -> Self {
-                self.attrs.merge(attrs);
+                let tag = self.tag_name().to_owned();
+                self.attrs.merge_for_tag(attrs, &tag);
                 self
             }
         }

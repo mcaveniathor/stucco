@@ -30,7 +30,7 @@ pub fn render_fragment(namespace: &str, r: &(impl Render + ?Sized)) -> RenderedF
     r.render(&mut cx);
     let (html, mut assets) = cx.finish();
     assets.retain(|a| {
-        let ok = a.behavior.is_none() || is_registered(a);
+        let ok = is_registered(a) || (a.behavior.is_none() && a.css.is_none());
         debug_assert!(ok, "unregistered asset in fragment: {}", a.name);
         ok
     });
@@ -123,6 +123,20 @@ mod tests {
         behavior: Some(Behavior::Js("/*loose*/")),
         deps: &[],
     };
+
+    static UNSTYLED: Asset = Asset {
+        name: "unstyled",
+        css: Some(".x{}"),
+        behavior: None,
+        deps: &[],
+    };
+
+    #[test]
+    #[cfg(debug_assertions)]
+    #[should_panic(expected = "unregistered asset in fragment: unstyled")]
+    fn unregistered_css_panics_in_debug() {
+        render_fragment("a", &crate::render_fn(|cx: &mut Cx| cx.require(&UNSTYLED)));
+    }
 
     #[test]
     #[cfg(debug_assertions)]

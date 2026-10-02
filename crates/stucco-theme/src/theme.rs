@@ -26,13 +26,13 @@ impl Fonts {
 
     /// Prepends `family` (quoted) to the body stack.
     pub fn sans(mut self, family: &str) -> Fonts {
-        self.sans = format!("\"{family}\", {}", self.sans);
+        self.sans = format!("\"{}\", {}", css_string(family), self.sans);
         self
     }
 
     /// Prepends `family` (quoted) to the code stack.
     pub fn mono(mut self, family: &str) -> Fonts {
-        self.mono = format!("\"{family}\", {}", self.mono);
+        self.mono = format!("\"{}\", {}", css_string(family), self.mono);
         self
     }
 
@@ -41,6 +41,23 @@ impl Fonts {
         self.sans = stack.to_owned();
         self
     }
+}
+
+/// Escapes `s` for use inside a double-quoted CSS string, including `<` so the
+/// value can never close an inline `<style>`.
+fn css_string(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for c in s.chars() {
+        match c {
+            '\\' => out.push_str(r"\\"),
+            '"' => out.push_str(r#"\""#),
+            '<' => out.push_str(r"\3c "),
+            '\n' => out.push_str(r"\a "),
+            '\r' => out.push_str(r"\d "),
+            c => out.push(c),
+        }
+    }
+    out
 }
 
 /// A modular type scale: `base_px × ratio^step`, fluid between 360px and
@@ -247,11 +264,32 @@ impl Theme {
                 }
             }
         }
-        if failures.is_empty() {
+        let t = &built.theme;
+        let invalid: Vec<&'static str> = [
+            ("min_contrast", t.min_contrast),
+            ("space", t.space),
+            ("type_scale.base_px", t.type_scale.base_px),
+            ("type_scale.ratio", t.type_scale.ratio),
+        ]
+        .into_iter()
+        .filter(|(_, v)| !(v.is_finite() && *v > 0.0))
+        .map(|(name, _)| name)
+        .collect();
+        if failures.is_empty() && invalid.is_empty() {
             Ok(built)
         } else {
-            Err(ContrastReport { failures })
+            Err(ContrastReport { failures, invalid })
         }
+    }
+}
+
+/// The accent step used for hover: lighter than step 9 under black text,
+/// darker under white text. Light scales get darker with the step number,
+/// dark scales lighter.
+pub(crate) fn hover_step(scheme: Scheme, on_black: bool) -> usize {
+    match (scheme, on_black) {
+        (Scheme::Light, true) | (Scheme::Dark, false) => 8,
+        (Scheme::Light, false) | (Scheme::Dark, true) => 10,
     }
 }
 
@@ -282,6 +320,11 @@ impl BuiltTheme {
         let (_, source) = self.roles().find(|(n, _)| *n == name)?;
         Some(match source {
             Source::Step(scale, n) => self.scale(scale).step(scheme, n),
+            Source::AccentHover => {
+                let on_black = self.role(scheme, "on-accent")?.l < 0.5;
+                self.scale("accent")
+                    .step(scheme, hover_step(scheme, on_black))
+            }
             Source::OnAccent => {
                 let accent = self.role(scheme, "accent")?;
                 let (black, white) = (Color::oklch(0.0, 0.0, 0.0), Color::oklch(1.0, 0.0, 0.0));
@@ -321,6 +364,9 @@ impl BuiltTheme {
 pub struct ContrastReport {
     /// Every failing pair.
     pub failures: Vec<ContrastFailure>,
+    /// Options that are not finite and positive (contrast cannot be checked
+    /// against them).
+    pub invalid: Vec<&'static str>,
 }
 
 /// One role pair below its required contrast.
@@ -340,6 +386,9 @@ pub struct ContrastFailure {
 
 impl fmt::Display for ContrastReport {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for name in &self.invalid {
+            writeln!(f, "invalid {name}: must be finite and positive")?;
+        }
         for x in &self.failures {
             writeln!(
                 f,
@@ -402,6 +451,24 @@ mod tests {
             .unwrap()
             .css(Scope::Named("brand"));
         assert!(css.contains("[data-st-theme=\"brand\"] {") && !css.contains("[data-theme="));
+        assert!(
+            !css.contains("color-scheme"),
+            "a named theme must not reset a forced scheme"
+        );
+    }
+
+    #[test]
+    fn non_finite_or_non_positive_options_fail_validation() {
+        for theme in [
+            Theme::from_seed(250.0).min_contrast(f64::NAN),
+            Theme::from_seed(250.0).min_contrast(0.0),
+            Theme::from_seed(250.0).space(f64::NAN),
+            Theme::from_seed(250.0).type_scale(TypeScale::new(f64::INFINITY, 1.2)),
+            Theme::from_seed(250.0).type_scale(TypeScale::new(16.0, -1.0)),
+        ] {
+            let err = theme.build().unwrap_err();
+            assert!(!err.invalid.is_empty(), "{err}");
+        }
     }
 
     #[test]
@@ -411,6 +478,17 @@ mod tests {
             .min_contrast(7.0)
             .build()
             .unwrap();
+    }
+
+    #[test]
+    fn font_families_cannot_break_out_of_the_token_block() {
+        let css = Theme::from_seed(250.0)
+            .fonts(Fonts::system().sans("x\"; } </style><script>alert(1)</script>"))
+            .build()
+            .unwrap()
+            .css(Scope::Root);
+        assert!(!css.contains("</"), "{css}");
+        assert!(css.contains(r#"--st-font-sans: "x\"; } \3c /style>\3c script>"#));
     }
 
     #[test]

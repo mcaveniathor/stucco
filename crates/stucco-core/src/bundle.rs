@@ -64,7 +64,18 @@ impl Bundle {
     }
 
     /// Adds a named theme, applied with `data-st-theme="<name>"`.
+    ///
+    /// `name` must match `[a-z0-9-]+`; an invalid name panics in debug builds
+    /// and is skipped in release builds.
     pub fn with_theme(mut self, name: &str, theme: impl Into<BuiltTheme>) -> Bundle {
+        let valid = !name.is_empty()
+            && name
+                .chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-');
+        debug_assert!(valid, "invalid theme name: {name:?} (use [a-z0-9-]+)");
+        if !valid {
+            return self;
+        }
         self.named.push((name.to_owned(), theme.into()));
         self.build();
         self
@@ -239,6 +250,13 @@ mod tests {
         ] {
             assert!(b.get(&bad).is_none(), "{bad}");
         }
+    }
+
+    #[test]
+    #[cfg(debug_assertions)]
+    #[should_panic(expected = "invalid theme name")]
+    fn theme_names_are_validated() {
+        let _ = Bundle::new(Preset::Slate).with_theme("x\"] { } body", Preset::Iris);
     }
 
     #[test]

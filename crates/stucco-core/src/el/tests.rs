@@ -132,3 +132,39 @@ fn open_is_not_mistaken_for_an_event_handler() {
         "<details open></details>"
     );
 }
+
+#[test]
+fn passthrough_attrs_get_the_tag_specific_url_check() {
+    let attrs = Attrs::default().attr("data", "javascript:alert(1)");
+    assert_eq!(
+        to_html(&el::object().attrs(&attrs)),
+        r##"<object data="#"></object>"##
+    );
+    let trusted = Attrs::default().trusted_attr("data", "javascript:void(0)");
+    assert_eq!(
+        to_html(&el::object().attrs(&trusted)),
+        r#"<object data="javascript:void(0)"></object>"#
+    );
+}
+
+#[cfg(not(debug_assertions))]
+mod release_drops {
+    use crate::{el, to_html};
+
+    #[test]
+    fn refused_and_invalid_attributes_are_dropped() {
+        let html = to_html(
+            &el::iframe()
+                .attr("OnLoad", "x")
+                .attr("srcdoc", "<b>")
+                .attr("a b", "x")
+                .attr("title", "kept"),
+        );
+        assert_eq!(html, r#"<iframe title="kept"></iframe>"#);
+    }
+
+    #[test]
+    fn invalid_custom_elements_render_a_div() {
+        assert_eq!(to_html(&el::custom("tabs")), "<div></div>");
+    }
+}

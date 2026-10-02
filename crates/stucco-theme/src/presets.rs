@@ -138,6 +138,20 @@ mod tests {
     }
 
     #[test]
+    fn accent_labels_stay_readable_on_hover() {
+        for p in Preset::ALL {
+            let built = Theme::preset(p).build().unwrap();
+            for scheme in Scheme::BOTH {
+                let r = contrast(
+                    built.role(scheme, "on-accent").unwrap(),
+                    built.role(scheme, "accent-hover").unwrap(),
+                );
+                assert!(r >= 4.5, "{} {scheme:?}: {r:.2}", p.name());
+            }
+        }
+    }
+
+    #[test]
     fn contrast_preset_meets_aaa_for_text() {
         let built = Theme::preset(Preset::Contrast).build().unwrap();
         for scheme in Scheme::BOTH {

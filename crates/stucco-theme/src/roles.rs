@@ -8,9 +8,13 @@ pub(crate) enum Source {
     Step(&'static str, usize),
     /// Black or white, whichever contrasts more with `accent`.
     OnAccent,
+    /// The accent step next to 9 that moves away from `on-accent` (lighter
+    /// under black text, darker under white), so hover keeps the label
+    /// readable.
+    AccentHover,
 }
 
-use Source::{OnAccent, Step};
+use Source::{AccentHover, OnAccent, Step};
 
 /// Every role, in CSS output order.
 pub(crate) const ROLES: &[(&str, Source)] = &[
@@ -23,7 +27,7 @@ pub(crate) const ROLES: &[(&str, Source)] = &[
     ("border", Step("neutral", 6)),
     ("border-strong", Step("neutral", 9)),
     ("accent", Step("accent", 9)),
-    ("accent-hover", Step("accent", 10)),
+    ("accent-hover", AccentHover),
     ("accent-text", Step("accent", 11)),
     ("accent-soft", Step("accent", 3)),
     ("on-accent", OnAccent),
@@ -76,6 +80,9 @@ pub(crate) const PAIRS: &[(&str, &str, Kind)] = &[
     ("accent-text", "bg", Kind::Text),
     ("accent-text", "surface", Kind::Text),
     ("on-accent", "accent", Kind::Text),
+    ("on-accent", "accent-hover", Kind::Text),
+    ("accent-text", "accent-soft", Kind::Text),
+    ("text-muted", "surface-raised", Kind::Text),
     ("success-text", "bg", Kind::Text),
     ("success-text", "success-soft", Kind::Text),
     ("warning-text", "bg", Kind::Text),

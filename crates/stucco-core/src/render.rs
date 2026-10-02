@@ -321,6 +321,22 @@ mod tests {
     }
 
     #[test]
+    #[cfg(debug_assertions)]
+    #[should_panic(expected = "invalid id prefix")]
+    fn hyphenated_prefixes_panic_in_debug() {
+        Cx::with_namespace("a").id("b-c");
+    }
+
+    #[test]
+    #[cfg(not(debug_assertions))]
+    fn hyphenated_prefixes_cannot_collide_across_namespaces_in_release() {
+        assert_ne!(
+            Cx::with_namespace("a").id("b-c"),
+            Cx::with_namespace("a-b").id("c")
+        );
+    }
+
+    #[test]
     fn a_generated_id_can_be_emitted_once() {
         let html = to_html(&render_fn(|cx: &mut Cx| {
             let id = cx.id("probe");

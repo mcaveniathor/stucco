@@ -23,11 +23,14 @@ const SPACE: [f64; 12] = [1., 2., 3., 4., 5., 6., 8., 10., 12., 16., 20., 24.];
 pub(crate) fn token_css(built: &BuiltTheme, scope: Scope<'_>) -> String {
     let t = &built.theme;
     let mut css = String::from("@layer stucco.tokens {\n");
-    let selector = match scope {
-        Scope::Root => ":root".to_owned(),
-        Scope::Named(name) => format!("[data-st-theme=\"{name}\"]"),
-    };
-    let _ = writeln!(css, "  {selector} {{ color-scheme: light dark;");
+    // Only the root sets `color-scheme`: a named theme inherits the scheme, so
+    // a forced `data-theme` above (or on) it still applies.
+    match scope {
+        Scope::Root => css.push_str("  :root { color-scheme: light dark;\n"),
+        Scope::Named(name) => {
+            let _ = writeln!(css, "  [data-st-theme=\"{name}\"] {{");
+        }
+    }
     for (name, scale) in &built.scales {
         for n in 1..=12 {
             let _ = writeln!(
@@ -42,6 +45,18 @@ pub(crate) fn token_css(built: &BuiltTheme, scope: Scope<'_>) -> String {
         match source {
             Source::Step(scale, n) => {
                 let _ = writeln!(css, "    --st-{role}: var(--st-{scale}-{n});");
+            }
+            Source::AccentHover => {
+                let step = |scheme| {
+                    let on_black = built.role(scheme, "on-accent").expect("role exists").l < 0.5;
+                    crate::theme::hover_step(scheme, on_black)
+                };
+                let _ = writeln!(
+                    css,
+                    "    --st-{role}: light-dark(var(--st-accent-{}), var(--st-accent-{}));",
+                    step(Scheme::Light),
+                    step(Scheme::Dark)
+                );
             }
             Source::OnAccent => {
                 let (l, d) = (

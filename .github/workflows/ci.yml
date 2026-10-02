@@ -44,3 +44,9 @@ jobs:
       - run: npx playwright test
       - name: Runtime size budget (6 KB gzip)
         run: test "$(gzip -c ../target/gallery/_stucco/stucco-runtime.*.js | wc -c)" -le 6144
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --workspace --release
