@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- docs.rs now labels items that require a cargo feature.
+- Document that the reserved `overlay` feature is enabled by default and adds nothing yet.
+- CI checks each cargo feature on its own and runs `cargo-semver-checks` against
+  the published release.
+
 ## 0.1.0 — 2026-10-02
 
 Initial release:

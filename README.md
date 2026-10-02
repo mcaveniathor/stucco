@@ -158,7 +158,9 @@ to select only the families you need.
 
 The manifest also contains reserved feature names for planned families
 (`overlay`, `marketing`, `diagram`, `markdown`, `askama`, and `maud`).
-They do not yet provide those integrations or component families.
+They do not yet provide those integrations or component families. The reserved
+`overlay` name is also in the default set; it currently adds nothing beyond
+`actions`.
 
 `stucco-tower` enables `axum` and `tower-http` by default.
 `stucco-redb` enables its `tokio` collection adapter by default; disable defaults

@@ -1,6 +1,7 @@
 //! Components for stucco: layout primitives, typography, actions, form
 //! controls and icons. Enable families with cargo features.
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
