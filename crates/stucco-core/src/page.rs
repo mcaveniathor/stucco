@@ -3,6 +3,7 @@
 use crate::bundle::substitute_placeholders;
 use crate::escape::{escape_attr, escape_text};
 use crate::{Attrs, Behavior, Bundle, Cx, Href, Render, Slot, is_registered};
+use stucco_theme::Scheme;
 
 /// Content for an inline `<script>` or `<style>`: `</` becomes `<\/` so the
 /// element cannot be closed early (valid in JS strings and CSS alike).
@@ -170,6 +171,14 @@ impl<'b, 'a> Page<'b, 'a> {
         escape_attr(&self.lang, &mut out);
         out.push_str("\"><head><meta charset=\"utf-8\">");
         out.push_str("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+        for (scheme, media) in [(Scheme::Light, "light"), (Scheme::Dark, "dark")] {
+            if let Some(bg) = self.bundle.root.role(scheme, "bg") {
+                out.push_str(&format!(
+                    "<meta name=\"theme-color\" media=\"(prefers-color-scheme: {media})\" content=\"{}\">",
+                    bg.css()
+                ));
+            }
+        }
         out.push_str("<title>");
         escape_text(&self.title, &mut out);
         out.push_str("</title>");

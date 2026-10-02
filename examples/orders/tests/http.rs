@@ -40,7 +40,7 @@ async fn storage_navigation_and_native_get_controls() {
     let app = orders::app(&dir.path().join("orders.redb")).unwrap();
     let first = html(app.clone(), "/orders").await;
     assert_eq!(first.matches("<tbody>").count(), 1);
-    assert_eq!(first.matches("<td>").count(), 25 * 5);
+    assert_eq!(first.matches("<td").count(), 25 * 5);
     let second = html(app.clone(), &next(&first, "Next")).await;
     assert!(second.contains(">26</td>"));
     let back = html(app.clone(), &next(&second, "Previous")).await;
@@ -51,12 +51,12 @@ async fn storage_navigation_and_native_get_controls() {
     )
     .await;
     assert!(filtered.contains("Ada"));
-    assert!(filtered.contains("paid</td>"));
-    assert!(!filtered.contains("pending</td>"));
+    assert!(filtered.contains(r#"data-value="paid""#));
+    assert!(!filtered.contains(r#"data-value="pending""#));
     assert!(filtered.contains("aria-sort=\"descending\""));
     let counted = html(app.clone(), "/orders?mode=pages&per=10&page=2").await;
     assert!(counted.contains("Showing 11–20 of 67"));
-    assert!(counted.contains("aria-current=\"page\""));
+    assert!(counted.contains(r#"aria-label="Page 2" aria-current="page""#));
     assert!(counted.contains("mode=pages"));
     let malformed = html(
         app.clone(),

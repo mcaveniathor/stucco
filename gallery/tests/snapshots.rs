@@ -59,6 +59,7 @@ fn component_pages_render_every_family() {
     );
     page_snapshot("actions", gallery::actions_page::page(&bundle), &bundle);
     page_snapshot("forms", gallery::forms_page::page(&bundle), &bundle);
+    page_snapshot("themes", gallery::themes_page::page(&bundle), &bundle);
     page_snapshot(
         "collections",
         gallery::collections_page::page(&bundle),
@@ -84,6 +85,7 @@ fn index_links_every_page() {
     let html = gallery::index::index_page(&gallery::bundle());
     for page in [
         "palette.html",
+        "themes.html",
         "layout.html",
         "typography.html",
         "actions.html",

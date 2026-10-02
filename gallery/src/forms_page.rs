@@ -1,7 +1,9 @@
 //! Form primitives, shown as a submitted form with errors.
 
 use stucco::actions::Button;
-use stucco::forms::{Checkbox, Field, Fieldset, Form, Input, RadioGroup, Select, Textarea};
+use stucco::forms::{
+    Checkbox, ErrorSummary, Field, Fieldset, Form, Input, RadioGroup, Select, Textarea,
+};
 use stucco::layout::{Cluster, Grid, Stack};
 use stucco::{Bundle, FormState, Measure, Render, Space, Variant};
 
@@ -24,6 +26,13 @@ pub fn page(bundle: &Bundle) -> String {
         Stack::new()
             .space(Space::S6)
             .child(
+                // A real failed submission lets the summary take focus; here
+                // it would pull focus away from the rest of the gallery page.
+                ErrorSummary::new(&state)
+                    .field("email", "email")
+                    .focus(false),
+            )
+            .child(
                 Grid::new()
                     .min(Measure::Xs)
                     .space(Space::S4)
@@ -33,9 +42,12 @@ pub fn page(bundle: &Bundle) -> String {
                             .bind(&state),
                     )
                     .child(
-                        Field::new("Email", Input::email("email").autocomplete("email"))
-                            .hint("We only use it for receipts.")
-                            .bind(&state),
+                        Field::new(
+                            "Email",
+                            Input::email("email").autocomplete("email").id("email"),
+                        )
+                        .hint("We only use it for receipts.")
+                        .bind(&state),
                     )
                     .child(
                         Field::new(

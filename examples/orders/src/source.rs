@@ -12,7 +12,7 @@ pub(crate) fn columns() -> Vec<ColumnSpec> {
             "status",
             ColumnKind::Enumeration(["pending", "paid", "shipped"].map(String::from).to_vec()),
         ),
-        ColumnSpec::new("total_cents", ColumnKind::Number),
+        ColumnSpec::new("total", ColumnKind::Number),
         ColumnSpec::new("created", ColumnKind::Date),
     ]
 }
@@ -20,7 +20,7 @@ impl CollectionMapping<Order> for OrdersMapping {
     fn capabilities(&self) -> Capabilities {
         Capabilities {
             sortable: vec!["id".into(), "customer".into()],
-            filterable: vec!["status".into(), "total_cents".into(), "created".into()],
+            filterable: vec!["status".into(), "total".into(), "created".into()],
             searchable: true,
             total_count: self.pages,
             offset: self.pages,
@@ -52,9 +52,9 @@ impl CollectionMapping<Order> for OrdersMapping {
             .iter()
             .all(|(key, filter)| match (key.as_str(), filter) {
                 ("status", Filter::Enumeration(status)) => &row.status == status,
-                ("total_cents", Filter::Number { min, max }) => {
-                    min.is_none_or(|n| row.total_cents as f64 >= n)
-                        && max.is_none_or(|n| row.total_cents as f64 <= n)
+                ("total", Filter::Number { min, max }) => {
+                    let dollars = row.total_cents as f64 / 100.0;
+                    min.is_none_or(|n| dollars >= n) && max.is_none_or(|n| dollars <= n)
                 }
                 ("created", Filter::Date { min, max }) => {
                     min.as_ref().is_none_or(|n| &row.created >= n)

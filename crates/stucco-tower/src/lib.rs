@@ -5,6 +5,7 @@
 //! a server. The `axum` and `tower-http` features (on by default) add axum
 //! integration and the standard layer stack.
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
@@ -16,6 +17,8 @@ mod collection;
 mod layers;
 mod negotiate;
 mod response;
+#[cfg(feature = "axum")]
+mod submission;
 
 pub use assets::{AssetService, FallbackFuture, WithFallback};
 #[cfg(feature = "axum")]
@@ -24,4 +27,6 @@ pub use collection::{CollectionSource, RequestContext, SourceError};
 #[cfg(all(feature = "axum", feature = "tower-http"))]
 pub use layers::{LayerConfig, with_standard_layers};
 pub use negotiate::{RequestKind, respond};
-pub use response::{FragmentResponse, PageResponse};
+pub use response::{FragmentResponse, PageResponse, SeeOther};
+#[cfg(feature = "axum")]
+pub use submission::{Submission, SubmissionRejection};

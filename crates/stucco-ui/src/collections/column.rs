@@ -1,4 +1,4 @@
-use stucco_core::{ColumnKind, ColumnSpec, Slot};
+use stucco_core::{ColumnKind, ColumnSpec, Slot, el};
 /// A typed display column; backend capabilities determine which operations appear.
 pub struct Col<'a, T> {
     pub(crate) spec: ColumnSpec,
@@ -56,18 +56,23 @@ impl<'a, T: 'a> Col<'a, T> {
         let kind = ColumnKind::Enumeration(choices.iter().map(|(k, _)| k.clone()).collect());
         Self::new(key, label, kind, move |r| {
             let value = get(r);
-            Slot::new(
-                choices
-                    .iter()
-                    .find(|(k, _)| k == &value)
-                    .map(|(_, v)| v.clone())
-                    .unwrap_or(value),
-            )
+            let text = choices
+                .iter()
+                .find(|(k, _)| k == &value)
+                .map_or_else(|| value.clone(), |(_, v)| v.clone());
+            Slot::new(el::span().class("st-tag").data("value", value).text(text))
         })
     }
     /// Arbitrary safe Render content; no implicit sorting/filtering.
     pub fn custom(key: &str, label: &str, get: impl Fn(&T) -> Slot<'a> + 'a) -> Self {
         Self::new(key, label, ColumnKind::Custom, get)
+    }
+    /// Replaces how cells display (formatting a number as money, say). The
+    /// column keeps its kind, so sorting and filtering still apply to the
+    /// underlying value.
+    pub fn display(mut self, show: impl Fn(&T) -> String + 'a) -> Self {
+        self.render = Box::new(move |r| Slot::new(show(r)));
+        self
     }
     /// Requests sorting if the backend supports it.
     pub fn sortable(mut self) -> Self {

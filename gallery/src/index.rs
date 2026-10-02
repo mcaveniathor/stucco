@@ -1,10 +1,11 @@
 //! The gallery home page.
 
-use stucco::layout::{Container, SkipLink, Stack};
+use stucco::data::Card;
+use stucco::layout::{Container, Grid, SkipLink, Stack};
 use stucco::typography::{Heading, Link, Text};
-use stucco::{Bundle, Page, Size, Space, Tone, el};
+use stucco::{Bundle, Measure, Page, Size, Space, Tone, el};
 
-const PAGES: [(&str, &str, &str); 7] = [
+const PAGES: [(&str, &str, &str); 8] = [
     (
         "collections.html",
         "Data and collections",
@@ -19,6 +20,11 @@ const PAGES: [(&str, &str, &str); 7] = [
         "palette.html",
         "Palettes",
         "Every preset's scales and roles, light and dark.",
+    ),
+    (
+        "themes.html",
+        "Seeded themes",
+        "Whole themes generated from a single number.",
     ),
     (
         "layout.html",
@@ -44,14 +50,19 @@ const PAGES: [(&str, &str, &str); 7] = [
 
 /// Links to every gallery page.
 pub fn index_page(bundle: &Bundle) -> String {
-    let links = el::ul().children(PAGES.map(|(href, title, blurb)| {
-        el::li().child(
-            Stack::new()
-                .space(Space::S1)
-                .child(Link::new(title, href))
-                .child(Text::new(blurb).tone(Tone::Muted).size(Size::Sm)),
-        )
-    }));
+    let links = Grid::new()
+        .min(Measure::Xs)
+        .space(Space::S4)
+        .children(PAGES.map(|(href, title, blurb)| {
+            Card::new().class("g-card").child(
+                Stack::new()
+                    .space(Space::S1)
+                    .child(
+                        Heading::new(2, Link::new(title, href).class("g-card-link")).size(Size::Lg),
+                    )
+                    .child(Text::new(blurb).tone(Tone::Muted)),
+            )
+        }));
     Page::new(bundle, "stucco gallery")
         .body((
             SkipLink::new(),

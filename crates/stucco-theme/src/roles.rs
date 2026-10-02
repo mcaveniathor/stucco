@@ -82,6 +82,9 @@ pub(crate) const PAIRS: &[(&str, &str, Kind)] = &[
     ("on-accent", "accent", Kind::Text),
     ("on-accent", "accent-hover", Kind::Text),
     ("accent-text", "accent-soft", Kind::Text),
+    // The tinted header and the current sidebar link sit on accent-soft.
+    ("text", "accent-soft", Kind::Text),
+    ("text-muted", "accent-soft", Kind::Text),
     ("text-muted", "surface-raised", Kind::Text),
     ("success-text", "bg", Kind::Text),
     ("success-text", "success-soft", Kind::Text),

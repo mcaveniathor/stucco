@@ -12,13 +12,14 @@
 //! assert!(html.contains("<h1>Hello</h1>"));
 //! ```
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
 pub use stucco_core::{
-    Asset, AssetFile, AssetRequirements, Attrs, Behavior, Bundle, Cx, Delivery, FormState, Href,
-    Meta, Page, Raw, Render, RenderFn, RenderedFragment, Slot, behavior, check_component_css, el,
-    register_asset, render_fn, render_fragment, to_html,
+    Asset, AssetFile, AssetRequirements, Attrs, Behavior, Bundle, Check, Cx, Delivery, FormState,
+    Href, Meta, Page, Raw, Render, RenderFn, RenderedFragment, Slot, Validator, behavior,
+    check_component_css, el, register_asset, render_fn, render_fragment, to_html,
 };
 
 pub use stucco_core::{
@@ -30,13 +31,14 @@ pub use stucco_ui::*;
 /// Themes: colours, scales, presets and contrast validation.
 pub mod theme {
     pub use stucco_theme::{
-        BuiltTheme, Color, ContrastFailure, ContrastReport, Density, Fonts, Preset, Radius, Scale,
-        Scheme, Scope, Theme, TypeScale, contrast,
+        BuiltTheme, ButtonShape, Color, ContrastFailure, ContrastReport, ControlStyle, Density,
+        Elevation, Fonts, HeaderStyle, HeadingWeight, Palette, Preset, Radius, Scale, Scheme,
+        Scope, SeedRng, Seeded, TableStyle, Theme, TypeScale, contrast,
     };
 }
 
 /// The most common imports.
 pub mod prelude {
-    pub use crate::theme::{Preset, Theme};
+    pub use crate::theme::{Preset, Seeded, Theme};
     pub use crate::{Bundle, Cx, Page, Render, el};
 }

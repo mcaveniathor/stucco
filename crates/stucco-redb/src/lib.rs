@@ -28,6 +28,7 @@
 //! across requests; creating a fresh source per request creates a fresh budget.
 //! Cursors are query-scoped locators, not authorization tokens. The table and
 //! indexes are not automatically migrated when changing codecs/schema.
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 mod codec;

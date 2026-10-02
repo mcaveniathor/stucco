@@ -2,6 +2,12 @@
   .g-page { max-inline-size: 72rem; margin-inline: auto; padding: var(--st-space-8) var(--st-space-4); }
   .g-page > * + * { margin-block-start: var(--st-space-6); }
   .g-lead { color: var(--st-text-muted); }
+  /* Whole-card links: the title link's hit area covers the card. */
+  .g-card { position: relative; transition: border-color var(--st-duration-fast) var(--st-ease); }
+  .g-card:hover { border-color: var(--st-border-strong); }
+  .g-card-link { color: var(--st-text); text-decoration: none; }
+  .g-card-link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+  .g-card:hover .g-card-link { text-decoration: underline; text-underline-offset: 0.2em; }
   .g-preset > * + * { margin-block-start: var(--st-space-3); }
   .g-panels { display: grid; gap: var(--st-space-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); }
   .g-panel {
@@ -10,6 +16,11 @@
     padding: var(--st-space-4); font-family: var(--st-font-sans);
   }
   .g-panel > * + * { margin-block-start: var(--st-space-3); }
+  .g-panel > .g-sample-header {
+    margin: calc(-1 * var(--st-space-4)) calc(-1 * var(--st-space-4)) var(--st-space-4);
+    padding: var(--st-space-3) var(--st-space-4);
+    border-start-start-radius: inherit; border-start-end-radius: inherit;
+  }
   .g-scale { display: grid; grid-template-columns: 5rem repeat(12, 1fr); gap: 2px; align-items: center; }
   .g-scale-name { font-size: var(--st-text-sm); color: var(--st-text-muted); }
   .g-swatch { block-size: 1.5rem; border-radius: var(--st-radius-sm); }

@@ -20,6 +20,7 @@ mod href;
 mod identity;
 mod page;
 mod render;
+mod validate;
 
 pub use asset::{Asset, AssetRef, AssetRequirements, Behavior, is_registered, registered_assets};
 pub use attrs::Attrs;
@@ -36,3 +37,4 @@ pub use href::Href;
 pub use inventory;
 pub use page::{Delivery, Meta, Page};
 pub use render::{Cx, Raw, Render, RenderFn, Slot, render_fn, to_html};
+pub use validate::{Check, Validator};

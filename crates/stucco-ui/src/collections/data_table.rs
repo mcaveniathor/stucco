@@ -1,12 +1,13 @@
-use super::{Col, CollectionToolbar, CollectionView};
+use super::{Col, CollectionView, FilterBar};
 use crate::{
-    data::{Row, Table},
-    feedback::EmptyState,
+    data::{ResultCount, Row, Table},
+    feedback::{EmptyState, LiveRegion},
     navigation::Pagination,
     passthrough::apply,
 };
 use stucco_core::{
-    Attrs, Capabilities, CollectionPage, CollectionQuery, Cx, Direction, Href, Render, el,
+    Attrs, Capabilities, CollectionPage, CollectionQuery, ColumnKind, Cx, Direction, Href, Render,
+    Window, el,
 };
 /// Server-rendered collection table with native GET controls.
 #[derive(Debug)]
@@ -66,6 +67,14 @@ impl<'a, T: 'a> DataTable<'a, T> {
     }
 }
 passthrough!(<T> DataTable<'_, T>);
+/// The `data-kind` for cells of a column kind that needs special alignment.
+fn kind_attr(kind: &ColumnKind) -> Option<&'static str> {
+    match kind {
+        ColumnKind::Number => Some("number"),
+        ColumnKind::Date => Some("date"),
+        _ => None,
+    }
+}
 impl<T> Render for DataTable<'_, T> {
     fn render(&self, cx: &mut Cx) {
         cx.require(&super::COLLECTIONS);
@@ -94,9 +103,10 @@ impl<T> Render for DataTable<'_, T> {
         let view =
             CollectionView::new(self.action.clone(), query, &caps, &specs).label(&self.caption);
         let total = self.page.and_then(|p| p.total).filter(|_| caps.total_count);
-        let mut root = el::div()
-            .class("st-data-table")
-            .child(CollectionToolbar::new(&view, self.rows.len(), total));
+        let filters = self.columns.iter().fold(FilterBar::new(&view), |bar, c| {
+            bar.column_label(c.spec.key.clone(), c.label.clone())
+        });
+        let mut root = el::div().class("st-data-table").child(filters);
         if self.rows.is_empty() {
             root = root.child(
                 EmptyState::new("No results")
@@ -104,7 +114,7 @@ impl<T> Render for DataTable<'_, T> {
                     .actions(
                         el::a()
                             .href(query.clone().reset().link(&self.action))
-                            .text("Reset filters"),
+                            .text("Clear filters"),
                     ),
             );
         } else {
@@ -141,25 +151,50 @@ impl<T> Render for DataTable<'_, T> {
                 } else {
                     Attrs::default()
                 };
+                let attrs = match kind_attr(&c.spec.kind) {
+                    Some(kind) => attrs.data("kind", kind),
+                    None => attrs,
+                };
+                let attrs = if sortable {
+                    attrs.data("sortable", "true")
+                } else {
+                    attrs
+                };
                 header = header.header_with_attrs(content, attrs);
             }
             let mut table = Table::new(&self.caption).header(header);
             for record in self.rows {
                 let mut row = Row::new();
                 for column in &self.columns {
-                    row = row.cell((column.render)(record));
+                    let value = (column.render)(record);
+                    row = match kind_attr(&column.spec.kind) {
+                        Some(kind) => {
+                            row.cell_with_attrs(value, Attrs::default().data("kind", kind))
+                        }
+                        None => row.cell(value),
+                    };
                 }
                 table = table.row(row);
             }
-            root = root.child(table);
-        }
-        if let Some(page) = self.page {
-            root = root.child(
-                Pagination::new(self.action.clone(), query)
-                    .label(format!("{} pagination", self.caption))
-                    .cursors(page.next.clone(), page.prev.clone())
-                    .total(total.filter(|_| caps.offset)),
-            );
+            let offset = match (caps.offset, &query.window) {
+                (true, Window::Offset { page }) => Some(
+                    page.saturating_sub(1)
+                        .saturating_mul(u64::from(query.per_page)),
+                ),
+                _ => None,
+            };
+            let mut footer = el::div()
+                .class("st-data-table-footer")
+                .child(LiveRegion::new().child(ResultCount::new(self.rows.len(), total, offset)));
+            if let Some(page) = self.page {
+                footer = footer.child(
+                    Pagination::new(self.action.clone(), query)
+                        .label(format!("{} pagination", self.caption))
+                        .cursors(page.next.clone(), page.prev.clone())
+                        .total(total.filter(|_| caps.offset)),
+                );
+            }
+            root = root.child(table).child(footer);
         }
         apply(root, &self.attrs, &[]).render(cx);
     }

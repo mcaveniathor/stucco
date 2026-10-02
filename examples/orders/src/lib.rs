@@ -66,6 +66,15 @@ pub fn app(db_path: &Path) -> Result<Router, StoreError> {
         &LayerConfig::default(),
     ))
 }
+/// A sidebar link, marked as the current page when `current`.
+fn nav_link(href: &'static str, text: &'static str, current: bool) -> el::Element<'static> {
+    let link = el::a().href(href).text(text);
+    if current {
+        link.aria("current", "page")
+    } else {
+        link
+    }
+}
 async fn list(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
@@ -104,8 +113,11 @@ async fn list(
                     .filter(),
                 )
                 .column(
-                    Col::number("total_cents", "Total (cents)", |row: &Order| {
-                        row.total_cents as f64
+                    Col::number("total", "Total", |row: &Order| {
+                        row.total_cents as f64 / 100.0
+                    })
+                    .display(|row: &Order| {
+                        format!("${}.{:02}", row.total_cents / 100, row.total_cents % 100)
                     })
                     .filter(),
                 )
@@ -122,15 +134,11 @@ async fn list(
                             .sidebar(
                                 el::nav()
                                     .aria("label", "Application")
-                                    .child(el::a().href("/orders").text("Orders"))
-                                    .child(
-                                        el::a().href("/orders?mode=pages").text("Numbered pages"),
-                                    ),
+                                    .child(nav_link("/orders", "Orders", !pages))
+                                    .child(nav_link("/orders?mode=pages", "Numbered pages", pages)),
                             )
                             .main(table)
-                            .footer(
-                                Footer::new().child(el::p().text("Read-only orders demonstration")),
-                            ),
+                            .footer(Footer::new().child(el::p().text("Read-only demo data"))),
                     )
                     .render(),
             )
