@@ -1,6 +1,7 @@
 @layer stucco.components {
   .st-card {
-    padding: var(--st-space-6); border: var(--st-line, 1px) solid var(--st-border); background: var(--st-surface); box-shadow: var(--st-card-shadow);
+    padding: var(--st-space-6); border: var(--st-line, 1px) solid var(--st-border); background: var(--st-surface-material, var(--st-surface)); -webkit-backdrop-filter: var(--st-surface-blur, none); backdrop-filter: var(--st-surface-blur, none);
+    box-shadow: var(--st-surface-edge, 0 0 transparent), var(--st-card-shadow);
     border-radius: var(--st-surface-radius); corner-shape: var(--st-corner-shape);
   }
   /* The theme's panel style: a box, an open section under a strong rule, or a box with a title band. */
@@ -8,7 +9,8 @@
     padding: var(--st-space-6) var(--st-panel-pad-inline);
     border: var(--st-panel-border); border-block-start: var(--st-panel-rule);
     border-radius: var(--st-panel-radius); corner-shape: var(--st-corner-shape);
-    background: var(--st-panel-bg); box-shadow: var(--st-panel-shadow);
+    background: var(--st-panel-bg); box-shadow: var(--st-panel-edge, 0 0 transparent), var(--st-panel-shadow);
+    -webkit-backdrop-filter: var(--st-surface-blur, none); backdrop-filter: var(--st-surface-blur, none);
   }
   .st-panel-header {
     margin: var(--st-panel-head-margin); padding: var(--st-panel-head-pad);

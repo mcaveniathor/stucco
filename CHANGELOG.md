@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- Three personality options for transparency and depth, each seedable and
+  in `ThemeSpec`, the CLI and the playground (`material`, `backdrop`,
+  `shadows`):
+  - `Material` (Solid, Glass, Frost) makes cards, panels, filter bars, table
+    cards, the header and the side column translucent and blurred; they turn
+    solid under `prefers-reduced-transparency`, `prefers-contrast: more` and
+    forced colours;
+  - `Backdrop` (Plain, Glow, Wash) adds soft accent colour behind the page;
+  - `ShadowStyle` (Soft, Layered, Tinted, Hard) draws the shadow steps.
+  `build` now checks text on the page against the backdrop as well as the
+  finish, and text on translucent surfaces against every colour behind them.
+  Defaults reproduce the previous look, and existing seeds keep every option
+  they had.
+- Shadows are black in dark schemes instead of the light text colour, so
+  they no longer glow.
 - Four more personality options, each seedable and in `ThemeSpec`, the CLI
   and the playground (`heading-font`, `leading`, `tags`, `rules`):
   - `HeadingFont` (Body, Serif, Rounded, Mono) sets the typeface of
