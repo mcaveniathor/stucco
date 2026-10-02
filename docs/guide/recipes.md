@@ -172,9 +172,46 @@ let config = LayerConfig { body_limit: 10 * 1024 * 1024, timeout: Duration::from
 let app = axum::Router::new().stucco_with(Preset::Slate, &config);
 ```
 
+## Build a create, edit and delete workflow
+
+The [orders example](https://github.com/mcaveniathor/stucco/tree/main/examples/orders) is a complete one; these are its routes and what each answers:
+
+| Route | Answers |
+| --- | --- |
+| `GET /orders` | The list; each ID links to `/orders/{id}?back=<this list>` |
+| `GET /orders/new` | The empty form |
+| `POST /orders` | 303 to the new order with a flash, or the form again with 422 |
+| `GET /orders/{id}` | The order: header, properties, history, actions |
+| `GET /orders/{id}/edit` | The form, filled from the record, with its version hidden |
+| `POST /orders/{id}` | 303 with a flash, 422 for invalid input, 409 if the version is stale |
+| `GET /orders/{id}/archive`, `…/delete` | A `Confirmation` page |
+| `POST /orders/{id}/archive`, `…/restore`, `…/delete` | 303 with a flash |
+| `GET /orders/bulk?action=…&id=…` | A confirmation naming the action and how many orders |
+| `POST /orders/bulk` | Rechecks each id, then 303 with a flash saying what happened |
+
+Every change is a POST, so no GET ever changes anything. Each handler checks the `back` parameter is one of its own paths before redirecting to it, and returns to the list the user came from, with its search, filters and page intact.
+
 ## Confirm before deleting
 
-Put the delete form in a dialog, and open it from the row's button. The form posts as usual; Cancel, Escape or a click outside closes it:
+Give the action a page of its own, so it works without JavaScript:
+
+```rust
+use stucco::prelude::*;
+
+async fn confirm_delete(page: PageCx) -> Document {
+    page.title("Delete order 42?").main(
+        Confirmation::new("Delete order 42 permanently?", "/orders/42/delete", "Delete order 42")
+            .target("Order 42 for Ada Lovelace, $12.00")
+            .consequence("The order and its history are deleted. This can't be undone.")
+            .danger()
+            .cancel("/orders/42"),
+    )
+}
+```
+
+Link to it from the order's Delete button (`GET /orders/42/delete`) and handle `POST /orders/42/delete`. Archiving, which can be undone, deserves a confirmation too but not a danger button.
+
+To ask in place instead, put the delete form in a dialog, and open it from the row's button. The form posts as usual; Cancel, Escape or a click outside closes it:
 
 ```rust
 use stucco::prelude::*;
@@ -192,4 +229,4 @@ fn delete_order(id: u64) -> impl Render {
 }
 ```
 
-After the redirect, show a `Toast::new("Order deleted").tone(Tone::Success)` on the page it lands on.
+Use `link_opener` instead of `opener` to keep the confirmation page as the fallback without JavaScript. After the redirect, show the outcome with a flash message and a `Notice` (see [forms](forms.html#feedback-after-a-save)), or a `Toast`.

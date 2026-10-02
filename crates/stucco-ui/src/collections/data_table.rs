@@ -1,4 +1,4 @@
-use super::{Col, CollectionView, FilterBar};
+use super::{ActiveFilters, Col, CollectionView, FilterBar};
 use crate::{
     data::{ResultCount, Row, Table},
     feedback::{EmptyState, LiveRegion},
@@ -7,9 +7,33 @@ use crate::{
 };
 use stucco_core::{
     Attrs, Capabilities, Collection, CollectionPage, CollectionQuery, ColumnKind, Cx, Direction,
-    Href, Render, Window, el,
+    Href, Render, Slot, Window, el,
 };
+/// A function of a row giving text (its id, its name).
+struct RowText<'a, T>(Box<dyn Fn(&T) -> String + 'a>);
+impl<T> std::fmt::Debug for RowText<'_, T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("RowText(..)")
+    }
+}
+/// Row checkboxes for bulk actions; see [`DataTable::selectable`].
+#[derive(Debug)]
+struct Selection<'a, T> {
+    form: String,
+    name: String,
+    label: RowText<'a, T>,
+    selected: &'a [String],
+}
 /// Server-rendered collection table with native GET controls.
+///
+/// With a query and capabilities (from [`DataTable::from_collection`]) it
+/// shows a filter bar, the active filters with links that remove each one,
+/// sortable headings, a result count and pagination, all as ordinary links
+/// and GET forms. It tells three kinds of empty apart: an empty collection
+/// (see [`DataTable::empty`]), a search or filter with no matches (with a
+/// link that clears them), and a page past the end (with a link back to
+/// the first page). A failed load is the application's to report; render a
+/// notice in place of the table, with a 5xx status.
 #[derive(Debug)]
 pub struct DataTable<'a, T> {
     attrs: Attrs,
@@ -20,6 +44,9 @@ pub struct DataTable<'a, T> {
     query: Option<&'a CollectionQuery>,
     caps: Option<&'a Capabilities>,
     action: Href,
+    row_id: Option<RowText<'a, T>>,
+    selection: Option<Selection<'a, T>>,
+    empty: Option<Slot<'a>>,
 }
 impl<'a, T: 'a> DataTable<'a, T> {
     /// Creates a table over already-loaded rows.
@@ -33,6 +60,9 @@ impl<'a, T: 'a> DataTable<'a, T> {
             query: None,
             caps: None,
             action: Href::new(""),
+            row_id: None,
+            selection: None,
+            empty: None,
         }
     }
     /// Uses a page's rows and metadata without duplicated state.
@@ -77,11 +107,67 @@ impl<'a, T: 'a> DataTable<'a, T> {
         self.action = action.into();
         self
     }
+    /// Each row's stable identifier, rendered as `data-row-id` on its
+    /// `<tr>` and submitted by [`DataTable::selectable`]'s checkboxes. Use
+    /// the record's key, not its position, so it survives sorting and
+    /// paging.
+    pub fn row_id(mut self, id: impl Fn(&T) -> String + 'a) -> Self {
+        self.row_id = Some(RowText(Box::new(id)));
+        self
+    }
+    /// Adds a checkbox to each row, submitted as `name=<row id>` with the
+    /// form whose id is `form`. Put that form (a bulk action's buttons)
+    /// anywhere on the page; the checkboxes join it through their `form`
+    /// attribute, so selection needs no JavaScript.
+    ///
+    /// `label` names each row for its checkbox ("Select order 42"). Only
+    /// the rows on this page can be selected; the receiving handler gets
+    /// their ids, and must check again that each still exists and that the
+    /// user may act on it. Requires [`DataTable::row_id`].
+    ///
+    /// ```
+    /// use stucco_core::to_html;
+    /// use stucco_ui::collections::{Col, DataTable};
+    ///
+    /// let rows = [(7, "Ada")];
+    /// let table = DataTable::new(&rows, "Orders")
+    ///     .row_id(|r: &(u32, &str)| r.0.to_string())
+    ///     .selectable("bulk", "id", |r| format!("order {}", r.0))
+    ///     .column(Col::text("customer", "Customer", |r: &(u32, &str)| r.1.to_string()));
+    /// let html = to_html(&table);
+    /// assert!(html.contains(r#"<tr data-row-id="7">"#));
+    /// assert!(html.contains(r#"form="bulk" name="id" value="7" aria-label="Select order 7""#));
+    /// ```
+    pub fn selectable(mut self, form: &str, name: &str, label: impl Fn(&T) -> String + 'a) -> Self {
+        self.selection = Some(Selection {
+            form: form.to_owned(),
+            name: name.to_owned(),
+            label: RowText(Box::new(label)),
+            selected: &[],
+        });
+        self
+    }
+    /// Rows whose checkboxes start checked, by id (after a bulk action
+    /// failed, say).
+    pub fn selected(mut self, ids: &'a [String]) -> Self {
+        if let Some(selection) = &mut self.selection {
+            selection.selected = ids;
+        }
+        self
+    }
+    /// What to show when the collection itself is empty (not merely
+    /// filtered to nothing): usually an [`EmptyState`] explaining what
+    /// belongs here, with the action that adds the first record.
+    pub fn empty(mut self, content: impl Render + 'a) -> Self {
+        self.empty = Some(Slot::new(content));
+        self
+    }
 }
 passthrough!(<T> DataTable<'_, T>);
-/// The `data-kind` for cells of a column kind that needs special alignment.
-fn kind_attr(kind: &ColumnKind) -> Option<&'static str> {
-    match kind {
+/// The `data-kind` for cells of a column that needs special alignment.
+fn cell_kind<T>(col: &Col<'_, T>) -> Option<&'static str> {
+    match col.spec.kind {
+        _ if col.actions => Some("actions"),
         ColumnKind::Number => Some("number"),
         ColumnKind::Date => Some("date"),
         _ => None,
@@ -129,26 +215,75 @@ impl<T> Render for DataTable<'_, T> {
                 .cursors(page.next.clone(), page.prev.clone())
                 .total(offset_pages)
         };
-        let mut root = el::div().class("st-data-table").child(filters);
+        let active = self.caps.map(|_| {
+            self.columns
+                .iter()
+                .fold(ActiveFilters::new(&view), |chips, c| {
+                    chips.column_label(c.spec.key.clone(), c.label.clone())
+                })
+        });
+        let mut root = el::div()
+            .class("st-data-table")
+            .child(filters)
+            .child(active);
         if self.rows.is_empty() {
-            let empty = EmptyState::new("No results");
-            root = root.child(match self.caps {
-                Some(_) => empty
-                    .description("Try adjusting your search or filters.")
-                    .actions(
-                        el::a()
-                            .href(query.clone().reset().link(&self.action))
-                            .text("Clear filters"),
-                    ),
-                None => empty,
-            });
+            let noun = self.caption.to_lowercase();
+            // Past the start (a later numbered page, or a cursor page with
+            // rows before it) there are rows elsewhere: offer the way back,
+            // not "no matches". A cursor alone proves nothing; it may be
+            // stale or forged.
+            let later_page = matches!(query.window, Window::Offset { page } if page > 1)
+                && self.page.is_none_or(|p| p.total != Some(0));
+            let past_start = later_page || self.page.is_some_and(|p| p.prev.is_some());
+            root = if past_start {
+                root.child(
+                    EmptyState::new("Nothing on this page")
+                        .description(el::p().text(format!("There are no more {noun} here.")))
+                        .actions(
+                            el::a()
+                                .href(
+                                    query
+                                        .clone()
+                                        .with_window(Window::default())
+                                        .link(&self.action),
+                                )
+                                .text("Go to the first page"),
+                        ),
+                )
+            } else if query.is_filtered() {
+                root.child(
+                    EmptyState::new(format!("No matching {noun}"))
+                        .description(el::p().text("Try another search, or remove some filters."))
+                        .actions(
+                            el::a()
+                                .href(query.clone().reset().link(&self.action))
+                                .text("Clear search and filters"),
+                        ),
+                )
+            } else {
+                match &self.empty {
+                    Some(empty) => root.child(empty),
+                    None => root.child(EmptyState::new(format!("No {noun} yet"))),
+                }
+            };
             // An empty page past the end still links back to the pages that
             // have rows, keeping the search and filters.
             if let Some(page) = self.page {
                 root = root.child(pagination(page));
             }
         } else {
+            debug_assert!(
+                self.selection.is_none() || self.row_id.is_some(),
+                "DataTable::selectable needs DataTable::row_id"
+            );
+            let selection = self.selection.as_ref().filter(|_| self.row_id.is_some());
             let mut header = Row::new();
+            if selection.is_some() {
+                header = header.header_with_attrs(
+                    el::span().class("st-sr-only").text("Select"),
+                    Attrs::default().data("kind", "select"),
+                );
+            }
             for c in &self.columns {
                 let sortable = caps.sortable.contains(&c.spec.key);
                 let active = sortable && query.sort.as_deref() == Some(&c.spec.key);
@@ -181,7 +316,7 @@ impl<T> Render for DataTable<'_, T> {
                 } else {
                     Attrs::default()
                 };
-                let attrs = match kind_attr(&c.spec.kind) {
+                let attrs = match cell_kind(c) {
                     Some(kind) => attrs.data("kind", kind),
                     None => attrs,
                 };
@@ -195,14 +330,31 @@ impl<T> Render for DataTable<'_, T> {
             let mut table = Table::new(&self.caption).header(header);
             for record in self.rows {
                 let mut row = Row::new();
+                let id = self.row_id.as_ref().map(|id| (id.0)(record));
+                if let Some(id) = &id {
+                    row = row.data("row-id", id.clone());
+                }
+                if let (Some(selection), Some(id)) = (selection, &id) {
+                    let checkbox = el::input()
+                        .class("st-row-select")
+                        .attr("type", "checkbox")
+                        .attr("form", selection.form.clone())
+                        .attr("name", selection.name.clone())
+                        .attr("value", id.clone())
+                        .aria("label", format!("Select {}", (selection.label.0)(record)))
+                        .bool_attr("checked", selection.selected.contains(id));
+                    row = row.cell_with_attrs(checkbox, Attrs::default().data("kind", "select"));
+                }
                 for column in &self.columns {
                     let value = (column.render)(record);
-                    row = match kind_attr(&column.spec.kind) {
-                        Some(kind) => {
-                            row.cell_with_attrs(value, Attrs::default().data("kind", kind))
-                        }
-                        None => row.cell(value),
-                    };
+                    let mut attrs = Attrs::default();
+                    if let Some(kind) = cell_kind(column) {
+                        attrs = attrs.data("kind", kind);
+                    }
+                    if column.wrap {
+                        attrs = attrs.data("wrap", "true");
+                    }
+                    row = row.cell_with_attrs(value, attrs);
                 }
                 table = table.row(row);
             }

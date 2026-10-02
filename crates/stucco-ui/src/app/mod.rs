@@ -11,9 +11,13 @@
 //!     .footer(Footer::new().child("Example"));
 //! assert_eq!(to_html(&shell).matches("<main ").count(), 1);
 //! ```
+#[cfg(feature = "forms")]
+mod confirmation;
 mod footer;
 mod header;
 mod shell;
+#[cfg(feature = "forms")]
+pub use confirmation::Confirmation;
 pub use footer::Footer;
 pub use header::{PageHeader, SectionHeader};
 pub use shell::AppShell;

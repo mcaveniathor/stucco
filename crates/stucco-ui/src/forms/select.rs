@@ -18,6 +18,7 @@ pub struct Select {
     placeholder: Option<String>,
     selected: Option<String>,
     required: bool,
+    disabled: bool,
 }
 
 impl Select {
@@ -30,6 +31,7 @@ impl Select {
             placeholder: None,
             selected: None,
             required: false,
+            disabled: false,
         }
     }
 
@@ -66,6 +68,13 @@ impl Select {
         self.required = true;
         self
     }
+
+    /// Disables the select. A disabled control is not submitted; to show a
+    /// fixed value that is, add a hidden input alongside it.
+    pub fn disabled(mut self) -> Self {
+        self.disabled = true;
+        self
+    }
 }
 
 passthrough!(Select);
@@ -97,6 +106,7 @@ impl Control for Select {
             wiring,
             self.required,
         )
+        .bool_attr("disabled", self.disabled)
         .attrs(&passthrough_without_id(&self.attrs));
         if let Some(p) = &self.placeholder {
             el = el.child(

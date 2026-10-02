@@ -38,6 +38,7 @@ struct Options {
     label: Option<LitStr>,
     value: Option<Path>,
     display: Option<Path>,
+    link: Option<Path>,
     sortable: bool,
     searchable: bool,
     filter: bool,
@@ -118,6 +119,9 @@ fn columns(input: &DeriveInput) -> syn::Result<TokenStream2> {
         };
         if let Some(display) = &options.display {
             column = quote! { #column.display(#display) };
+        }
+        if let Some(link) = &options.link {
+            column = quote! { #column.href(#link) };
         }
         if options.sortable {
             column = quote! { #column.sortable() };
@@ -201,6 +205,9 @@ fn field_options(field: &syn::Field) -> syn::Result<Options> {
             } else if path.is_ident("display") {
                 options.display = Some(meta.value()?.parse()?);
                 Ok(())
+            } else if path.is_ident("link") {
+                options.link = Some(meta.value()?.parse()?);
+                Ok(())
             } else if path.is_ident("sortable") {
                 options.sortable = true;
                 Ok(())
@@ -216,7 +223,7 @@ fn field_options(field: &syn::Field) -> syn::Result<Options> {
             } else {
                 Err(meta.error(
                     "unknown column option; expected text, number, date, enumeration(...), \
-                     key, label, value, display, sortable, searchable, filter or skip",
+                     key, label, value, display, link, sortable, searchable, filter or skip",
                 ))
             }
         })?;

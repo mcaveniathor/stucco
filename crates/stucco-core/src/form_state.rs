@@ -5,7 +5,16 @@ use std::collections::BTreeMap;
 
 use crate::behavior;
 
-/// Values and errors from a form submission, keyed by field name.
+/// A form's values and errors, keyed by field name.
+///
+/// The same type holds a form's *initial* values (an edit form filled from a
+/// stored record, built with [`FormState::with_value`]) and its *submitted*
+/// values (parsed with [`FormState::from_urlencoded`]); [`is_submitted`]
+/// tells them apart. Submitted values are kept exactly as sent, including
+/// input that failed to parse, so a re-rendered form shows what the user
+/// typed rather than a stored value or a blank.
+///
+/// [`is_submitted`]: FormState::is_submitted
 ///
 /// ```
 /// use stucco_core::FormState;
@@ -21,6 +30,7 @@ pub struct FormState {
     values: BTreeMap<String, Vec<String>>,
     errors: BTreeMap<String, Vec<String>>,
     form_errors: Vec<String>,
+    submitted: bool,
 }
 
 impl FormState {
@@ -55,7 +65,11 @@ impl FormState {
 
     /// Parses an `application/x-www-form-urlencoded` body, keeping repeated
     /// names in order. The CSRF field (`_csrf`) is dropped so it is never
-    /// echoed back into a re-rendered form.
+    /// echoed back into a re-rendered form. The state is marked submitted.
+    ///
+    /// Browsers send nothing for an unchecked checkbox, so a missing name
+    /// means "unchecked" (see `Validator::flag`), and a name sent several
+    /// times (checkbox groups, multi-selects) keeps every value.
     ///
     /// ```
     /// use stucco_core::FormState;
@@ -71,6 +85,43 @@ impl FormState {
             .fold(FormState::new(), |state, (name, value)| {
                 state.with_value(name, value)
             })
+            .mark_submitted()
+    }
+
+    /// Marks the state as a submission (for values read some other way,
+    /// such as a multipart or JSON body).
+    pub fn mark_submitted(mut self) -> FormState {
+        self.submitted = true;
+        self
+    }
+
+    /// Whether the values came from a submission rather than being the
+    /// form's initial values.
+    pub fn is_submitted(&self) -> bool {
+        self.submitted
+    }
+
+    /// Drops the values of `names` and keeps their errors: for passwords,
+    /// tokens and other secrets, before a state is re-rendered, stored or
+    /// logged. (`Field` never redisplays a password or sensitive control's
+    /// value, but the state still holds it, and its `Debug` output shows
+    /// every value.)
+    ///
+    /// ```
+    /// use stucco_core::FormState;
+    ///
+    /// let state = FormState::from_urlencoded(b"email=a%40b.c&password=hunter2")
+    ///     .with_error("password", "Wrong password")
+    ///     .without_values(&["password"]);
+    /// assert_eq!(state.value("password"), None);
+    /// assert_eq!(state.errors("password"), ["Wrong password"]);
+    /// assert!(!format!("{state:?}").contains("hunter2"));
+    /// ```
+    pub fn without_values(mut self, names: &[&str]) -> FormState {
+        for name in names {
+            self.values.remove(*name);
+        }
+        self
     }
 
     /// The first submitted value for `name`.
@@ -136,6 +187,20 @@ mod tests {
         assert_eq!(s.value("empty"), Some(""));
         assert_eq!(s.value("flag"), Some(""));
         assert!(s.values("_csrf").is_empty() && !s.has_errors());
-        assert_eq!(FormState::from_urlencoded(b""), FormState::new());
+        assert_eq!(
+            FormState::from_urlencoded(b""),
+            FormState::new().mark_submitted()
+        );
+    }
+
+    #[test]
+    fn initial_values_are_not_a_submission() {
+        let initial = FormState::new().with_value("name", "Ada");
+        assert!(!initial.is_submitted());
+        assert!(FormState::from_urlencoded(b"name=Ada").is_submitted());
+        let kept = FormState::from_urlencoded(b"a=1&b=2").without_values(&["a", "missing"]);
+        assert_eq!(kept.value("a"), None);
+        assert_eq!(kept.value("b"), Some("2"));
+        assert!(kept.is_submitted());
     }
 }

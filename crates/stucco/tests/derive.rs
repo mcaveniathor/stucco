@@ -73,3 +73,30 @@ fn a_table_renders_from_derived_columns() {
     // The filter works in dollars, from `value`, not in cents.
     assert!(!html.contains(">4800<"));
 }
+
+fn customer_page(customer: &Customer) -> String {
+    format!("/customers/{}", customer.id)
+}
+
+#[derive(Columns)]
+struct Customer {
+    #[col(sortable)]
+    id: u64,
+    #[col(searchable, link = customer_page)]
+    name: String,
+}
+
+#[test]
+fn linked_columns_keep_their_kind_and_controls() {
+    let specs = Customer::column_specs();
+    assert_eq!(specs[1].kind, ColumnKind::Text);
+    let rows = [Customer {
+        id: 3,
+        name: "Grace <Hopper>".into(),
+    }];
+    let html = to_html(&DataTable::new(&rows, "Customers").columns(Customer::columns()));
+    assert!(
+        html.contains(r#"<a href="/customers/3">Grace &lt;Hopper&gt;</a>"#),
+        "{html}"
+    );
+}

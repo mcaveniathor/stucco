@@ -8,7 +8,9 @@
 //! assert!(to_html(&empty).contains("No orders"));
 //! assert!(to_html(&LiveRegion::new().child("Showing 25 orders")).contains("aria-live"));
 //! ```
+mod notice;
 use crate::{passthrough::apply, typography::Heading};
+pub use notice::Notice;
 use stucco_core::{Attrs, Cx, Render, Slot, el};
 /// Feedback styles.
 pub static FEEDBACK: stucco_core::Asset = stucco_core::Asset {

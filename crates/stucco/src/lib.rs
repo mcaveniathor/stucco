@@ -83,30 +83,40 @@ pub mod prelude {
 
     #[cfg(feature = "actions")]
     pub use crate::actions::{Button, ButtonLink, IconButton};
+    #[cfg(all(feature = "app", feature = "forms"))]
+    pub use crate::app::Confirmation;
     #[cfg(feature = "app")]
     pub use crate::app::{AppShell, Footer, PageHeader};
     #[cfg(feature = "collections")]
     pub use crate::collections::{Col, Columns, DataTable};
     #[cfg(feature = "data")]
-    pub use crate::data::{Card, Panel, Row, Table};
+    pub use crate::data::{
+        Activity, ActivityList, Card, DescriptionList, Panel, Row, StatusBadge, Table, Timestamp,
+    };
     #[cfg(feature = "feedback")]
-    pub use crate::feedback::{EmptyState, LiveRegion};
+    pub use crate::feedback::{EmptyState, LiveRegion, Notice};
     #[cfg(feature = "forms")]
     pub use crate::forms::{
-        Checkbox, ErrorSummary, Field, Fieldset, Form, Input, RadioGroup, Select, Textarea,
+        Checkbox, ErrorSummary, Field, Fieldset, Form, FormActions, HiddenInput, Input, RadioGroup,
+        Select, Textarea,
     };
     #[cfg(feature = "layout")]
     pub use crate::layout::{
         Center, Cluster, Container, Grid, Separator, Sidebar, Stack, Switcher,
     };
     #[cfg(feature = "navigation")]
-    pub use crate::navigation::{NavLink, Pagination, Tabs};
+    pub use crate::navigation::{Breadcrumbs, NavLink, Pagination, Tabs};
     #[cfg(feature = "overlay")]
     pub use crate::overlay::{Dialog, Menu, Toast, Tooltip};
     #[cfg(feature = "typography")]
     pub use crate::typography::{Code, Heading, Kbd, Link, Text};
     #[cfg(feature = "collections")]
     pub use crate::{Collection, CollectionQuery};
+    #[cfg(feature = "forms")]
+    pub use crate::{FormState, Validator};
     #[cfg(feature = "axum")]
-    pub use stucco_tower::{CollectionSource, Document, PageCx, StuccoRouter};
+    pub use stucco_tower::{
+        CollectionSource, Document, Flash, FlashLevel, IncomingFlash, PageCx, SeeOther,
+        StuccoRouter, Submission,
+    };
 }

@@ -48,4 +48,8 @@
   .st-checkbox > input, .st-radio > input { inline-size: 1.125em; block-size: 1.125em; margin: 0; accent-color: var(--st-accent); }
   .st-radio-group { border: 0; padding: 0; min-inline-size: 0; display: flex; flex-direction: column; gap: var(--st-space-2); }
   .st-radio-group > .st-legend { padding: 0; margin-block-end: var(--st-space-1); }
+  .st-optional { color: var(--st-text-muted); font-weight: 400; }
+  .st-input[readonly], .st-textarea[readonly] { background: var(--st-surface-raised); }
+  /* Save/cancel row: primary first, wrapping cleanly on narrow screens. */
+  .st-form-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--st-space-3); }
 }

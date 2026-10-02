@@ -2,10 +2,10 @@
 
 use stucco::actions::Button;
 use stucco::forms::{
-    Checkbox, ErrorSummary, Field, Fieldset, Form, Input, RadioGroup, Select, Textarea,
+    Checkbox, ErrorSummary, Field, Fieldset, Form, FormActions, Input, RadioGroup, Select, Textarea,
 };
-use stucco::layout::{Cluster, Grid, Stack};
-use stucco::{Bundle, FormState, Measure, Render, Space, Variant};
+use stucco::layout::{Grid, Stack};
+use stucco::{Bundle, FormState, Measure, Render, Space};
 
 use crate::shell::{component_page, section};
 
@@ -80,7 +80,11 @@ pub fn page(bundle: &Bundle) -> String {
                         .bind(&state),
                     ),
             )
-            .child(Field::new("Bio", Textarea::new("bio").rows(3)).bind(&state))
+            .child(
+                Field::new("Bio", Textarea::new("bio").rows(3))
+                    .optional()
+                    .bind(&state),
+            )
             .child(
                 Fieldset::new("Preferences").child(
                     Stack::new()
@@ -95,16 +99,45 @@ pub fn page(bundle: &Bundle) -> String {
                 ),
             )
             .child(
-                Cluster::new()
-                    .child(
-                        Button::new("Create account")
-                            .submit()
-                            .variant(Variant::Primary),
-                    )
-                    .child(Button::new("Reset").reset()),
+                FormActions::submit("Create account")
+                    .secondary(Button::new("Reset").reset())
+                    .cancel("index.html"),
             ),
     );
-    let sections: Vec<Box<dyn Render>> = vec![section("A submitted form with errors", form)];
+    let fixed = Form::post("#").child(
+        Grid::new()
+            .min(Measure::Xs)
+            .space(Space::S4)
+            .child(
+                Field::new(
+                    "Account ID",
+                    Input::text("account").value("acct_8f2c").readonly(),
+                )
+                .hint("Read-only: submitted, but not editable."),
+            )
+            .child(
+                Field::new(
+                    "Region",
+                    Select::new("region")
+                        .option("eu", "Europe")
+                        .selected("eu")
+                        .disabled(),
+                )
+                .hint("Disabled: neither editable nor submitted."),
+            )
+            .child(Field::new(
+                "Archived note",
+                Textarea::new("archived")
+                    .rows(2)
+                    .value("Kept for the record.")
+                    .readonly(),
+            ))
+            .child(Field::new("Coupon", Input::text("coupon").disabled()).optional()),
+    );
+    let sections: Vec<Box<dyn Render>> = vec![
+        section("A submitted form with errors", form),
+        section("Read-only and disabled fields", fixed),
+    ];
     component_page(
         bundle,
         "Forms",

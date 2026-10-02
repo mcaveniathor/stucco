@@ -15,8 +15,13 @@ from this repository.
 ## What is included
 
 - Layout primitives, typography, buttons, form controls, feedback, and icons.
-- Tables, cards, panels, page headers, footers, and application shells.
-- Typed collection columns and capability-aware GET search/filter controls.
+- Tables, cards, panels, page headers, breadcrumbs, footers, and application shells.
+- Notices, status badges, property lists, timestamps, activity history, and
+  full-page confirmations for the pages around a form.
+- Typed collection columns, capability-aware GET search/filter controls,
+  removable active filters, row actions, and native row selection.
+- Validation that keeps every submitted value, and one-time flash messages
+  for feedback after a redirect.
 - OKLCH themes with semantic color tokens, light/dark schemes, and contrast checks.
 - Escaped text, checked URLs, generated IDs, and explicit accessible labels.
 - Optional Tower/Axum integration and embedded redb storage.
@@ -183,10 +188,14 @@ column list, from its fields.
 blocking scans.
 
 The [orders example](https://github.com/mcaveniathor/stucco/tree/main/examples/orders)
-persists 67 seeded records and demonstrates the complete flow. Its default
-cursor mode leaves the total unknown. Numbered mode deliberately scans the whole
-collection and is intended for small datasets. Authentication, authorization,
-schema migrations, and mutation endpoints belong to the application.
+is a complete admin for one resource, without JavaScript: browse, search,
+filter, sort and page 67 persisted records; view an order and its history;
+create and edit with validation and conflict detection; archive, restore and
+delete with confirmation; and act on several orders at once. Its default
+cursor mode leaves the total unknown. Numbered mode deliberately scans the
+whole collection and is intended for small datasets. Authentication,
+authorization, CSRF tokens and schema migrations belong to the application;
+the example's README says what it leaves out.
 
 ## Crates and compiler support
 
@@ -212,13 +221,13 @@ to select only the families you need.
 | `layout` | Stack, Cluster, Grid, Container, Sidebar, and related primitives |
 | `typography` | Headings, text, links, code, and keyboard keys |
 | `actions` | Buttons, button links, and icon buttons |
-| `forms` | Forms, fields, inputs, selects, and choice controls |
-| `feedback` | Empty states and live status regions |
-| `navigation` | Pagination, navigation links, and tabs |
+| `forms` | Forms, fields, inputs, selects, choice controls, and form actions |
+| `feedback` | Notices, empty states, and live status regions |
+| `navigation` | Breadcrumbs, pagination, navigation links, and tabs |
 | `overlay` | Dialogs, menus, toasts, and tooltips |
-| `data` | Cards, panels, semantic tables, and result counts |
-| `app` | Application shells, page/section headers, and footers |
-| `collections` | Typed DataTable and GET controls; enables data/forms/navigation/feedback |
+| `data` | Cards, panels, tables, result counts, badges, property lists, timestamps, and activity |
+| `app` | Application shells, page/section headers, footers, and confirmation pages |
+| `collections` | Typed DataTable, GET controls, and active filters; enables data/forms/navigation/feedback |
 | `icons` | Vendored Lucide icon catalog |
 
 The manifest also contains reserved feature names for planned families

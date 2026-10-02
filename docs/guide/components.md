@@ -11,13 +11,13 @@ Components are grouped into families, each behind a cargo feature. The facade en
 | `layout` | `Stack`, `Cluster`, `Grid`, `Center`, `Container`, `Sidebar`, `Switcher`, `Surface`, `ThemeScope`, `SkipLink` |
 | `typography` | `Heading`, `Text`, `Link`, `Code`, `Kbd` |
 | `actions` | `Button`, `ButtonLink`, `IconButton` |
-| `forms` | `Form`, `Field`, `Input`, `Select`, `Textarea`, `Checkbox`, `RadioGroup`, `Fieldset`, `ErrorSummary` |
-| `feedback` | `EmptyState`, `LiveRegion` |
-| `navigation` | `Pagination`, `NavLink`, `Tabs` |
+| `forms` | `Form`, `Field`, `Input`, `Select`, `Textarea`, `Checkbox`, `RadioGroup`, `Fieldset`, `ErrorSummary`, `FormActions`, `HiddenInput` |
+| `feedback` | `Notice`, `EmptyState`, `LiveRegion` |
+| `navigation` | `Breadcrumbs`, `Pagination`, `NavLink`, `Tabs` |
 | `overlay` | `Dialog`, `Menu`, `Toast`, `Tooltip` |
-| `data` | `Card`, `Panel`, `Table`, `ResultCount` |
-| `app` | `AppShell`, `PageHeader`, `SectionHeader`, `Footer` |
-| `collections` | `DataTable`, `Col`, `FilterBar`, `SearchForm`, `SortControl` |
+| `data` | `Card`, `Panel`, `Table`, `ResultCount`, `DescriptionList`, `StatusBadge`, `Timestamp`, `ActivityList` |
+| `app` | `AppShell`, `PageHeader`, `SectionHeader`, `Footer`, `Confirmation` (with `forms`) |
+| `collections` | `DataTable`, `Col`, `FilterBar`, `ActiveFilters`, `SearchForm`, `SortControl` |
 | `icons` | The Lucide icon catalog |
 
 The [gallery](../gallery/) shows every component in every state.
@@ -103,6 +103,37 @@ let shell = AppShell::new()
 
 The theme's shell layout decides where the primary links go: at the top of the side column, or in a row under the header. The sidebar is always a column beside the content, and narrow screens stack everything.
 
+## Records and outcomes
+
+A record's page and the feedback around a change use a few small pieces:
+
+```rust
+use stucco::prelude::*;
+
+let header = PageHeader::new("Order 1042")
+    .breadcrumbs(Breadcrumbs::new().link("Orders", "/orders").current("Order 1042"))
+    .description(StatusBadge::new("Paid").tone(Tone::Success))
+    .actions(ButtonLink::new("Edit", "/orders/1042/edit").variant(Variant::Primary));
+let details = DescriptionList::new()
+    .item("Customer", "Ada Lovelace")
+    .item("Created", Timestamp::new("2026-09-04T10:00:00Z", "4 Sep 2026, 10:00").zone("UTC"));
+let history = ActivityList::new("History of order 1042").item(Activity::new(
+    "Grace Hopper",
+    "marked the order paid",
+    Timestamp::new("2026-09-12T08:30:00Z", "12 Sep 2026, 08:30").zone("UTC"),
+));
+```
+
+- **`Breadcrumbs`** is a `<nav>` with the trail to the current page, which is marked `aria-current="page"`. Label steps with page names ("Order 1042"), not "Details".
+- **`StatusBadge`** always shows its text; the tone only tints it, so status reads the same without colour.
+- **`DescriptionList`** lays a record's properties out in columns that stack on narrow screens. Pass "Not set" rather than leaving a value blank.
+- **`Timestamp`** is a `<time>` with a machine-readable value. Stucco doesn't format dates or convert time zones: pass both forms, and name the zone whenever a time of day is shown.
+- **`ActivityList`** shows who did what, to what, and when, with optional details in a native disclosure. Keep secrets out of activity.
+- **`Notice`** reports an outcome ("Order 1042 was saved.") or a state ("This order is archived."). The tone is spelled out for screen readers, outcomes are announced, and `quiet()` notices are not.
+- **`Confirmation`** is a full page that asks before acting: what is affected, what will happen, and a confirm button posting a form beside a cancel link. It works without JavaScript; a `Dialog` can offer the same form in place.
+
+`PageHeader` actions wrap onto new lines on narrow screens.
+
 ## Overlays
 
 The `overlay` family, on by default, puts content above the page. Each component is native HTML first, and one small behaviour script, loaded only on pages that use them, fills the gaps.
@@ -140,4 +171,6 @@ Components carry the accessibility work so pages get it without extra effort:
 - Focus rings use `:focus-visible`, and motion respects `prefers-reduced-motion`.
 - Every theme passes WCAG contrast checks for its text and interface colours before it builds.
 
-The browser test suite runs axe against every gallery page in light and dark schemes.
+The browser test suite runs axe against every gallery page in light and dark schemes, and against the orders example at a 320px width.
+
+Automated checks and contrast validation find some problems, not all: they can't tell whether a label makes sense or a focus order is logical. Check your pages with a keyboard and a screen reader too, and keep the obligations that belong to your application: meaningful labels and messages, headings in order, and announcements that aren't noisy.

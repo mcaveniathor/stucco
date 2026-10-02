@@ -18,6 +18,8 @@ pub struct Textarea {
     value: Option<String>,
     placeholder: Option<String>,
     required: bool,
+    disabled: bool,
+    readonly: bool,
     sensitive: bool,
 }
 
@@ -31,6 +33,8 @@ impl Textarea {
             value: None,
             placeholder: None,
             required: false,
+            disabled: false,
+            readonly: false,
             sensitive: false,
         }
     }
@@ -56,6 +60,18 @@ impl Textarea {
     /// Requires a value.
     pub fn required(mut self) -> Self {
         self.required = true;
+        self
+    }
+
+    /// Disables the textarea (its value is not submitted).
+    pub fn disabled(mut self) -> Self {
+        self.disabled = true;
+        self
+    }
+
+    /// Makes the textarea read-only (its value is still submitted).
+    pub fn readonly(mut self) -> Self {
+        self.readonly = true;
         self
     }
 
@@ -92,7 +108,10 @@ impl Control for Textarea {
         if let Some(p) = &self.placeholder {
             el = el.attr("placeholder", p.clone());
         }
-        let mut el = wire(el, wiring, self.required).attrs(&passthrough_without_id(&self.attrs));
+        let mut el = wire(el, wiring, self.required)
+            .bool_attr("disabled", self.disabled)
+            .bool_attr("readonly", self.readonly)
+            .attrs(&passthrough_without_id(&self.attrs));
         if !self.sensitive {
             if let Some(v) = wiring.value.as_ref().or(self.value.as_ref()) {
                 // The parser drops one newline right after <textarea>; double

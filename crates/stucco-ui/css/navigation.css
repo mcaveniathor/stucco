@@ -28,4 +28,10 @@
     content: ""; position: absolute; inset-inline: var(--st-space-2); bottom: calc(-1 * var(--st-line, 1px));
     block-size: 3px; border-radius: var(--st-radius-full); background: var(--st-accent);
   }
+  /* Breadcrumbs: a wrapping trail with CSS separators (not read aloud). */
+  .st-breadcrumbs > ol { display: flex; flex-wrap: wrap; align-items: center; gap: var(--st-space-1) var(--st-space-2); margin: 0; padding: 0; list-style: none; font-size: var(--st-text-sm); }
+  .st-breadcrumbs li { display: inline-flex; align-items: center; gap: var(--st-space-2); min-inline-size: 0; overflow-wrap: anywhere; }
+  .st-breadcrumbs li + li::before { content: "/"; color: var(--st-text-muted); }
+  .st-breadcrumbs a { color: var(--st-accent-text); }
+  .st-breadcrumbs [aria-current="page"] { color: var(--st-text-muted); }
 }

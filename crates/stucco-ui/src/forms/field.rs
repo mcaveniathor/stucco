@@ -24,6 +24,7 @@ pub struct Field<'a, C: Control + 'a> {
     errors: Vec<String>,
     value: Option<String>,
     required: bool,
+    optional: bool,
 }
 
 impl<'a, C: Control + 'a> Field<'a, C> {
@@ -37,6 +38,7 @@ impl<'a, C: Control + 'a> Field<'a, C> {
             errors: Vec::new(),
             value: None,
             required: false,
+            optional: false,
         }
     }
 
@@ -66,6 +68,13 @@ impl<'a, C: Control + 'a> Field<'a, C> {
     /// Marks the field required (a visual marker plus `required`).
     pub fn required(mut self) -> Self {
         self.required = true;
+        self
+    }
+
+    /// Adds "(optional)" to the label. In a form where most fields are
+    /// required, mark the few optional ones instead of every required one.
+    pub fn optional(mut self) -> Self {
+        self.optional = true;
         self
     }
 }
@@ -131,7 +140,11 @@ impl<C: Control> Render for Field<'_, C> {
                     .class("st-required")
                     .aria("hidden", "true")
                     .text("*")
-            }));
+            }))
+            .child(
+                (self.optional && !self.required)
+                    .then(|| el::span().class("st-optional").text(" (optional)")),
+            );
         let el = el::div()
             .class("st-field")
             .child(label)

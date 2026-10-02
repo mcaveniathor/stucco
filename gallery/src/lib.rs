@@ -17,6 +17,7 @@ pub mod index;
 pub mod layout_page;
 pub mod overlays_page;
 pub mod palette;
+pub mod records_page;
 mod shell;
 pub mod tabs_page;
 pub mod themes_page;
@@ -56,6 +57,7 @@ pub fn pages(bundle: &Bundle) -> Vec<(String, String)> {
         ("typography.html".to_owned(), typography_page::page(bundle)),
         ("actions.html".to_owned(), actions_page::page(bundle)),
         ("forms.html".to_owned(), forms_page::page(bundle)),
+        ("records.html".to_owned(), records_page::page(bundle)),
         ("overlays.html".to_owned(), overlays_page::page(bundle)),
         (
             "collections.html".to_owned(),
