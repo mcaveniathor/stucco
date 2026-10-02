@@ -4,8 +4,8 @@ use std::fmt;
 
 use crate::color::{luminance_ratio, srgb_luminance};
 use crate::personality::{
-    ButtonShape, ControlStyle, Elevation, Finish, FocusStyle, HeaderStyle, HeadingWeight,
-    LinkStyle, NavStyle, Personality, TableStyle,
+    ButtonShape, ControlStyle, CornerStyle, Elevation, Finish, FocusStyle, HeaderStyle,
+    HeadingWeight, LinkStyle, NavStyle, PanelStyle, Personality, ShellLayout, TableStyle,
 };
 use crate::roles::{INK_ACCENT, Kind, PAIRS, ROLES, STATUS, Source};
 use crate::seed::Palette;
@@ -281,6 +281,24 @@ impl Theme {
     /// The texture of the page background.
     pub fn finish(mut self, finish: Finish) -> Theme {
         self.personality.finish = finish;
+        self
+    }
+
+    /// How the application shell arranges its navigation and content.
+    pub fn shell_layout(mut self, layout: ShellLayout) -> Theme {
+        self.personality.shell = layout;
+        self
+    }
+
+    /// How panels frame their content.
+    pub fn panel_style(mut self, style: PanelStyle) -> Theme {
+        self.personality.panels = style;
+        self
+    }
+
+    /// The shape of the corners of cards, panels and other large surfaces.
+    pub fn corner_style(mut self, style: CornerStyle) -> Theme {
+        self.personality.corners = style;
         self
     }
 

@@ -19,7 +19,10 @@
   @media (prefers-contrast: more), (forced-colors: active) {
     .g-panel { background-image: none; }
   }
-  .g-sample-nav { flex: none; padding: var(--st-space-2); border: 1px solid var(--st-border); border-radius: var(--st-radius-md); }
+  /* The app-shell sample spans both scheme panels so a sidebar has room beside the content. */
+  .g-shell-sample { --st-app-gutter: var(--st-space-5); grid-column: 1 / -1; padding: 0; overflow: hidden; }
+  .g-panel.g-shell-sample > *, .g-panel.g-shell-sample > .g-sample-header { margin: 0; }
+  .g-shell-sample .st-app-main { padding: var(--st-space-5) var(--st-app-gutter); }
   .g-panel > .g-sample-header {
     margin: calc(-1 * var(--st-space-4)) calc(-1 * var(--st-space-4)) var(--st-space-4);
     padding: var(--st-space-3) var(--st-space-4);

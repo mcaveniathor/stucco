@@ -2,8 +2,8 @@
 //! stream [`SeedRng`], and implementations for every theme option.
 
 use crate::personality::{
-    ButtonShape, ControlStyle, Elevation, Finish, FocusStyle, HeaderStyle, HeadingWeight,
-    LinkStyle, NavStyle, TableStyle,
+    ButtonShape, ControlStyle, CornerStyle, Elevation, Finish, FocusStyle, HeaderStyle,
+    HeadingWeight, LinkStyle, NavStyle, PanelStyle, ShellLayout, TableStyle,
 };
 use crate::{Color, Density, Fonts, Radius, Theme, TypeScale};
 
@@ -425,11 +425,40 @@ seeded_enum!(
     ]
 );
 
+seeded_enum!(
+    ShellLayout,
+    "shell-layout",
+    [
+        (ShellLayout::Sidebar, 3),
+        (ShellLayout::Rail, 1),
+        (ShellLayout::Topbar, 1)
+    ]
+);
+seeded_enum!(
+    PanelStyle,
+    "panel-style",
+    [
+        (PanelStyle::Boxed, 2),
+        (PanelStyle::Ruled, 1),
+        (PanelStyle::Headed, 1)
+    ]
+);
+seeded_enum!(
+    CornerStyle,
+    "corner-style",
+    [
+        (CornerStyle::Even, 3),
+        (CornerStyle::Squircle, 1),
+        (CornerStyle::Bevel, 1),
+        (CornerStyle::Hand, 1),
+    ]
+);
+
 impl Seeded for Theme {
     const STREAM: &'static str = "theme";
 
     /// Every option from its own fork of `rng`: palette, fonts, type scale,
-    /// spacing, radius, density and the ten personality options. Pill
+    /// spacing, radius, density and the thirteen personality options. Pill
     /// buttons become rounded on sharp themes. The result always passes
     /// [`Theme::build`].
     fn from_rng(rng: &mut SeedRng) -> Theme {
@@ -461,6 +490,9 @@ impl Seeded for Theme {
             .nav_style(NavStyle::from_rng(&mut rng.fork(NavStyle::STREAM)))
             .focus_style(FocusStyle::from_rng(&mut rng.fork(FocusStyle::STREAM)))
             .finish(Finish::from_rng(&mut rng.fork(Finish::STREAM)))
+            .shell_layout(ShellLayout::from_rng(&mut rng.fork(ShellLayout::STREAM)))
+            .panel_style(PanelStyle::from_rng(&mut rng.fork(PanelStyle::STREAM)))
+            .corner_style(CornerStyle::from_rng(&mut rng.fork(CornerStyle::STREAM)))
     }
 
     /// The theme for `seed`; its options match each option's own
@@ -549,6 +581,9 @@ mod tests {
             assert_eq!(p.nav, NavStyle::seeded(seed));
             assert_eq!(p.focus, FocusStyle::seeded(seed));
             assert_eq!(p.finish, Finish::seeded(seed));
+            assert_eq!(p.shell, ShellLayout::seeded(seed));
+            assert_eq!(p.panels, PanelStyle::seeded(seed));
+            assert_eq!(p.corners, CornerStyle::seeded(seed));
             let palette = Palette::seeded(seed);
             assert_eq!(theme.accent_hue, palette.accent.h);
             assert_eq!(theme.accent_from_neutral, palette.ink);

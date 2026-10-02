@@ -19,8 +19,9 @@ use std::fmt::{self, Write};
 use std::str::FromStr;
 
 use crate::{
-    BuiltTheme, ButtonShape, ControlStyle, Density, Elevation, Finish, FocusStyle, HeaderStyle,
-    HeadingWeight, LinkStyle, NavStyle, Preset, Radius, Scheme, TableStyle, Theme,
+    BuiltTheme, ButtonShape, ControlStyle, CornerStyle, Density, Elevation, Finish, FocusStyle,
+    HeaderStyle, HeadingWeight, LinkStyle, NavStyle, PanelStyle, Preset, Radius, Scheme,
+    ShellLayout, TableStyle, Theme,
 };
 
 /// One choice for an option.
@@ -198,6 +199,40 @@ pub const OPTIONS: &[OptionInfo] = &[
             choice("sand", "Sand"),
             choice("float", "Float"),
             choice("knockdown", "Knockdown"),
+        ],
+    },
+    OptionInfo {
+        key: "shell",
+        label: "App layout",
+        ty: "ShellLayout",
+        method: "shell_layout",
+        choices: &[
+            choice("sidebar", "Sidebar"),
+            choice("rail", "Rail"),
+            choice("topbar", "Topbar"),
+        ],
+    },
+    OptionInfo {
+        key: "panels",
+        label: "Panels",
+        ty: "PanelStyle",
+        method: "panel_style",
+        choices: &[
+            choice("boxed", "Boxed"),
+            choice("ruled", "Ruled"),
+            choice("headed", "Headed"),
+        ],
+    },
+    OptionInfo {
+        key: "corners",
+        label: "Corner shape",
+        ty: "CornerStyle",
+        method: "corner_style",
+        choices: &[
+            choice("even", "Even"),
+            choice("squircle", "Squircle"),
+            choice("bevel", "Bevel"),
+            choice("hand", "Hand"),
         ],
     },
 ];
@@ -640,6 +675,16 @@ fn apply(theme: Theme, key: &str, value: &str) -> Theme {
         ("finish", "sand") => theme.finish(Finish::Sand),
         ("finish", "float") => theme.finish(Finish::Float),
         ("finish", "knockdown") => theme.finish(Finish::Knockdown),
+        ("shell", "sidebar") => theme.shell_layout(ShellLayout::Sidebar),
+        ("shell", "rail") => theme.shell_layout(ShellLayout::Rail),
+        ("shell", "topbar") => theme.shell_layout(ShellLayout::Topbar),
+        ("panels", "boxed") => theme.panel_style(PanelStyle::Boxed),
+        ("panels", "ruled") => theme.panel_style(PanelStyle::Ruled),
+        ("panels", "headed") => theme.panel_style(PanelStyle::Headed),
+        ("corners", "even") => theme.corner_style(CornerStyle::Even),
+        ("corners", "squircle") => theme.corner_style(CornerStyle::Squircle),
+        ("corners", "bevel") => theme.corner_style(CornerStyle::Bevel),
+        ("corners", "hand") => theme.corner_style(CornerStyle::Hand),
         _ => theme,
     }
 }
@@ -707,6 +752,22 @@ fn current(theme: &Theme, key: &str) -> &'static str {
             Finish::Sand => "sand",
             Finish::Float => "float",
             Finish::Knockdown => "knockdown",
+        },
+        "shell" => match p.shell {
+            ShellLayout::Sidebar => "sidebar",
+            ShellLayout::Rail => "rail",
+            ShellLayout::Topbar => "topbar",
+        },
+        "panels" => match p.panels {
+            PanelStyle::Boxed => "boxed",
+            PanelStyle::Ruled => "ruled",
+            PanelStyle::Headed => "headed",
+        },
+        "corners" => match p.corners {
+            CornerStyle::Even => "even",
+            CornerStyle::Squircle => "squircle",
+            CornerStyle::Bevel => "bevel",
+            CornerStyle::Hand => "hand",
         },
         _ => unreachable!("only known keys are looked up"),
     }

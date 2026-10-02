@@ -86,6 +86,15 @@
   .site-prose th { color: var(--st-text-muted); font-weight: 600; }
 
   /* Guide navigation: page list with the current page's outline. */
+  /* The guide's nav is a nested outline, not a flat list of links, so it keeps
+     the sidebar layout whatever shell layout the visitor's theme picks. */
+  .st-app-sidebar:has(.site-guide-nav) {
+    --st-shell-sidebar-basis: 15rem; --st-shell-sidebar-bg: var(--st-surface);
+    --st-shell-sidebar-rule-inline: 1px; --st-shell-sidebar-rule-block: 0;
+    --st-shell-sidebar-pad-block: var(--st-space-4); --st-shell-nav-direction: column; --st-shell-nav-summary: list-item;
+    --st-shell-bar-inset-block: var(--st-space-1); --st-shell-bar-inset-inline: 0 auto;
+    --st-shell-bar-inline-size: 3px; --st-shell-bar-block-size: auto;
+  }
   .site-guide-nav ul { list-style: none; margin: 0; padding: 0; }
   .site-guide-nav li + li { margin-block-start: 2px; }
   .site-outline { margin-block: var(--st-space-1) var(--st-space-2); }
