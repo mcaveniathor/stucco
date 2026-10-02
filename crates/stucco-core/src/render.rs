@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 use crate::escape::escape_text;
 use crate::identity::Identity;
+use crate::{Asset, AssetRequirements};
 
 /// Anything that can write itself as HTML into a [`Cx`].
 ///
@@ -23,6 +24,7 @@ pub trait Render {
 pub struct Cx {
     out: String,
     ids: Identity,
+    required: Vec<&'static Asset>,
 }
 
 impl Cx {
@@ -62,9 +64,17 @@ impl Cx {
         self.out.push_str(s);
     }
 
-    /// Finishes rendering and returns the HTML.
-    pub fn finish(self) -> (String, ()) {
-        (self.out, ())
+    /// Records that the output needs `asset` (and its dependencies).
+    pub fn require(&mut self, asset: &'static Asset) {
+        if !self.required.iter().any(|a| std::ptr::eq(*a, asset)) {
+            self.required.push(asset);
+        }
+    }
+
+    /// Finishes rendering: the HTML and the resolved asset requirements.
+    pub fn finish(self) -> (String, AssetRequirements) {
+        let assets = AssetRequirements::resolve(&self.required);
+        (self.out, assets)
     }
 }
 
