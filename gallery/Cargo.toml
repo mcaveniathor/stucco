@@ -7,7 +7,7 @@ license.workspace = true
 publish = false
 
 [dependencies]
-stucco = { workspace = true, features = ["icons"] }
+stucco = { workspace = true, features = ["icons", "collections"] }
 
 [dev-dependencies]
 insta.workspace = true

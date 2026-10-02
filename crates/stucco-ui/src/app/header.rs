@@ -83,6 +83,31 @@ impl<'a> SectionHeader<'a> {
         self.0 = self.0.level(n);
         self
     }
+    /// Adds root classes.
+    pub fn class(mut self, value: impl AsRef<str>) -> Self {
+        self.0 = self.0.class(value);
+        self
+    }
+    /// Sets the root identifier.
+    pub fn id(mut self, value: impl Into<String>) -> Self {
+        self.0 = self.0.id(value);
+        self
+    }
+    /// Sets a root attribute.
+    pub fn attr(mut self, name: &str, value: impl Into<String>) -> Self {
+        self.0 = self.0.attr(name, value);
+        self
+    }
+    /// Sets a data attribute.
+    pub fn data(mut self, name: &str, value: impl Into<String>) -> Self {
+        self.0 = self.0.data(name, value);
+        self
+    }
+    /// Sets an accessibility attribute.
+    pub fn aria(mut self, name: &str, value: impl Into<String>) -> Self {
+        self.0 = self.0.aria(name, value);
+        self
+    }
 }
 impl Render for SectionHeader<'_> {
     fn render(&self, cx: &mut Cx) {

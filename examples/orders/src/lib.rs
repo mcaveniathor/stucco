@@ -24,9 +24,11 @@ use stucco_tower::{
 };
 
 type OrdersTable = IndexTable<u64, Order>;
+type OrdersSource = RedbCollection<u64, Order, U64Key, PostcardCodec<Order>, OrdersMapping>;
 #[derive(Clone)]
 struct AppState {
-    table: OrdersTable,
+    cursor: OrdersSource,
+    pages: OrdersSource,
     bundle: Arc<Bundle>,
 }
 
@@ -48,8 +50,11 @@ fn open(path: &Path) -> Result<OrdersTable, StoreError> {
 }
 /// Opens persistent storage and constructs the read-only router.
 pub fn app(db_path: &Path) -> Result<Router, StoreError> {
+    let cursor = RedbCollection::new(open(db_path)?, OrdersMapping { pages: false });
+    let pages = cursor.with_mapping(OrdersMapping { pages: true });
     let state = AppState {
-        table: open(db_path)?,
+        cursor,
+        pages,
         bundle: Arc::new(Bundle::new(Preset::Slate)),
     };
     let routes = Router::new()
@@ -68,7 +73,7 @@ async fn list(
 ) -> PageResponse {
     let raw = raw.unwrap_or_default();
     let pages = form_urlencoded::parse(raw.as_bytes()).any(|(k, v)| k == "mode" && v == "pages");
-    let source = RedbCollection::new(state.table, OrdersMapping { pages });
+    let source = if pages { &state.pages } else { &state.cursor };
     let caps = source.capabilities();
     let query = CollectionQuery::parse(&raw, &caps, &source::columns());
     match source.query(&query, &context).await {

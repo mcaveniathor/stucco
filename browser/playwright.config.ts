@@ -12,6 +12,13 @@ export default defineConfig({
   ],
   webServer: [
     {
+      command: "cargo run -q -p orders",
+      env: { PORT: "4181", ORDERS_DB: "../target/orders-browser.redb" },
+      url: "http://localhost:4181/orders",
+      reuseExistingServer: !process.env.CI,
+      timeout: 300_000,
+    },
+    {
       command: "cargo run -q -p gallery -- ../target/gallery && node serve.mjs ../target/gallery 4173",
       url: "http://localhost:4173/index.html",
       reuseExistingServer: !process.env.CI,

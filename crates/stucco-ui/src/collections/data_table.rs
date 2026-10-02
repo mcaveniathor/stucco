@@ -156,6 +156,7 @@ impl<T> Render for DataTable<'_, T> {
         if let Some(page) = self.page {
             root = root.child(
                 Pagination::new(self.action.clone(), query)
+                    .label(format!("{} pagination", self.caption))
                     .cursors(page.next.clone(), page.prev.clone())
                     .total(total.filter(|_| caps.offset)),
             );

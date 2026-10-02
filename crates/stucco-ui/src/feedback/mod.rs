@@ -1,4 +1,13 @@
 //! Empty and status feedback.
+//!
+//! ```
+//! use stucco_ui::feedback::{EmptyState, LiveRegion};
+//! use stucco_core::{el, to_html};
+//! let empty = EmptyState::new("No orders").description("Try another filter")
+//!     .actions(el::a().href("/orders").text("Reset"));
+//! assert!(to_html(&empty).contains("No orders"));
+//! assert!(to_html(&LiveRegion::new().child("Showing 25 orders")).contains("aria-live"));
+//! ```
 use crate::{passthrough::apply, typography::Heading};
 use stucco_core::{Attrs, Cx, Render, Slot, el};
 /// Feedback styles.

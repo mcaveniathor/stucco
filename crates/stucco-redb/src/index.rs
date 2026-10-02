@@ -38,8 +38,9 @@ impl<K, V, KC: KeyCodec<K>, VC: Codec<V>> Table<K, V, KC, VC> {
         projection: impl Fn(&V) -> Vec<u8> + Send + Sync + 'static,
     ) -> Result<IndexTable<K, V, KC, VC>, StoreError> {
         crate::store::validate_name(name)?;
-        let physical = format!("{}--{name}", self.name);
-        crate::store::validate_name(&physical)?;
+        // ':' and '@' cannot occur in public names, so indexes occupy a
+        // disjoint namespace and the separator is unambiguous.
+        let physical = format!("@index:{}:{name}", self.name);
         let tx = self.store.db.begin_write().map_err(StoreError::new)?;
         {
             tx.open_table(redb::TableDefinition::<&[u8], &[u8]>::new(&physical))

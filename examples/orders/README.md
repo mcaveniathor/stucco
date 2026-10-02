@@ -7,6 +7,7 @@ The app seeds 67 deterministic records only when the orders table is empty.
 Customer names have duplicate values; the index uses the primary key as a tie
 breaker. Startup rebuilds the customer index, preserving persisted records.
 All controls work through ordinary GET requests without JavaScript.
+Both pagination modes share one application-wide budget of four blocking scans.
 
 Default mode scans in primary-key or customer-index order with exclusive,
 query-scoped cursors and an unknown total. Filtering may traverse many records

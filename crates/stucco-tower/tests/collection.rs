@@ -1,5 +1,4 @@
 use http::Request;
-use std::future::Future;
 use stucco_core::{Capabilities, CollectionPage, CollectionQuery};
 use stucco_tower::{CollectionSource, RequestContext, SourceError};
 struct Source;
@@ -8,19 +7,17 @@ impl CollectionSource for Source {
     fn capabilities(&self) -> Capabilities {
         Capabilities::default()
     }
-    fn query(
+    async fn query(
         &self,
         _: &CollectionQuery,
         _: &RequestContext,
-    ) -> impl Future<Output = Result<CollectionPage<u64>, SourceError>> + Send {
-        async {
-            Ok(CollectionPage {
-                rows: vec![1, 2],
-                next: None,
-                prev: None,
-                total: Some(2),
-            })
-        }
+    ) -> Result<CollectionPage<u64>, SourceError> {
+        Ok(CollectionPage {
+            rows: vec![1, 2],
+            next: None,
+            prev: None,
+            total: Some(2),
+        })
     }
 }
 #[tokio::test]

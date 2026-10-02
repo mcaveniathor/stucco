@@ -1,4 +1,12 @@
 //! Server-rendered navigation.
+//!
+//! ```
+//! use stucco_ui::navigation::Pagination;
+//! use stucco_core::{CollectionQuery, Cursor, to_html};
+//! let nav = Pagination::new("/orders", &CollectionQuery::default())
+//!     .cursors(Cursor::new("next"), None);
+//! assert!(to_html(&nav).contains("after=next"));
+//! ```
 mod pagination;
 pub use pagination::Pagination;
 /// Navigation stylesheet.

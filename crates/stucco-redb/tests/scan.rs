@@ -1,5 +1,22 @@
 use stucco_core::{Cursor, Direction, Window};
 use stucco_redb::{PostcardCodec, ScanRequest, Store, U64Key};
+#[test]
+fn primary_tables_can_scan_without_creating_an_index() {
+    let dir = tempfile::tempdir().unwrap();
+    let table = Store::open(dir.path().join("primary.redb"))
+        .unwrap()
+        .table::<u64, String, _, _>("rows", U64Key, PostcardCodec::default())
+        .unwrap();
+    for id in 1..=3 {
+        table.put(&id, &id.to_string()).unwrap();
+    }
+    let mut req = request(Direction::Asc, Window::default());
+    req.index = None;
+    let first = table.scan(&req, |_| true).unwrap();
+    assert_eq!(first.rows, ["1", "2"]);
+    req.window = Window::After(first.next.unwrap());
+    assert_eq!(table.scan(&req, |_| true).unwrap().rows, ["3"]);
+}
 fn request(direction: Direction, window: Window) -> ScanRequest {
     ScanRequest {
         index: Some("name".into()),
@@ -17,7 +34,9 @@ fn forward_backward_and_deleted_anchors_preserve_order() {
     let table = store
         .table::<u64, String, _, _>("rows", U64Key, PostcardCodec::default())
         .unwrap()
-        .index("name", |v: &String| v.as_bytes().to_vec())
+        .index("name", |v: &String| {
+            v.split('-').next().unwrap().as_bytes().to_vec()
+        })
         .unwrap();
     table
         .put_many(

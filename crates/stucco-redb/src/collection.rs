@@ -43,6 +43,16 @@ impl<K, V, KC, VC, M> RedbCollection<K, V, KC, VC, M> {
         self.permits = Arc::new(tokio::sync::Semaphore::new(limit.max(1)));
         self
     }
+    /// Creates another query mapping over the same table and concurrency budget.
+    /// Configure concurrency before creating these views; all clones/views
+    /// then retain the same semaphore, including cancelled blocking requests.
+    pub fn with_mapping<N>(&self, mapping: N) -> RedbCollection<K, V, KC, VC, N> {
+        RedbCollection {
+            table: self.table.clone(),
+            mapping: Arc::new(mapping),
+            permits: self.permits.clone(),
+        }
+    }
 }
 impl<K: 'static, V: Send + 'static, KC: KeyCodec<K>, VC: Codec<V>, M: CollectionMapping<V>>
     CollectionSource for RedbCollection<K, V, KC, VC, M>

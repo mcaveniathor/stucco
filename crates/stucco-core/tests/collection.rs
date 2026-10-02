@@ -102,3 +102,37 @@ fn collection_links_preserve_unrelated_query_and_fragment() {
     );
     assert_eq!(q.link(&Href::invalid()), Href::invalid());
 }
+
+#[test]
+fn default_sort_direction_survives_navigation() {
+    let (caps, columns) = declarations();
+    let q = CollectionQuery::parse("dir=desc", &caps, &columns);
+    let next = q
+        .clone()
+        .with_window(Window::After(Cursor::new("anchor").unwrap()));
+    assert_eq!(
+        CollectionQuery::parse(&next.to_query_string(), &caps, &columns).direction,
+        Direction::Desc
+    );
+}
+#[test]
+fn malformed_duplicate_filters_do_not_erase_valid_values() {
+    let (caps, columns) = declarations();
+    let q = CollectionQuery::parse(
+        "f.status=paid&f.status=unknown&f.amount.min=10&f.amount.min=NaN&f.date.min=2024-02-29&f.date.min=invalid",
+        &caps,
+        &columns,
+    );
+    assert_eq!(
+        q.filters.get("status"),
+        Some(&Filter::Enumeration("paid".into()))
+    );
+    assert_eq!(
+        q.filters.get("amount"),
+        Some(&Filter::Number {
+            min: Some(10.0),
+            max: None
+        })
+    );
+    assert!(q.filters.contains_key("date"));
+}

@@ -28,6 +28,26 @@ impl<K, V, KC, VC> std::fmt::Debug for Table<K, V, KC, VC> {
     }
 }
 impl<K, V, KC: KeyCodec<K>, VC: Codec<V>> Table<K, V, KC, VC> {
+    /// Scans primary-key order without creating an index. Secondary index
+    /// requests require an IndexTable handle.
+    pub fn scan(
+        &self,
+        request: &crate::ScanRequest,
+        keep: impl Fn(&V) -> bool,
+    ) -> Result<stucco_core::CollectionPage<V>, StoreError> {
+        if request.index.is_some() {
+            return Err(StoreError::invalid("primary table has no secondary index"));
+        }
+        // Reuse the same snapshot/cursor algorithm. With index=None it only
+        // opens the primary table, and never invokes the secondary projection.
+        crate::IndexTable {
+            table: self.clone(),
+            name: self.name.clone(),
+            key: String::new(),
+            projection: Arc::new(|_| Vec::new()),
+        }
+        .scan(request, keep)
+    }
     /// Reads one value from a snapshot.
     pub fn get(&self, key: &K) -> Result<Option<V>, StoreError> {
         let key = self.keys.encode(key)?;

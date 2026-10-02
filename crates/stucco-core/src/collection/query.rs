@@ -94,7 +94,34 @@ impl CollectionQuery {
                     }
                 }
                 key if key.starts_with("f.") && value.chars().count() <= 256 => {
-                    fields.insert(key.to_owned(), value);
+                    // Last valid occurrence wins; malformed duplicates cannot
+                    // silently remove an earlier valid filter.
+                    let valid = columns
+                        .iter()
+                        .filter(|c| caps.filterable.contains(&c.key))
+                        .any(|c| {
+                            let scalar = format!("f.{}", c.key);
+                            let range =
+                                key == format!("{scalar}.min") || key == format!("{scalar}.max");
+                            match &c.kind {
+                                ColumnKind::Text => key == scalar,
+                                ColumnKind::Enumeration(options) => {
+                                    key == scalar && (value.is_empty() || options.contains(&value))
+                                }
+                                ColumnKind::Number => {
+                                    range
+                                        && (value.is_empty()
+                                            || value.parse::<f64>().is_ok_and(|n| n.is_finite()))
+                                }
+                                ColumnKind::Date => {
+                                    range && (value.is_empty() || date_valid(&value))
+                                }
+                                ColumnKind::Custom => false,
+                            }
+                        });
+                    if valid {
+                        fields.insert(key.to_owned(), value);
+                    }
                 }
                 _ => {}
             }
@@ -160,6 +187,8 @@ impl CollectionQuery {
         if let Some(sort) = &self.sort {
             s.append_pair("sort", sort)
                 .append_pair("dir", self.direction.as_str());
+        } else if self.direction == Direction::Desc {
+            s.append_pair("dir", self.direction.as_str());
         }
         if !self.search.is_empty() {
             s.append_pair("q", &self.search);

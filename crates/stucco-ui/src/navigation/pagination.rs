@@ -9,6 +9,7 @@ pub struct Pagination {
     next: Option<Cursor>,
     prev: Option<Cursor>,
     total: Option<u64>,
+    label: String,
 }
 impl Pagination {
     /// Navigation for the given query.
@@ -20,6 +21,7 @@ impl Pagination {
             next: None,
             prev: None,
             total: None,
+            label: "Pagination".into(),
         }
     }
     /// Sets cursor navigation metadata.
@@ -33,12 +35,17 @@ impl Pagination {
         self.total = total;
         self
     }
+    /// Names navigation distinctly when a page contains multiple collections.
+    pub fn label(mut self, label: impl Into<String>) -> Self {
+        self.label = label.into();
+        self
+    }
 }
 passthrough!(Pagination);
 impl Render for Pagination {
     fn render(&self, cx: &mut Cx) {
         cx.require(&super::NAVIGATION);
-        let mut nav = el::nav().class("st-pagination").aria("label", "Pagination");
+        let mut nav = el::nav().class("st-pagination").aria("label", &self.label);
         if let (Some(total), Window::Offset { page }) = (self.total, &self.query.window) {
             let per = u64::from(self.query.per_page.max(1));
             let count = total.div_ceil(per);
