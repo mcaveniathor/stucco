@@ -1,0 +1,46 @@
+name: Release
+# Publishes every crate to crates.io when a version tag such as v0.2.0 is
+# pushed, then creates the GitHub release from the changelog.
+# Needs the CARGO_REGISTRY_TOKEN repository secret (see RELEASING.md).
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+concurrency:
+  group: release
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Check the tag matches the version and is on main
+        run: |
+          version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | select(.name == "stucco") | .version')
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME doesn't match the workspace version $version"
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::tag $GITHUB_REF_NAME isn't on main"
+            exit 1
+          fi
+      - name: Check the changelog has this version
+        run: grep -q "^## ${GITHUB_REF_NAME#v} " CHANGELOG.md
+      - run: cargo test --workspace --locked
+      - name: Publish to crates.io
+        run: cargo publish --workspace --locked --exclude gallery --exclude hello --exclude orders --exclude site --exclude site-wasm
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      - name: Create the GitHub release
+        run: |
+          awk -v heading="## ${GITHUB_REF_NAME#v} " \
+            'index($0, heading) == 1 { found = 1; next } found && /^## / { exit } found' \
+            CHANGELOG.md > notes.md
+          gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag
+        env:
+          GH_TOKEN: ${{ github.token }}
