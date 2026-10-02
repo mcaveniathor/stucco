@@ -11,4 +11,21 @@
   .st-pagination a:hover { background: var(--st-hover); border-color: var(--st-border-strong); }
   .st-pagination a[aria-current="page"] { background: var(--st-accent); border-color: var(--st-accent); color: var(--st-on-accent); }
   .st-pagination > span { padding-inline: var(--st-space-1); color: var(--st-text-muted); }
+  /* Tabs: links to sections of a page, the current one underlined in the accent. */
+  .st-tabs {
+    display: flex; gap: var(--st-space-1); overflow-x: auto;
+    border-block-end: var(--st-line, 1px) solid var(--st-border);
+  }
+  .st-tabs > a {
+    position: relative; flex: none; padding: var(--st-space-2) var(--st-space-3);
+    border-radius: var(--st-radius-md) var(--st-radius-md) 0 0;
+    color: var(--st-text-muted); font-weight: 550; text-decoration: none; white-space: nowrap;
+    transition: background-color var(--st-duration-fast) var(--st-ease), color var(--st-duration-fast) var(--st-ease);
+  }
+  .st-tabs > a:hover { background: var(--st-hover); color: var(--st-text); }
+  .st-tabs > a[aria-current="page"] { color: var(--st-text); }
+  .st-tabs > a[aria-current="page"]::after {
+    content: ""; position: absolute; inset-inline: var(--st-space-2); bottom: calc(-1 * var(--st-line, 1px));
+    block-size: 3px; border-radius: var(--st-radius-full); background: var(--st-accent);
+  }
 }
