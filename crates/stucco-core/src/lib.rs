@@ -27,8 +27,8 @@ pub use attrs::Attrs;
 pub use base_css::{BASE_CSS, LAYERS_CSS, RESET_CSS, check_component_css};
 pub use bundle::{AssetFile, Bundle};
 pub use collection::{
-    Capabilities, CollectionPage, CollectionQuery, ColumnKind, ColumnSpec, Cursor, Direction,
-    Filter, Window,
+    Capabilities, Collection, CollectionPage, CollectionQuery, ColumnKind, ColumnSpec, Cursor,
+    Direction, Filter, Window,
 };
 pub use form_state::FormState;
 pub use fragment::{RenderedFragment, render_fragment};

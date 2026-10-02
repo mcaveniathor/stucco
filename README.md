@@ -116,7 +116,9 @@ let theme = Theme::preset(Preset::Slate)
     .fonts(Fonts::seeded(14))
     .radius(Radius::seeded(14))
     .table_style(TableStyle::seeded(14));
-let bundle = Bundle::new(theme.build().expect("contrast passes"));
+// A bundle builds the theme; it panics with the contrast report if a
+// hand-tuned theme fails. `Bundle::try_new` returns the report instead.
+let bundle = Bundle::new(theme);
 ```
 
 An option seeded on its own matches what the full seeded theme chooses for it,
@@ -168,7 +170,9 @@ assert!(to_html(&table).contains("Ada"));
 
 Declare sortable/searchable/filterable columns and provide backend capabilities
 to enable their controls. `CollectionQuery` validates incoming query parameters;
-`CollectionSource` in `stucco-tower` loads the corresponding page.
+`CollectionSource` in `stucco-tower` loads the corresponding page, and its
+`load` does both in one call, returning a `Collection` that
+`DataTable::from_collection` takes whole.
 `stucco-redb` adds typed records, transactional secondary indexes, and bounded
 blocking scans.
 

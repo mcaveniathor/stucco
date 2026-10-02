@@ -92,6 +92,32 @@ impl CollectionSource for OrdersSource {
 
 `RequestContext` carries the request id and any request extensions, such as the signed-in user, so the source can scope results.
 
+In a handler, `load` parses the request's query string and reads the page in one call. It returns a `Collection`: the query, the capabilities and the page, which `DataTable::from_collection` takes whole.
+
+```rust
+use stucco::prelude::*;
+use stucco::server::RequestContext;
+
+async fn orders(
+    State(source): State<OrdersSource>,
+    RawQuery(raw): RawQuery,
+    context: RequestContext,
+    page: PageCx,
+) -> Document {
+    let raw = raw.unwrap_or_default();
+    match source.load(&raw, &columns(), &context).await {
+        Ok(orders) => page.title("Orders").main(
+            DataTable::from_collection(&orders, "Orders")
+                .action("/orders")
+                .column(Col::text("customer", "Customer", |o: &Order| o.customer.clone()).searchable()),
+        ),
+        Err(_) => page.title("Orders unavailable").status(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+```
+
+`columns()` lists each column's key and kind as `ColumnSpec`s, so the parser knows which filters are valid.
+
 ## Pagination
 
 Two modes:

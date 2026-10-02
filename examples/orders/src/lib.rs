@@ -11,7 +11,7 @@ use model::Order;
 use source::OrdersMapping;
 use std::path::Path;
 use stucco::prelude::*;
-use stucco::server::{CollectionSource, RequestContext};
+use stucco::server::RequestContext;
 use stucco_redb::{IndexTable, PostcardCodec, RedbCollection, Store, StoreError, U64Key};
 
 type OrdersTable = IndexTable<u64, Order>;
@@ -58,18 +58,14 @@ async fn list(
     let raw = raw.unwrap_or_default();
     let pages = form_urlencoded::parse(raw.as_bytes()).any(|(k, v)| k == "mode" && v == "pages");
     let source = if pages { &state.pages } else { &state.cursor };
-    let caps = source.capabilities();
-    let query = CollectionQuery::parse(&raw, &caps, &source::columns());
-    match source.query(&query, &context).await {
-        Ok(page) => {
-            let table = DataTable::from_page(&page, "Orders")
+    match source.load(&raw, &source::columns(), &context).await {
+        Ok(orders) => {
+            let table = DataTable::from_collection(&orders, "Orders")
                 .action(if pages {
                     "/orders?mode=pages"
                 } else {
                     "/orders"
                 })
-                .query(&query)
-                .capabilities(&caps)
                 .column(Col::number("id", "ID", |row: &Order| row.id as f64).sortable())
                 .column(
                     Col::text("customer", "Customer", |row: &Order| row.customer.clone())
