@@ -739,6 +739,7 @@ dependencies = [
 name = "stucco-ui"
 version = "0.1.0"
 dependencies = [
+ "form_urlencoded",
  "stucco-core",
 ]
 

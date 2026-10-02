@@ -59,7 +59,7 @@ impl Render for Table<'_> {
 /// A table row with data cells or scoped headings.
 #[derive(Debug, Default)]
 pub struct Row<'a> {
-    cells: Vec<(bool, Slot<'a>)>,
+    cells: Vec<(bool, Slot<'a>, Attrs)>,
     attrs: Attrs,
 }
 impl<'a> Row<'a> {
@@ -69,20 +69,26 @@ impl<'a> Row<'a> {
     }
     /// Appends a data cell.
     pub fn cell(mut self, value: impl Render + 'a) -> Self {
-        self.cells.push((false, Slot::new(value)));
+        self.cells.push((false, Slot::new(value), Attrs::default()));
         self
     }
     /// Appends a heading (column scope in a table header, row scope in the body).
     pub fn header(mut self, value: impl Render + 'a) -> Self {
-        self.cells.push((true, Slot::new(value)));
+        self.cells.push((true, Slot::new(value), Attrs::default()));
+        self
+    }
+    /// Appends a scoped heading with per-cell attributes, such as aria-sort.
+    pub fn header_with_attrs(mut self, value: impl Render + 'a, attrs: Attrs) -> Self {
+        self.cells.push((true, Slot::new(value), attrs));
         self
     }
     fn element(&self, header: bool) -> stucco_core::el::Element<'_> {
         apply(
-            el::tr().children(self.cells.iter().map(|(heading, value)| {
+            el::tr().children(self.cells.iter().map(|(heading, value, attrs)| {
                 if *heading {
                     el::th()
                         .attr("scope", if header { "col" } else { "row" })
+                        .attrs(&attrs.without(&["scope"]))
                         .child(value)
                 } else {
                     el::td().child(value)

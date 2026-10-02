@@ -8,6 +8,7 @@ license.workspace = true
 
 [dependencies]
 stucco-core.workspace = true
+form_urlencoded.workspace = true
 
 [features]
 layout = []

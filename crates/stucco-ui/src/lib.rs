@@ -10,6 +10,8 @@ mod passthrough;
 pub mod actions;
 #[cfg(feature = "app")]
 pub mod app;
+#[cfg(feature = "collections")]
+pub mod collections;
 mod common;
 #[cfg(feature = "data")]
 pub mod data;
@@ -48,5 +50,9 @@ pub fn ui_assets() -> Vec<&'static Asset> {
     assets.push(&app::APP);
     #[cfg(feature = "feedback")]
     assets.push(&feedback::FEEDBACK);
+    #[cfg(feature = "navigation")]
+    assets.push(&navigation::NAVIGATION);
+    #[cfg(feature = "collections")]
+    assets.push(&collections::COLLECTIONS);
     assets
 }

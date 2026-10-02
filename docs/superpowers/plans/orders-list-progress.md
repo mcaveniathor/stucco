@@ -16,3 +16,4 @@ Ruling: expose explicitly O(n) IndexTable::all for numbered mode/maintenance —
 Ruling: ScanRequest adds offset_mode bool — Window::Offset(page=1) also represents cursor first page, so window alone cannot select counted mode — cost: one additional configuration field.
 Task 5 complete: all storage/scan/source tests passed; no-default tests, Rust 1.90 and adapter Clippy passed.
 Task 6 complete: table/shell/count/feedback markup tests and all-feature CSS checks passed.
+Task 7 complete: typed controls and DataTable markup, CSS, all-feature UI tests and Clippy passed.
