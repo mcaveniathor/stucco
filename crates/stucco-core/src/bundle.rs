@@ -114,6 +114,17 @@ impl Bundle {
         self.stylesheet(required.iter())
     }
 
+    /// Every served URL path, sorted.
+    pub fn paths(&self) -> Vec<String> {
+        let mut paths: Vec<String> = self
+            .files
+            .keys()
+            .map(|name| format!("{}{name}", self.prefix))
+            .collect();
+        paths.sort();
+        paths
+    }
+
     /// The file at request path `path` (a `?query` is ignored).
     pub fn get(&self, path: &str) -> Option<AssetFile> {
         let path = path.split('?').next().unwrap_or(path);
@@ -228,6 +239,15 @@ mod tests {
         ] {
             assert!(b.get(&bad).is_none(), "{bad}");
         }
+    }
+
+    #[test]
+    fn paths_list_every_served_file() {
+        let b = Bundle::new(Preset::Slate);
+        let paths = b.paths();
+        assert!(paths.iter().any(|p| p == b.stylesheet_url()));
+        assert!(paths.iter().any(|p| p == b.runtime_url()));
+        assert!(paths.iter().all(|p| b.get(p).is_some()));
     }
 
     #[test]

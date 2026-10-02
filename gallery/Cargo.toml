@@ -8,3 +8,6 @@ publish = false
 
 [dependencies]
 stucco.workspace = true
+
+[dev-dependencies]
+insta.workspace = true
