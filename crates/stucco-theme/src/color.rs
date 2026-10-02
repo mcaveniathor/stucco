@@ -57,8 +57,7 @@ impl Color {
 
     /// WCAG relative luminance.
     pub fn luminance(self) -> f64 {
-        let [r, g, b] = self.to_srgb().map(decode);
-        0.2126 * r + 0.7152 * g + 0.0722 * b
+        srgb_luminance(self.to_srgb())
     }
 
     /// Linear sRGB via OKLab (Björn Ottosson's matrices), unclamped.
@@ -81,7 +80,17 @@ impl Color {
 
 /// WCAG contrast ratio between two colours (1–21, order-independent).
 pub fn contrast(a: Color, b: Color) -> f64 {
-    let (la, lb) = (a.luminance(), b.luminance());
+    luminance_ratio(a.luminance(), b.luminance())
+}
+
+/// WCAG relative luminance of gamma-encoded sRGB channels in 0–1.
+pub(crate) fn srgb_luminance(srgb: [f64; 3]) -> f64 {
+    let [r, g, b] = srgb.map(decode);
+    0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+/// WCAG contrast ratio between two relative luminances.
+pub(crate) fn luminance_ratio(la: f64, lb: f64) -> f64 {
     let (hi, lo) = if la > lb { (la, lb) } else { (lb, la) };
     (hi + 0.05) / (lo + 0.05)
 }

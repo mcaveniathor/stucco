@@ -157,5 +157,8 @@
   .st-surface[data-radius="md"] { border-radius: var(--st-radius-md); }
   .st-surface[data-radius="lg"] { border-radius: var(--st-radius-lg); }
   /* Theme scope: repaints its subtree in another scheme or theme. */
-  .st-theme-scope { background: var(--st-bg); color: var(--st-text); }
+  .st-theme-scope { background: var(--st-finish, none) var(--st-bg); color: var(--st-text); }
+  @media (prefers-contrast: more), (forced-colors: active) {
+    .st-theme-scope { background-image: none; }
+  }
 }

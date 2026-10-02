@@ -36,7 +36,7 @@ From the accent and neutral hues, stucco generates twelve-step OKLCH scales for 
 
 ## Personality
 
-Six options change how components look without changing their markup:
+Ten options change how components look without changing their markup:
 
 | Option | Choices |
 | --- | --- |
@@ -46,8 +46,22 @@ Six options change how components look without changing their markup:
 | `header_style` | Bar (default), Plain, Tinted |
 | `heading_weight` | Regular, Bold (default), Heavy |
 | `button_shape` | Rounded (default), Pill |
+| `link_style` | Underlined (default), Subtle, Bold, Highlight |
+| `nav_style` | Soft (default), Solid, Bar |
+| `focus_style` | Ring (default), Thick, Snug |
+| `finish` | Smooth (default), Sand, Float, Knockdown |
 
-Each option sets tokens such as `--st-card-shadow` or `--st-table-rule` that the component styles read.
+Each option sets tokens such as `--st-card-shadow` or `--st-table-rule` that the component styles read. Every link style keeps an underline, so links never depend on colour alone.
+
+### Finish
+
+`finish` gives the page background a plaster texture: a fine sand grain, a softer float coat, or the broad patches of a knockdown coat. Cards, inputs and other surfaces stay smooth. The grain is a faint grey, so it works in both schemes. `build` checks text on the page background against the grain's darkest and lightest points, and pages drop the grain for visitors who ask for more contrast.
+
+```rust
+use stucco::theme::{Finish, Preset, Theme};
+
+let theme = Theme::preset(Preset::Sand).finish(Finish::Float);
+```
 
 ## Seeded themes
 

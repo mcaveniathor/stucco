@@ -72,6 +72,106 @@ pub enum ButtonShape {
     Pill,
 }
 
+/// How links in running text are drawn. Every style keeps an underline, so
+/// links never rely on colour alone.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum LinkStyle {
+    /// A full-strength underline that thickens on hover (default).
+    #[default]
+    Underlined,
+    /// A thin, faint underline that turns full strength on hover.
+    Subtle,
+    /// A thick underline and medium weight.
+    Bold,
+    /// An underline over a soft accent highlight along the baseline.
+    Highlight,
+}
+
+/// How navigation marks the current page.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum NavStyle {
+    /// A soft accent fill with accent text (default).
+    #[default]
+    Soft,
+    /// A solid accent fill with contrasting text.
+    Solid,
+    /// An accent bar along the leading edge, without a fill.
+    Bar,
+}
+
+/// The keyboard focus ring.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum FocusStyle {
+    /// A 2px ring with a 2px gap (default).
+    #[default]
+    Ring,
+    /// A 3px ring with a 2px gap.
+    Thick,
+    /// A 2px ring with a 1px gap, close to the control.
+    Snug,
+}
+
+/// The texture of the page background, like the finish of a plastered
+/// wall. Surfaces such as cards and inputs stay smooth.
+///
+/// Textured finishes are a faint grey grain. [`Theme::build`] checks text
+/// on the page background against the grain's darkest and lightest points,
+/// and the grain is removed for visitors who ask for more contrast.
+///
+/// [`Theme::build`]: crate::Theme::build
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum Finish {
+    /// No texture (default).
+    #[default]
+    Smooth,
+    /// A fine, even grain.
+    Sand,
+    /// A softer, medium grain, like a floated coat.
+    Float,
+    /// Broad, mottled patches, like a knockdown coat.
+    Knockdown,
+}
+
+impl Finish {
+    /// The grain's strongest opacity: how far it can pull the background
+    /// towards mid-grey.
+    pub(crate) fn max_alpha(self) -> f64 {
+        match self {
+            Finish::Smooth => 0.0,
+            Finish::Sand => 0.06,
+            Finish::Float => 0.05,
+            Finish::Knockdown => 0.05,
+        }
+    }
+
+    /// A tiling SVG noise image as a CSS `url()`, or `none`.
+    fn image(self) -> &'static str {
+        // Grey (0.5) grain whose opacity follows the noise, so the same
+        // image darkens light backgrounds and lightens dark ones.
+        match self {
+            Finish::Smooth => "none",
+            Finish::Sand => concat!(
+                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E",
+                "%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E",
+                "%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0.06 0 0 0 0'/%3E%3C/filter%3E",
+                "%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E\")"
+            ),
+            Finish::Float => concat!(
+                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E",
+                "%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.4' numOctaves='4' stitchTiles='stitch'/%3E",
+                "%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0.05 0 0 0 0'/%3E%3C/filter%3E",
+                "%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E\")"
+            ),
+            Finish::Knockdown => concat!(
+                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E",
+                "%3Cfilter id='f'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.03' numOctaves='2' stitchTiles='stitch'/%3E",
+                "%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0.05 0 0 0 0'/%3E%3C/filter%3E",
+                "%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E\")"
+            ),
+        }
+    }
+}
+
 /// Every personality choice; the default reproduces stucco's base look.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub(crate) struct Personality {
@@ -81,6 +181,10 @@ pub(crate) struct Personality {
     pub(crate) header: HeaderStyle,
     pub(crate) headings: HeadingWeight,
     pub(crate) buttons: ButtonShape,
+    pub(crate) links: LinkStyle,
+    pub(crate) nav: NavStyle,
+    pub(crate) focus: FocusStyle,
+    pub(crate) finish: Finish,
 }
 
 impl Personality {
@@ -138,6 +242,39 @@ impl Personality {
             ButtonShape::Rounded => "var(--st-radius-md)",
             ButtonShape::Pill => "var(--st-radius-full)",
         };
+        // (underline colour, thickness, hover thickness, background, weight)
+        let (link_line, link_thickness, link_hover, link_bg, link_weight) = match self.links {
+            LinkStyle::Underlined => ("currentColor", "auto", "2px", "none", "inherit"),
+            LinkStyle::Subtle => (
+                "color-mix(in oklch, currentColor 35%, transparent)",
+                "1px",
+                "1px",
+                "none",
+                "inherit",
+            ),
+            LinkStyle::Bold => ("currentColor", "2px", "3px", "none", "550"),
+            LinkStyle::Highlight => (
+                "currentColor",
+                "auto",
+                "2px",
+                "linear-gradient(transparent 62%, var(--st-accent-soft) 0)",
+                "inherit",
+            ),
+        };
+        let (nav_bg, nav_color, nav_bar) = match self.nav {
+            NavStyle::Soft => (
+                "var(--st-accent-soft)",
+                "var(--st-accent-text)",
+                "transparent",
+            ),
+            NavStyle::Solid => ("var(--st-accent)", "var(--st-on-accent)", "transparent"),
+            NavStyle::Bar => ("transparent", "var(--st-text)", "var(--st-accent)"),
+        };
+        let (focus_width, focus_offset) = match self.focus {
+            FocusStyle::Ring => ("2px", "2px"),
+            FocusStyle::Thick => ("3px", "2px"),
+            FocusStyle::Snug => ("2px", "1px"),
+        };
         vec![
             ("surface-shadow", surface_shadow),
             ("card-shadow", card_shadow),
@@ -153,6 +290,17 @@ impl Personality {
             ("heading-weight", weight),
             ("heading-tracking", tracking),
             ("button-radius", button_radius),
+            ("link-line", link_line),
+            ("link-thickness", link_thickness),
+            ("link-hover-thickness", link_hover),
+            ("link-bg", link_bg),
+            ("link-weight", link_weight),
+            ("nav-current-bg", nav_bg),
+            ("nav-current-text", nav_color),
+            ("nav-current-bar", nav_bar),
+            ("focus-width", focus_width),
+            ("focus-offset", focus_offset),
+            ("finish", self.finish.image()),
         ]
     }
 }
