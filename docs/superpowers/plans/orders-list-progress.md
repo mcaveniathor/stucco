@@ -11,3 +11,6 @@ Baseline passed (workspace tests). Task 1 complete: collection regression suite 
 Task 2 complete: source/context regression passed, all five Tower feature checks passed.
 Task 3 complete: storage persistence/codec tests passed in default and synchronous modes; Rust 1.90 check passed.
 Ruling: optional adapter Tower dependency uses a direct path declaration to disable defaults — Cargo rejects overriding inherited default features — cost: maintain its version alongside workspace declaration.
+Task 4 complete: index atomicity, duplicate sorts, update/delete/rebuild and rollback tests passed; adapter Clippy passed.
+Ruling: expose explicitly O(n) IndexTable::all for numbered mode/maintenance — needed to exercise index integrity and small-mode scans — cost: callers must heed documented scan cost.
+Ruling: ScanRequest adds offset_mode bool — Window::Offset(page=1) also represents cursor first page, so window alone cannot select counted mode — cost: one additional configuration field.
