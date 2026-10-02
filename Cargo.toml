@@ -19,7 +19,7 @@ http = "1.5"
 http-body = "1.1"
 http-body-util = "0.1.5"
 bytes = "1.12"
-pin-project-lite = "0.2"
+pin-project = "1.1.13"
 axum = { version = "0.8.9", default-features = false }
 tower-http = "0.7.1"
 tokio = "1.53"

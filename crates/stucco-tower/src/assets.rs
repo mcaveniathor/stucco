@@ -12,7 +12,7 @@ use http::header::{
 };
 use http::{Method, Request, Response, StatusCode};
 use http_body_util::{Either, Full};
-use pin_project_lite::pin_project;
+use pin_project::pin_project;
 use stucco_core::Bundle;
 use tower::Service;
 
@@ -143,17 +143,20 @@ where
     }
 }
 
-pin_project! {
-    /// The future returned by [`WithFallback`].
-    #[project = FallbackProj]
-    // pin-project-lite does not accept doc comments on variant fields.
-    #[allow(missing_docs)]
-    pub enum FallbackFuture<F> {
-        /// An asset response, ready immediately (taken when polled).
-        Asset { res: Option<Response<Full<Bytes>>> },
+/// The future returned by [`WithFallback`].
+#[pin_project(project = FallbackProj)]
+pub enum FallbackFuture<F> {
+    /// An asset response, ready immediately.
+    Asset {
+        /// The response, taken when polled.
+        res: Option<Response<Full<Bytes>>>,
+    },
+    /// The inner service's response.
+    Inner {
         /// The inner service's future.
-        Inner { #[pin] future: F },
-    }
+        #[pin]
+        future: F,
+    },
 }
 
 impl<F, ResBody, E> Future for FallbackFuture<F>

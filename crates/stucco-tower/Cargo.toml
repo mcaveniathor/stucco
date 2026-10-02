@@ -13,7 +13,7 @@ http.workspace = true
 http-body.workspace = true
 http-body-util.workspace = true
 bytes.workspace = true
-pin-project-lite.workspace = true
+pin-project.workspace = true
 axum = { workspace = true, optional = true }
 tower-http = { workspace = true, optional = true, features = ["trace", "request-id", "limit", "timeout"] }
 tokio = { workspace = true, optional = true, features = ["time"] }

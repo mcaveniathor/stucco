@@ -9,7 +9,9 @@
 #![deny(missing_docs)]
 
 mod assets;
+mod negotiate;
 mod response;
 
 pub use assets::{AssetService, FallbackFuture, WithFallback};
+pub use negotiate::{RequestKind, respond};
 pub use response::{FragmentResponse, PageResponse};
