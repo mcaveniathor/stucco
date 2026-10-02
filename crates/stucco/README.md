@@ -2,7 +2,7 @@
 
 Server-rendered, themeable UI components for Rust. This is the facade crate:
 start here for layouts, typography, buttons, forms, tables, and application shells.
-The 0.1 API is experimental.
+The 0.2 API is experimental.
 
 ```rust
 use stucco::prelude::*;

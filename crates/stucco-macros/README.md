@@ -4,7 +4,7 @@ Derive macros for [stucco](https://github.com/mcaveniathor/stucco). Use them
 through the `stucco` crate's `derive` feature rather than directly:
 
 ```toml
-stucco = { version = "0.1", features = ["derive"] }
+stucco = { version = "0.2", features = ["derive"] }
 ```
 
 `#[derive(Columns)]` turns a struct's fields into data table columns. See the

@@ -17,7 +17,7 @@ The `collections` feature composes tables and native GET search, filters,
 sorting, and pagination. Components use backend capabilities without depending
 on a database, HTTP server, or Tokio.
 
-Minimum Rust: **1.85**. The 0.1 API is experimental.
+Minimum Rust: **1.85**. The 0.2 API is experimental.
 Most applications should use the [stucco facade](https://github.com/mcaveniathor/stucco)
 which re-exports the components with common families enabled.
 
