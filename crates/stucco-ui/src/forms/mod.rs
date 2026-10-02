@@ -5,6 +5,7 @@ use stucco_core::{Asset, register_asset};
 
 mod choice;
 mod control;
+mod error_summary;
 mod field;
 mod input;
 mod select;
@@ -13,6 +14,7 @@ mod textarea;
 
 pub use choice::{Checkbox, RadioGroup};
 pub use control::{Control, Wiring};
+pub use error_summary::ErrorSummary;
 pub use field::Field;
 pub use input::Input;
 pub use select::Select;

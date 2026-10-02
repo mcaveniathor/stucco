@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- `FormState::from_urlencoded` parses a form body (dropping `_csrf`), and
+  `FormState::field_errors` lists fields with errors.
+- `Validator` checks a submitted `FormState` and builds typed values, or returns
+  the state with one message per invalid field.
+- `ErrorSummary` lists a failed submission's errors above the form, links them
+  to their controls, and takes focus on load.
+- `stucco-tower`: the `Submission` axum extractor (415 for other content types)
+  and the `SeeOther` 303 redirect for post-redirect-get.
 - docs.rs now labels items that require a cargo feature.
 - Document that the reserved `overlay` feature is enabled by default and adds nothing yet.
 - CI checks each cargo feature on its own and runs `cargo-semver-checks` against

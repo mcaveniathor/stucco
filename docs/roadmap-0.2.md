@@ -22,7 +22,11 @@ The missing pieces are parsing a submission, validation, CSRF issuing and
 verifying, post-redirect-get with flash messages, storage writes from async
 handlers, and overlay components.
 
-## Milestone 1: form submissions (stucco-core, stucco-tower)
+## Milestone 1: form submissions (stucco-core, stucco-tower) — done
+
+Shipped as `FormState::from_urlencoded`, `Validator`/`Check` (core),
+`ErrorSummary` (forms), and `Submission`/`SeeOther` (stucco-tower). The items
+below are the original plan; the code is the reference now.
 
 1. **Parse a submission into `FormState`.** `FormState::from_urlencoded(&[u8])`
    in core, which keeps repeated keys and drops `_csrf`. Add an axum extractor,
@@ -51,7 +55,9 @@ handlers, and overlay components.
    `HttpOnly; SameSite=Lax; Secure` cookie holding a random token. It puts the
    form token (HMAC of the cookie token with the app key) into `RequestContext`
    so handlers can pass it to `Form::csrf`. It rejects unsafe methods with
-   `403` unless `_csrf` (or an `x-csrf-token` header) verifies. The handler
+   `403` unless `_csrf` (or the `Stucco-Csrf` header, already defined in
+   `stucco_core::behavior`) verifies. The layer must buffer the body to read
+   `_csrf` and hand it on unchanged to the handler's `Submission`. The handler
    reads the token with `cx.get::<CsrfToken>()`.
    - Also check the `Origin`/`Sec-Fetch-Site` headers as defence in depth.
    - New deps: `hmac`, `sha2`, `getrandom` (or `rand`). Put them behind a
@@ -114,6 +120,11 @@ beyond what the browser provides:
 - Remove the reserved feature names that have no 0.2 implementation
   (`marketing`, `diagram`, `markdown`, `askama`, `maud`). Re-adding a feature
   later is not breaking; keeping empty ones invites dependents on nothing.
+- `PageResponse`, `FragmentResponse` and `SeeOther` have an inherent
+  `into_response` returning an `http` response, which shadows axum's
+  `IntoResponse::into_response` in handlers (callers must write
+  `IntoResponse::into_response(x)`). Rename the inherent method (for example
+  `into_http`).
 - Review the `FormState` builder names (`with_value`/`with_error`) against the
   new validator API so the two read consistently.
 
