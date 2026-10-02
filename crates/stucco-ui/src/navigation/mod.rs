@@ -9,8 +9,10 @@
 //! ```
 mod nav_link;
 mod pagination;
+mod tabs;
 pub use nav_link::NavLink;
 pub use pagination::Pagination;
+pub use tabs::Tabs;
 /// Navigation stylesheet.
 pub static NAVIGATION: stucco_core::Asset = stucco_core::Asset {
     name: "navigation",

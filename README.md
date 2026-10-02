@@ -214,17 +214,16 @@ to select only the families you need.
 | `actions` | Buttons, button links, and icon buttons |
 | `forms` | Forms, fields, inputs, selects, and choice controls |
 | `feedback` | Empty states and live status regions |
-| `navigation` | Pagination |
+| `navigation` | Pagination, navigation links, and tabs |
+| `overlay` | Dialogs, menus, toasts, and tooltips |
 | `data` | Cards, panels, semantic tables, and result counts |
 | `app` | Application shells, page/section headers, and footers |
 | `collections` | Typed DataTable and GET controls; enables data/forms/navigation/feedback |
 | `icons` | Vendored Lucide icon catalog |
 
 The manifest also contains reserved feature names for planned families
-(`overlay`, `marketing`, `diagram`, `markdown`, `askama`, and `maud`).
-They do not yet provide those integrations or component families. The reserved
-`overlay` name is also in the default set; it currently adds nothing beyond
-`actions`.
+(`marketing`, `diagram`, `markdown`, `askama`, and `maud`). They do not yet
+provide those integrations or component families.
 
 `stucco-tower` enables `axum` and `tower-http` by default.
 `stucco-redb` enables its `tokio` collection adapter by default; disable defaults

@@ -59,6 +59,7 @@ fn component_pages_render_every_family() {
     );
     page_snapshot("actions", gallery::actions_page::page(&bundle), &bundle);
     page_snapshot("forms", gallery::forms_page::page(&bundle), &bundle);
+    page_snapshot("overlays", gallery::overlays_page::page(&bundle), &bundle);
     page_snapshot("themes", gallery::themes_page::page(&bundle), &bundle);
     page_snapshot(
         "collections",
@@ -90,6 +91,7 @@ fn index_links_every_page() {
         "typography.html",
         "actions.html",
         "forms.html",
+        "overlays.html",
         "collections.html",
         "app.html",
     ] {

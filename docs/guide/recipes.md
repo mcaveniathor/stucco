@@ -171,3 +171,25 @@ use stucco::server::LayerConfig;
 let config = LayerConfig { body_limit: 10 * 1024 * 1024, timeout: Duration::from_secs(60) };
 let app = axum::Router::new().stucco_with(Preset::Slate, &config);
 ```
+
+## Confirm before deleting
+
+Put the delete form in a dialog, and open it from the row's button. The form posts as usual; Cancel, Escape or a click outside closes it:
+
+```rust
+use stucco::prelude::*;
+
+fn delete_order(id: u64) -> impl Render {
+    let dialog_id = format!("delete-order-{id}");
+    let confirm = Dialog::new(&dialog_id, format!("Delete order {id}?"))
+        .child(Text::new("The order and its history are removed."))
+        .actions(Dialog::close_button(&dialog_id, "Cancel"))
+        .actions(
+            Form::post(format!("/orders/{id}/delete"))
+                .child(Button::new("Delete order").submit().variant(Variant::Danger)),
+        );
+    (confirm.opener("Delete").variant(Variant::Ghost), confirm)
+}
+```
+
+After the redirect, show a `Toast::new("Order deleted").tone(Tone::Success)` on the page it lands on.
