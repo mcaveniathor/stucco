@@ -33,4 +33,8 @@
   .st-input-group > .st-input-adornment:first-child { border-inline-end: 0; border-start-start-radius: var(--st-radius-md); border-end-start-radius: var(--st-radius-md); }
   .st-input-group > .st-input-adornment:last-child { border-inline-start: 0; border-start-end-radius: var(--st-radius-md); border-end-end-radius: var(--st-radius-md); }
   .st-input-group > .st-input:not(:first-child):not(:last-child) { border-radius: 0; }
+  .st-checkbox, .st-radio { display: flex; align-items: center; gap: var(--st-space-2); color: var(--st-text); cursor: pointer; }
+  .st-checkbox > input, .st-radio > input { inline-size: 1.125em; block-size: 1.125em; margin: 0; accent-color: var(--st-accent); }
+  .st-radio-group { border: 0; padding: 0; margin: 0; min-inline-size: 0; display: flex; flex-direction: column; gap: var(--st-space-2); }
+  .st-radio-group > .st-legend { padding: 0; margin-block-end: var(--st-space-1); }
 }

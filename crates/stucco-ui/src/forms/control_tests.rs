@@ -131,3 +131,51 @@ fn field_wiring_cannot_be_overridden() {
 fn control_names_cannot_be_overridden() {
     let _ = to_html(&Input::text("x").attr("name", "y"));
 }
+
+#[test]
+fn checkboxes_bind_by_value() {
+    let state = FormState::new()
+        .with_value("tags", "a")
+        .with_value("tags", "c");
+    let a = to_html(&Checkbox::new("tags", "A").value("a").bind(&state));
+    assert_eq!(
+        a,
+        r#"<label class="st-checkbox"><input type="checkbox" name="tags" value="a" checked>A</label>"#
+    );
+    assert!(!to_html(&Checkbox::new("tags", "B").value("b").bind(&state)).contains(" checked"));
+    assert!(to_html(&Checkbox::new("terms", "I agree")).contains(r#"value="on""#));
+}
+
+#[test]
+fn radio_groups_are_fieldsets_with_described_errors() {
+    let state = FormState::new()
+        .with_value("plan", "pro")
+        .with_error("plan", "Pick one");
+    let html = to_html(
+        &RadioGroup::new("plan", "Plan")
+            .option("free", "Free")
+            .option("pro", "Pro <best>")
+            .bind(&state),
+    );
+    assert!(
+        html.starts_with(r#"<fieldset class="st-radio-group" aria-describedby="radios-1-error" aria-invalid="true"><legend class="st-legend">Plan</legend>"#),
+        "{html}"
+    );
+    assert!(html.contains(r#"<label class="st-radio"><input type="radio" name="plan" value="pro" checked>Pro &lt;best&gt;</label>"#));
+    assert!(html.contains(r#"id="radios-1-error""#) && html.contains("Pick one"));
+}
+
+#[test]
+fn radio_group_hints_and_required() {
+    let html = to_html(
+        &RadioGroup::new("size", "Size")
+            .option("s", "S")
+            .hint("Pick a size")
+            .required(),
+    );
+    assert!(
+        html.contains(r#"aria-describedby="radios-1-hint""#)
+            && html.contains(r#"<input type="radio" name="size" value="s" required>"#),
+        "{html}"
+    );
+}
