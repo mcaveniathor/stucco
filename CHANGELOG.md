@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Three more personality options, each seedable and in `ThemeSpec`, the CLI
+  and the playground (`shell`, `panels`, `corners`):
+  - `ShellLayout` (Sidebar, Rail, Topbar) arranges `AppShell`; Topbar puts
+    navigation in a row under the header;
+  - `PanelStyle` (Boxed, Ruled, Headed) frames `Panel`;
+  - `CornerStyle` (Even, Squircle, Bevel, Hand) shapes cards, panels, filter
+    bars and table cards, using `corner-shape` where browsers support it.
+  The playground preview gains an app-shell sample. Defaults reproduce the
+  previous look, and existing seeds keep every option they had.
 - Four more personality options, each seedable, in `ThemeSpec` and the CLI
   (`links`, `nav`, `focus`, `finish`) and in the playground:
   - `LinkStyle` (Underlined, Subtle, Bold, Highlight) for `.st-link`;

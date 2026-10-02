@@ -36,7 +36,7 @@ From the accent and neutral hues, stucco generates twelve-step OKLCH scales for 
 
 ## Personality
 
-Ten options change how components look without changing their markup:
+Thirteen options change how components look without changing their markup:
 
 | Option | Choices |
 | --- | --- |
@@ -50,8 +50,19 @@ Ten options change how components look without changing their markup:
 | `nav_style` | Soft (default), Solid, Bar |
 | `focus_style` | Ring (default), Thick, Snug |
 | `finish` | Smooth (default), Sand, Float, Knockdown |
+| `shell_layout` | Sidebar (default), Rail, Topbar |
+| `panel_style` | Boxed (default), Ruled, Headed |
+| `corner_style` | Even (default), Squircle, Bevel, Hand |
 
 Each option sets tokens such as `--st-card-shadow` or `--st-table-rule` that the component styles read. Every link style keeps an underline, so links never depend on colour alone.
+
+### Layout and shape
+
+`shell_layout` arranges the application shell. Sidebar puts a filled navigation column beside the content, Rail a narrower one on the page background, and Topbar a row of links under the header with the content at full width. Topbar suits a flat list of links; a sidebar holding a nested outline is better left as a column.
+
+`panel_style` frames panels: Boxed is a bordered box, Ruled drops the box for a strong rule above the title, and Headed sets the title in a raised band.
+
+`corner_style` shapes the corners of cards, panels, filter bars and table cards. Squircle and Bevel use the CSS `corner-shape` property, so browsers without it show ordinary rounded corners. Hand makes each corner slightly different, like plaster shaped by hand. Every style keeps the theme's radius, so sharp themes stay sharp.
 
 ### Finish
 
