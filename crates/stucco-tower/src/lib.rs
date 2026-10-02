@@ -9,9 +9,17 @@
 #![deny(missing_docs)]
 
 mod assets;
+#[cfg(feature = "axum")]
+mod axum_support;
+#[cfg(all(feature = "axum", feature = "tower-http"))]
+mod layers;
 mod negotiate;
 mod response;
 
 pub use assets::{AssetService, FallbackFuture, WithFallback};
+#[cfg(feature = "axum")]
+pub use axum_support::assets_router;
+#[cfg(all(feature = "axum", feature = "tower-http"))]
+pub use layers::{LayerConfig, with_standard_layers};
 pub use negotiate::{RequestKind, respond};
 pub use response::{FragmentResponse, PageResponse};
