@@ -1,0 +1,91 @@
+@layer stucco.layout {
+  /* Stack: vertical rhythm between children. */
+  .st-stack { display: flex; flex-direction: column; justify-content: flex-start; }
+  .st-stack > * { margin-block: 0; }
+  .st-stack[data-space="0"] > * + * { margin-block-start: 0; }
+  .st-stack[data-space="0"][data-recursive] * + * { margin-block-start: 0; }
+  .st-stack[data-space="1"] > * + * { margin-block-start: var(--st-space-1); }
+  .st-stack[data-space="1"][data-recursive] * + * { margin-block-start: var(--st-space-1); }
+  .st-stack[data-space="2"] > * + * { margin-block-start: var(--st-space-2); }
+  .st-stack[data-space="2"][data-recursive] * + * { margin-block-start: var(--st-space-2); }
+  .st-stack[data-space="3"] > * + * { margin-block-start: var(--st-space-3); }
+  .st-stack[data-space="3"][data-recursive] * + * { margin-block-start: var(--st-space-3); }
+  .st-stack[data-space="4"] > * + * { margin-block-start: var(--st-space-4); }
+  .st-stack[data-space="4"][data-recursive] * + * { margin-block-start: var(--st-space-4); }
+  .st-stack[data-space="5"] > * + * { margin-block-start: var(--st-space-5); }
+  .st-stack[data-space="5"][data-recursive] * + * { margin-block-start: var(--st-space-5); }
+  .st-stack[data-space="6"] > * + * { margin-block-start: var(--st-space-6); }
+  .st-stack[data-space="6"][data-recursive] * + * { margin-block-start: var(--st-space-6); }
+  .st-stack[data-space="8"] > * + * { margin-block-start: var(--st-space-8); }
+  .st-stack[data-space="8"][data-recursive] * + * { margin-block-start: var(--st-space-8); }
+  .st-stack[data-space="10"] > * + * { margin-block-start: var(--st-space-10); }
+  .st-stack[data-space="10"][data-recursive] * + * { margin-block-start: var(--st-space-10); }
+  .st-stack[data-space="12"] > * + * { margin-block-start: var(--st-space-12); }
+  .st-stack[data-space="12"][data-recursive] * + * { margin-block-start: var(--st-space-12); }
+  /* Cluster: wrapping inline group. */
+  .st-cluster { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; }
+  .st-cluster[data-space="0"] { gap: 0; }
+  .st-cluster[data-space="1"] { gap: var(--st-space-1); }
+  .st-cluster[data-space="2"] { gap: var(--st-space-2); }
+  .st-cluster[data-space="3"] { gap: var(--st-space-3); }
+  .st-cluster[data-space="4"] { gap: var(--st-space-4); }
+  .st-cluster[data-space="5"] { gap: var(--st-space-5); }
+  .st-cluster[data-space="6"] { gap: var(--st-space-6); }
+  .st-cluster[data-space="8"] { gap: var(--st-space-8); }
+  .st-cluster[data-space="10"] { gap: var(--st-space-10); }
+  .st-cluster[data-space="12"] { gap: var(--st-space-12); }
+  .st-cluster[data-justify="start"] { justify-content: flex-start; }
+  .st-cluster[data-justify="center"] { justify-content: center; }
+  .st-cluster[data-justify="end"] { justify-content: flex-end; }
+  .st-cluster[data-justify="between"] { justify-content: space-between; }
+  .st-cluster[data-align="start"] { align-items: flex-start; }
+  .st-cluster[data-align="center"] { align-items: center; }
+  .st-cluster[data-align="end"] { align-items: flex-end; }
+  .st-cluster[data-align="baseline"] { align-items: baseline; }
+  .st-cluster[data-align="stretch"] { align-items: stretch; }
+  /* Grid: as many columns as fit at the minimum width. */
+  .st-grid { display: grid; }
+  .st-grid[data-min="xs"] { grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); }
+  .st-grid[data-min="sm"] { grid-template-columns: repeat(auto-fit, minmax(min(100%, 30rem), 1fr)); }
+  .st-grid[data-min="md"] { grid-template-columns: repeat(auto-fit, minmax(min(100%, 40rem), 1fr)); }
+  .st-grid[data-min="lg"] { grid-template-columns: repeat(auto-fit, minmax(min(100%, 60rem), 1fr)); }
+  .st-grid[data-min="xl"] { grid-template-columns: repeat(auto-fit, minmax(min(100%, 75rem), 1fr)); }
+  .st-grid[data-min="prose"] { grid-template-columns: repeat(auto-fit, minmax(min(100%, 65ch), 1fr)); }
+  .st-grid[data-space="0"] { gap: 0; }
+  .st-grid[data-space="1"] { gap: var(--st-space-1); }
+  .st-grid[data-space="2"] { gap: var(--st-space-2); }
+  .st-grid[data-space="3"] { gap: var(--st-space-3); }
+  .st-grid[data-space="4"] { gap: var(--st-space-4); }
+  .st-grid[data-space="5"] { gap: var(--st-space-5); }
+  .st-grid[data-space="6"] { gap: var(--st-space-6); }
+  .st-grid[data-space="8"] { gap: var(--st-space-8); }
+  .st-grid[data-space="10"] { gap: var(--st-space-10); }
+  .st-grid[data-space="12"] { gap: var(--st-space-12); }
+  /* Center: a horizontally centred measure. */
+  .st-center { box-sizing: content-box; margin-inline: auto; }
+  .st-center[data-max="xs"] { max-inline-size: 20rem; }
+  .st-center[data-max="sm"] { max-inline-size: 30rem; }
+  .st-center[data-max="md"] { max-inline-size: 40rem; }
+  .st-center[data-max="lg"] { max-inline-size: 60rem; }
+  .st-center[data-max="xl"] { max-inline-size: 75rem; }
+  .st-center[data-max="prose"] { max-inline-size: 65ch; }
+  .st-center[data-gutters="0"] { padding-inline: 0; }
+  .st-center[data-gutters="1"] { padding-inline: var(--st-space-1); }
+  .st-center[data-gutters="2"] { padding-inline: var(--st-space-2); }
+  .st-center[data-gutters="3"] { padding-inline: var(--st-space-3); }
+  .st-center[data-gutters="4"] { padding-inline: var(--st-space-4); }
+  .st-center[data-gutters="5"] { padding-inline: var(--st-space-5); }
+  .st-center[data-gutters="6"] { padding-inline: var(--st-space-6); }
+  .st-center[data-gutters="8"] { padding-inline: var(--st-space-8); }
+  .st-center[data-gutters="10"] { padding-inline: var(--st-space-10); }
+  .st-center[data-gutters="12"] { padding-inline: var(--st-space-12); }
+  .st-center[data-intrinsic] { display: flex; flex-direction: column; align-items: center; }
+  /* Container: page width with responsive gutters. */
+  .st-container { margin-inline: auto; padding-inline: clamp(var(--st-space-4), 4vw, var(--st-space-8)); }
+  .st-container[data-size="xs"] { max-inline-size: 20rem; }
+  .st-container[data-size="sm"] { max-inline-size: 30rem; }
+  .st-container[data-size="md"] { max-inline-size: 40rem; }
+  .st-container[data-size="lg"] { max-inline-size: 60rem; }
+  .st-container[data-size="xl"] { max-inline-size: 75rem; }
+  .st-container[data-size="prose"] { max-inline-size: 65ch; }
+}

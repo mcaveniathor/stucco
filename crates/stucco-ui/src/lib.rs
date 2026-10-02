@@ -8,6 +8,8 @@
 mod passthrough;
 mod common;
 pub mod icon;
+#[cfg(feature = "layout")]
+pub mod layout;
 
 pub use common::{ColorScheme, Measure, Size, Space, Tone, Variant};
 pub use icon::{Icon, LabelledIcon};
@@ -18,5 +20,7 @@ use stucco_core::Asset;
 pub fn ui_assets() -> Vec<&'static Asset> {
     #[allow(unused_mut)]
     let mut assets: Vec<&'static Asset> = vec![&icon::ICON];
+    #[cfg(feature = "layout")]
+    assets.push(&layout::LAYOUT);
     assets
 }

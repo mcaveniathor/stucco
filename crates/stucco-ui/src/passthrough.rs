@@ -52,7 +52,6 @@ macro_rules! passthrough {
     )),
     allow(dead_code)
 )]
-#[allow(dead_code)] // TEMP until the first component (Task 4)
 pub(crate) fn apply<'a>(el: Element<'a>, attrs: &Attrs, reserved: &[&str]) -> Element<'a> {
     let conflicts = attrs.reserved_conflicts(reserved);
     debug_assert!(

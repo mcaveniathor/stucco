@@ -1,6 +1,9 @@
 #[test]
 fn palette_page_shows_every_preset_in_both_schemes() {
-    let html = gallery::palette::palette_page(&gallery::bundle());
+    let bundle = gallery::bundle();
+    // The stylesheet hash changes whenever any component CSS changes.
+    let html = gallery::palette::palette_page(&bundle)
+        .replace(bundle.stylesheet_url(), "/_stucco/stucco.HASH.css");
     for p in stucco::theme::Preset::ALL {
         assert!(
             html.contains(&format!("data-st-theme=\"{}\"", p.name())),
