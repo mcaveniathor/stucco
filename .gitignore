@@ -3,3 +3,4 @@ node_modules/
 browser/test-results/
 browser/playwright-report/
 .superpowers/
+docs/superpowers/

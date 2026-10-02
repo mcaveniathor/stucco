@@ -1,10 +1,17 @@
 [package]
 name = "stucco-ui"
-description = "Components for stucco: layout, typography, actions, forms and icons."
+description = "Semantic UI components for stucco: layouts, forms, tables, collections, application shells and icons."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+include.workspace = true
+readme = "README.md"
+documentation = "https://docs.rs/stucco-ui"
+keywords = ["ui", "html", "server-rendered"]
+categories = ["web-programming"]
 
 [dependencies]
 stucco-core.workspace = true
@@ -21,3 +28,6 @@ feedback = ["typography"]
 navigation = []
 app = ["layout", "navigation", "typography"]
 collections = ["data", "forms", "navigation", "feedback"]
+
+[package.metadata.docs.rs]
+all-features = true
