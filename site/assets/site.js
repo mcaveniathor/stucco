@@ -216,13 +216,17 @@ function playground(form) {
   const seed = byId("pg-seed");
   const status = byId("pg-status");
   const options = [...form.querySelectorAll("select")].filter((s) => s !== preset);
-  const validSeed = () => /^\d+$/.test(seed.value.trim()) && BigInt(seed.value.trim()) < 2n ** 64n;
+  // Digits are a seed (Theme::seeded); other text is a name (Theme::seeded_str).
+  const numeric = () => /^\d+$/.test(seed.value.trim());
+  const validSeed = () => numeric() && BigInt(seed.value.trim()) < 2n ** 64n;
   let current;
   let ticket = 0;
 
   const query = () => {
     const params = new URLSearchParams();
-    if (validSeed()) params.set("seed", seed.value.trim());
+    const text = seed.value.trim();
+    if (validSeed()) params.set("seed", text);
+    else if (text && !numeric()) params.set("name", text);
     else params.set("preset", preset.value);
     for (const select of options) if (select.value) params.set(select.name, select.value);
     return params.toString();
@@ -231,14 +235,13 @@ function playground(form) {
   const load = (search) => {
     const params = new URLSearchParams(search);
     if (params.has("preset")) preset.value = params.get("preset");
-    seed.value = params.get("seed") ?? "";
+    seed.value = params.get("seed") ?? params.get("name") ?? "";
     for (const select of options) select.value = params.get(select.name) ?? "";
   };
 
   async function update(remember) {
     const mine = ++ticket;
-    const seedText = seed.value.trim();
-    seed.setAttribute("aria-invalid", String(seedText !== "" && !validSeed()));
+    seed.setAttribute("aria-invalid", String(numeric() && !validSeed()));
     let result;
     try {
       result = await generate(query(), "playground");
@@ -248,8 +251,8 @@ function playground(form) {
     }
     if (mine !== ticket) return;
     current = result;
-    // A valid seed replaces the preset as the starting point.
-    preset.disabled = validSeed();
+    // A seed or name replaces the preset as the starting point.
+    preset.disabled = !result.query.startsWith("preset=");
     byId("pg-theme").textContent = result.scoped;
     byId("pg-rust").textContent = result.rust;
     byId("pg-css").textContent = result.css;

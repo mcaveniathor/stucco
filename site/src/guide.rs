@@ -23,6 +23,7 @@ const PAGES: &[(&str, &str)] = &[
         include_str!("../../docs/guide/collections.md"),
     ),
     ("theming", include_str!("../../docs/guide/theming.md")),
+    ("cli", include_str!("../../docs/guide/cli.md")),
     (
         "enhancement",
         include_str!("../../docs/guide/enhancement.md"),

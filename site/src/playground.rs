@@ -1,10 +1,10 @@
 //! The theme playground: pick a preset or seed, override options, preview the
 //! result in light and dark, and export it as Rust, CSS or JSON.
 
-use site_wasm::{Config, OPTIONS, tokens_json};
 use stucco::actions::Button;
 use stucco::forms::{Field, Fieldset, Form, Input, Select};
 use stucco::layout::{Cluster, Stack};
+use stucco::theme::spec::{OPTIONS, ThemeSpec, tokens_json};
 use stucco::theme::{Preset, Scope, Theme};
 use stucco::typography::{Heading, Text};
 use stucco::{Size, Space, Tone, Variant, el};
@@ -14,7 +14,7 @@ use crate::shell::{Section, Site, title_case};
 /// The playground page. It renders the default theme's exports so the page
 /// is complete without JavaScript; the site script then drives the controls.
 pub fn page(site: &Site) -> String {
-    let config = Config::default();
+    let spec = ThemeSpec::default();
     let built = Theme::preset(Preset::Slate)
         .build()
         .expect("Slate passes its contrast checks");
@@ -34,11 +34,10 @@ pub fn page(site: &Site) -> String {
                 "Seed",
                 Input::text("seed")
                     .id("pg-seed")
-                    .attr("inputmode", "numeric")
-                    .attr("pattern", "[0-9]*")
-                    .autocomplete("off"),
+                    .autocomplete("off")
+                    .attr("spellcheck", "false"),
             )
-            .hint("A whole number. Leave it empty to start from the preset."),
+            .hint("A whole number, or any text such as your product's name. Leave it empty to start from the preset."),
         )
         .child(
             Cluster::new()
@@ -50,13 +49,13 @@ pub fn page(site: &Site) -> String {
                         .data("pg-action", "clear"),
                 ),
         );
-    let options = Fieldset::new("Options").children(OPTIONS.iter().map(|spec| {
+    let options = Fieldset::new("Options").children(OPTIONS.iter().map(|option| {
         Field::new(
-            spec.label,
-            Select::new(spec.key)
-                .id(format!("pg-{}", spec.key))
+            option.label,
+            Select::new(option.key)
+                .id(format!("pg-{}", option.key))
                 .option("", "From the base")
-                .options(spec.choices.iter().map(|(v, l, _)| (*v, *l))),
+                .options(option.choices.iter().map(|c| (c.value, c.label))),
         )
     }));
     let controls = Form::get(site.url("playground.html"))
@@ -99,7 +98,7 @@ pub fn page(site: &Site) -> String {
                 .child(gallery::themes_page::panels("playground")),
         );
     let exports = [
-        ("pg-rust", "Rust", "theme.rs", config.rust()),
+        ("pg-rust", "Rust", "theme.rs", spec.rust()),
         ("pg-css", "CSS", "theme.css", built.css(Scope::Root)),
         ("pg-json", "JSON tokens", "tokens.json", tokens_json(&built)),
     ];
