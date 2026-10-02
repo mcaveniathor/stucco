@@ -20,9 +20,10 @@ use std::str::FromStr;
 
 use crate::{
     Backdrop, BuiltTheme, ButtonDepth, ButtonShape, ControlStyle, CornerStyle, Density, Elevation,
-    Finish, FocusStyle, HeaderStyle, HeadingFont, HeadingWeight, IconWeight, LabelStyle, Leading,
-    LineWeight, LinkStyle, Material, Motion, NavStyle, PanelStyle, Preset, Radius, RuleStyle,
-    Scheme, ShadowStyle, ShellLayout, TableStyle, TagStyle, Theme,
+    Finish, FocusStyle, HeaderEdge, HeaderStyle, HeadingFont, HeadingWeight, IconWeight,
+    LabelStyle, Leading, LineWeight, LinkStyle, Material, Motion, NavStyle, PanelStyle, Pattern,
+    Preset, Radius, Relief, RuleStyle, Scheme, ShadowStyle, ShellLayout, TableStyle, TagStyle,
+    Theme,
 };
 
 /// One choice for an option.
@@ -365,6 +366,43 @@ pub const OPTIONS: &[OptionInfo] = &[
             choice("layered", "Layered"),
             choice("tinted", "Tinted"),
             choice("hard", "Hard"),
+        ],
+    },
+    OptionInfo {
+        key: "relief",
+        label: "Relief",
+        ty: "Relief",
+        method: "relief",
+        choices: &[
+            choice("flat", "Flat"),
+            choice("venetian", "Venetian"),
+            choice("trowel", "Trowel"),
+            choice("skip", "Skip"),
+        ],
+    },
+    OptionInfo {
+        key: "pattern",
+        label: "Header pattern",
+        ty: "Pattern",
+        method: "pattern",
+        choices: &[
+            choice("plain", "Plain"),
+            choice("dots", "Dots"),
+            choice("grid", "Grid"),
+            choice("contours", "Contours"),
+            choice("waves", "Waves"),
+        ],
+    },
+    OptionInfo {
+        key: "edge",
+        label: "Header edge",
+        ty: "HeaderEdge",
+        method: "header_edge",
+        choices: &[
+            choice("straight", "Straight"),
+            choice("wave", "Wave"),
+            choice("zigzag", "Zigzag"),
+            choice("torn", "Torn"),
         ],
     },
 ];
@@ -855,6 +893,19 @@ fn apply(theme: Theme, key: &str, value: &str) -> Theme {
         ("shadows", "layered") => theme.shadow_style(ShadowStyle::Layered),
         ("shadows", "tinted") => theme.shadow_style(ShadowStyle::Tinted),
         ("shadows", "hard") => theme.shadow_style(ShadowStyle::Hard),
+        ("relief", "flat") => theme.relief(Relief::Flat),
+        ("relief", "venetian") => theme.relief(Relief::Venetian),
+        ("relief", "trowel") => theme.relief(Relief::Trowel),
+        ("relief", "skip") => theme.relief(Relief::Skip),
+        ("pattern", "plain") => theme.pattern(Pattern::Plain),
+        ("pattern", "dots") => theme.pattern(Pattern::Dots),
+        ("pattern", "grid") => theme.pattern(Pattern::Grid),
+        ("pattern", "contours") => theme.pattern(Pattern::Contours),
+        ("pattern", "waves") => theme.pattern(Pattern::Waves),
+        ("edge", "straight") => theme.header_edge(HeaderEdge::Straight),
+        ("edge", "wave") => theme.header_edge(HeaderEdge::Wave),
+        ("edge", "zigzag") => theme.header_edge(HeaderEdge::Zigzag),
+        ("edge", "torn") => theme.header_edge(HeaderEdge::Torn),
         _ => theme,
     }
 }
@@ -1000,6 +1051,25 @@ fn current(theme: &Theme, key: &str) -> &'static str {
             ShadowStyle::Layered => "layered",
             ShadowStyle::Tinted => "tinted",
             ShadowStyle::Hard => "hard",
+        },
+        "relief" => match p.relief {
+            Relief::Flat => "flat",
+            Relief::Venetian => "venetian",
+            Relief::Trowel => "trowel",
+            Relief::Skip => "skip",
+        },
+        "pattern" => match p.pattern {
+            Pattern::Plain => "plain",
+            Pattern::Dots => "dots",
+            Pattern::Grid => "grid",
+            Pattern::Contours => "contours",
+            Pattern::Waves => "waves",
+        },
+        "edge" => match p.edge {
+            HeaderEdge::Straight => "straight",
+            HeaderEdge::Wave => "wave",
+            HeaderEdge::Zigzag => "zigzag",
+            HeaderEdge::Torn => "torn",
         },
         _ => unreachable!("only known keys are looked up"),
     }

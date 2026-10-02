@@ -36,7 +36,7 @@ From the accent and neutral hues, stucco generates twelve-step OKLCH scales for 
 
 ## Personality
 
-Twenty-five options change how components look without changing their markup:
+Twenty-eight options change how components look without changing their markup:
 
 | Option | Choices |
 | --- | --- |
@@ -65,6 +65,9 @@ Twenty-five options change how components look without changing their markup:
 | `material` | Solid (default), Glass, Frost |
 | `backdrop` | Plain (default), Glow, Wash |
 | `shadow_style` | Soft (default), Layered, Tinted, Hard |
+| `relief` | Flat (default), Venetian, Trowel, Skip |
+| `pattern` | Plain (default), Dots, Grid, Contours, Waves |
+| `header_edge` | Straight (default), Wave, Zigzag, Torn |
 
 Each option sets tokens such as `--st-card-shadow` or `--st-table-rule` that the component styles read. Every link style keeps an underline, so links never depend on colour alone.
 
@@ -126,6 +129,31 @@ let theme = Theme::preset(Preset::Slate)
     .backdrop(Backdrop::Glow)
     .elevation(Elevation::Raised)
     .shadow_style(ShadowStyle::Layered);
+```
+
+### Ornaments
+
+Three options draw small SVG images that stucco generates from a handful of numbers, so they cost no downloads and no extra markup.
+
+`relief` lights a raised plaster surface on the page background: broad Venetian swirls, the long strokes of a trowel, or the small islands of a skip-trowel coat.
+
+`pattern` puts a faint motif behind the application header: dots, a grid, topographic contour lines or rows of waves.
+
+`header_edge` shapes the header's bottom edge as a wave, a zigzag or a torn plaster line, in place of its bottom rule. It shows on headers with a fill, so pair it with the Bar or Tinted header style.
+
+`motif_seed` varies all three: the direction of the relief's light and the layout of its plaster, the pattern's spacing and contours, and the rhythm of the edge. Seeded themes take it from their seed, so every seed draws its own contour map and its own torn edge; other themes use 0.
+
+The relief and the pattern are as strong as the theme's contrast allows. `build` checks text and controls on them at their darkest and lightest points, together with the backdrop, the finish and translucent surfaces, and fades both until every pair passes. On their own they keep their full strength; stacked with other textures on a theme with little contrast to spare, they come out fainter. Pages drop both for visitors who ask for more contrast.
+
+```rust
+use stucco::theme::{HeaderEdge, HeaderStyle, Pattern, Preset, Relief, Theme};
+
+let theme = Theme::preset(Preset::Sand)
+    .relief(Relief::Trowel)
+    .header_style(HeaderStyle::Tinted)
+    .pattern(Pattern::Contours)
+    .header_edge(HeaderEdge::Torn)
+    .motif_seed(7);
 ```
 
 ### Finish

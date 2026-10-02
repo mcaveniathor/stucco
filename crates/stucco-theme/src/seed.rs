@@ -1,6 +1,7 @@
 //! Deterministic generation from seeds: the [`Seeded`] trait, its random
 //! stream [`SeedRng`], and implementations for every theme option.
 
+use crate::ornament::{HeaderEdge, Pattern, Relief};
 use crate::personality::{
     Backdrop, ButtonDepth, ButtonShape, ControlStyle, CornerStyle, Elevation, Finish, FocusStyle,
     HeaderStyle, HeadingFont, HeadingWeight, IconWeight, LabelStyle, Leading, LineWeight,
@@ -562,12 +563,43 @@ seeded_enum!(
         (ShadowStyle::Hard, 1),
     ]
 );
+seeded_enum!(
+    Relief,
+    "relief",
+    [
+        (Relief::Flat, 5),
+        (Relief::Venetian, 1),
+        (Relief::Trowel, 1),
+        (Relief::Skip, 1),
+    ]
+);
+seeded_enum!(
+    Pattern,
+    "pattern",
+    [
+        (Pattern::Plain, 5),
+        (Pattern::Dots, 1),
+        (Pattern::Grid, 1),
+        (Pattern::Contours, 1),
+        (Pattern::Waves, 1),
+    ]
+);
+seeded_enum!(
+    HeaderEdge,
+    "header-edge",
+    [
+        (HeaderEdge::Straight, 5),
+        (HeaderEdge::Wave, 1),
+        (HeaderEdge::Zigzag, 1),
+        (HeaderEdge::Torn, 1),
+    ]
+);
 
 impl Seeded for Theme {
     const STREAM: &'static str = "theme";
 
     /// Every option from its own fork of `rng`: palette, fonts, type scale,
-    /// spacing, radius, density and the twenty-five personality options. Pill
+    /// spacing, radius, density and the twenty-eight personality options and the motif seed. Pill
     /// buttons become rounded on sharp themes. The result always passes
     /// [`Theme::build`].
     fn from_rng(rng: &mut SeedRng) -> Theme {
@@ -614,6 +646,10 @@ impl Seeded for Theme {
             .material(Material::from_rng(&mut rng.fork(Material::STREAM)))
             .backdrop(Backdrop::from_rng(&mut rng.fork(Backdrop::STREAM)))
             .shadow_style(ShadowStyle::from_rng(&mut rng.fork(ShadowStyle::STREAM)))
+            .relief(Relief::from_rng(&mut rng.fork(Relief::STREAM)))
+            .pattern(Pattern::from_rng(&mut rng.fork(Pattern::STREAM)))
+            .header_edge(HeaderEdge::from_rng(&mut rng.fork(HeaderEdge::STREAM)))
+            .motif_seed(rng.fork("motif").next_u64() as u32)
     }
 
     /// The theme for `seed`; its options match each option's own
@@ -717,6 +753,9 @@ mod tests {
             assert_eq!(p.material, Material::seeded(seed));
             assert_eq!(p.backdrop, Backdrop::seeded(seed));
             assert_eq!(p.shadows, ShadowStyle::seeded(seed));
+            assert_eq!(p.relief, Relief::seeded(seed));
+            assert_eq!(p.pattern, Pattern::seeded(seed));
+            assert_eq!(p.edge, HeaderEdge::seeded(seed));
             let palette = Palette::seeded(seed);
             assert_eq!(theme.accent_hue, palette.accent.h);
             assert_eq!(theme.accent_from_neutral, palette.ink);
