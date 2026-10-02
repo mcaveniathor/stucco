@@ -22,13 +22,14 @@ test("the submitted password is not redisplayed", async ({ page }) => {
   await expect(page.getByLabel("Password")).toHaveValue("");
 });
 
-test("keyboard order: skip link, back link, then the first field", async ({ page }) => {
+test("keyboard order: skip link, back link, error summary, then the first field", async ({ page }) => {
   // Whether Tab stops on links depends on the platform (WebKit skips them on
   // some builds), so allow either; whatever is focused before the first field
-  // must be the skip link and then the back link, in that order.
-  const expected = ["Skip to main content", "← Gallery"];
+  // must be the skip link, the back link and the error summary's link, in
+  // that order.
+  const expected = ["Skip to main content", "← Gallery", "Enter a valid email address."];
   const seen: string[] = [];
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 4; i++) {
     await page.keyboard.press("Tab");
     const focused = await page.evaluate(() => {
       const el = document.activeElement as HTMLElement | null;
@@ -39,4 +40,14 @@ test("keyboard order: skip link, back link, then the first field", async ({ page
   }
   await expect(page.getByLabel("Name")).toBeFocused();
   expect(expected.filter((label) => seen.includes(label))).toEqual(seen);
+});
+
+test("the error summary lists every error and links fields to their controls", async ({ page }) => {
+  const summary = page.getByRole("group", { name: "There is a problem" });
+  await expect(summary.getByRole("listitem")).toHaveText(["Enter a valid email address.", "Choose a billing period."]);
+  const link = summary.getByRole("link", { name: "Enter a valid email address." });
+  await expect(link).toHaveAttribute("href", "#email");
+  await expect(page.locator("#email")).toHaveAttribute("name", "email");
+  await link.click();
+  await expect(page).toHaveURL(/#email$/);
 });

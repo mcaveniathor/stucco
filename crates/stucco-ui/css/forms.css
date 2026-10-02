@@ -4,6 +4,14 @@
   .st-fieldset > * + * { margin-block-start: var(--st-space-4); }
   .st-legend { font-weight: 600; padding-inline: var(--st-space-1); color: var(--st-text); }
   .st-field-hint { font-size: var(--st-text-sm); color: var(--st-text-muted); }
+  .st-error-summary {
+    border: 2px solid var(--st-danger); border-radius: var(--st-radius-md);
+    padding: var(--st-space-4); color: var(--st-text);
+  }
+  .st-error-summary-title { font-size: var(--st-text-lg); font-weight: 650; margin: 0 0 var(--st-space-2); }
+  .st-error-summary-list { margin: 0; padding-inline-start: var(--st-space-5); }
+  .st-error-summary-list > li + li { margin-block-start: var(--st-space-1); }
+  .st-error-summary-list a { color: var(--st-danger-text); font-weight: 550; }
   .st-field-error { font-size: var(--st-text-sm); color: var(--st-danger-text); font-weight: 550; }
   .st-field { display: flex; flex-direction: column; gap: var(--st-space-1); }
   .st-label { font-weight: 550; color: var(--st-text); }
