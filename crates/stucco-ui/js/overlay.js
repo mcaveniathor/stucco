@@ -12,13 +12,24 @@ function dialogFor(id) {
   return dialog instanceof HTMLDialogElement ? dialog : null;
 }
 
+/** Whether a click on `link` is one the page may take over. */
+function plainClick(event, link) {
+  if (event.defaultPrevented || event.button !== 0) return false;
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return false;
+  const target = link.getAttribute("target");
+  return !target || target === "_self";
+}
+
 document.addEventListener("click", (event) => {
   const target = event.target instanceof Element ? event.target : null;
   if (!target) return;
 
-  // A link opener opens its dialog in place instead of navigating.
+  // A link opener opens its dialog in place instead of navigating, but only
+  // for a plain primary click: a modified click (new tab or window, download)
+  // or one another handler already took still follows the link.
   const link = target.closest("a[data-st-opens]");
   if (link) {
+    if (!plainClick(event, link)) return;
     const dialog = dialogFor(link.getAttribute("data-st-opens"));
     if (dialog) {
       event.preventDefault();

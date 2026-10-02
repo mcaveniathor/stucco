@@ -129,3 +129,93 @@ fn rows_without_a_source_get_no_filter_bar() {
     );
     assert!(sourced.contains("st-filter-bar"));
 }
+
+/// An empty page of an offset collection, `page` of `total` rows, filtered.
+fn empty_offset_page(page: u64, total: u64) -> String {
+    let empty = CollectionPage::<Record> {
+        rows: vec![],
+        next: None,
+        prev: None,
+        total: Some(total),
+    };
+    let q = CollectionQuery::default()
+        .with_filter("status", Some(Filter::Enumeration("paid".into())))
+        .with_window(Window::Offset { page });
+    let caps = caps();
+    to_html(
+        &DataTable::from_page(&empty, "Orders")
+            .action("/orders")
+            .query(&q)
+            .capabilities(&caps)
+            .column(Col::text("name", "Name", |r: &Record| r.name.clone()))
+            .column(
+                Col::enumeration(
+                    "status",
+                    "Status",
+                    vec![("paid".into(), "Paid".into())],
+                    |r: &Record| r.status.clone(),
+                )
+                .filter(),
+            ),
+    )
+}
+
+#[test]
+fn an_empty_page_past_the_end_links_back_keeping_the_filters() {
+    // Past the last page: links back to the pages with rows.
+    let html = empty_offset_page(9, 45);
+    assert!(html.contains("No results"), "{html}");
+    assert!(html.contains("st-pagination"), "{html}");
+    assert!(html.contains("aria-label=\"Page 1\""), "{html}");
+    let last = html
+        .split("aria-label=\"Page ")
+        .filter_map(|s| s.split('"').next())
+        .filter_map(|n| n.parse::<u64>().ok())
+        .max();
+    assert!(last.is_some_and(|n| n >= 1), "{html}");
+    for link in html
+        .split("href=\"")
+        .skip(1)
+        .filter_map(|s| s.split('"').next())
+    {
+        if link.contains("page=") {
+            assert!(
+                link.contains("f.status=paid"),
+                "a page link drops the filter: {link}"
+            );
+        }
+    }
+
+    // No rows at all, on a later page: one link, to page 1, never page 0.
+    let html = empty_offset_page(3, 0);
+    assert!(html.contains("aria-label=\"Page 1\""), "{html}");
+    assert!(!html.contains("aria-label=\"Page 0\""), "{html}");
+
+    // An empty first page has nowhere to go.
+    let html = empty_offset_page(1, 0);
+    assert!(!html.contains("st-pagination"), "{html}");
+}
+
+#[test]
+fn an_empty_cursor_page_keeps_its_previous_link() {
+    let empty = CollectionPage::<Record> {
+        rows: vec![],
+        next: None,
+        prev: stucco_core::Cursor::new("c1"),
+        total: None,
+    };
+    let caps = Capabilities {
+        offset: false,
+        total_count: false,
+        ..caps()
+    };
+    let html = to_html(
+        &DataTable::from_page(&empty, "Orders")
+            .action("/orders")
+            .query(&CollectionQuery::default())
+            .capabilities(&caps)
+            .column(Col::text("name", "Name", |r: &Record| r.name.clone())),
+    );
+    assert!(html.contains("No results"), "{html}");
+    assert!(html.contains(">Previous</a>"), "{html}");
+}
