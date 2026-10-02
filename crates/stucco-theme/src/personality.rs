@@ -172,6 +172,53 @@ impl Finish {
     }
 }
 
+/// How the application shell arranges its navigation and content.
+///
+/// The shell's primary links (`AppShell::link`) follow the layout; its
+/// sidebar is always a column beside the content.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum ShellLayout {
+    /// A filled side column with the primary links above the sidebar
+    /// (default).
+    #[default]
+    Sidebar,
+    /// A narrower side column on the page background, separated by a rule.
+    Rail,
+    /// The primary links in a row under the header; a sidebar, if any,
+    /// stays a column beside the content.
+    Topbar,
+}
+
+/// How panels frame their content.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum PanelStyle {
+    /// A bordered box on the surface colour (default).
+    #[default]
+    Boxed,
+    /// No box: a strong rule above the title, for an editorial look.
+    Ruled,
+    /// A bordered box whose title sits in a raised band.
+    Headed,
+}
+
+/// The shape of the corners of cards, panels and other large surfaces.
+///
+/// Squircle and Bevel use the CSS `corner-shape` property; browsers
+/// without it show ordinary rounded corners. All three keep the theme's
+/// radius, so sharp themes stay sharp.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum CornerStyle {
+    /// Evenly rounded corners (default).
+    #[default]
+    Even,
+    /// Continuous, squircle-like curves.
+    Squircle,
+    /// Corners cut at an angle.
+    Bevel,
+    /// Slightly uneven corners, as if shaped by hand.
+    Hand,
+}
+
 /// Every personality choice; the default reproduces stucco's base look.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub(crate) struct Personality {
@@ -185,6 +232,9 @@ pub(crate) struct Personality {
     pub(crate) nav: NavStyle,
     pub(crate) focus: FocusStyle,
     pub(crate) finish: Finish,
+    pub(crate) shell: ShellLayout,
+    pub(crate) panels: PanelStyle,
+    pub(crate) corners: CornerStyle,
 }
 
 impl Personality {
@@ -275,6 +325,108 @@ impl Personality {
             FocusStyle::Thick => ("3px", "2px"),
             FocusStyle::Snug => ("2px", "1px"),
         };
+        // The shell body is a grid: the primary links ("nav"), the sidebar
+        // ("side") and main. `solo` areas apply when there is no sidebar.
+        // (columns, areas, solo columns, solo areas)
+        let (columns, areas, solo_columns, solo_areas) = match self.shell {
+            ShellLayout::Sidebar => (
+                "15rem minmax(0, 1fr)",
+                "\"nav main\" \"side main\"",
+                "15rem minmax(0, 1fr)",
+                "\"nav main\" \"nav main\"",
+            ),
+            ShellLayout::Rail => (
+                "11rem minmax(0, 1fr)",
+                "\"nav main\" \"side main\"",
+                "11rem minmax(0, 1fr)",
+                "\"nav main\" \"nav main\"",
+            ),
+            ShellLayout::Topbar => (
+                "15rem minmax(0, 1fr)",
+                "\"nav nav\" \"side main\"",
+                "minmax(0, 1fr)",
+                "\"nav\" \"main\"",
+            ),
+        };
+        // The primary links: a column at the top of the side, or a row.
+        // (direction, block padding, inline rule, block rule, side fill)
+        let (nav_dir, nav_pad, nav_rule_inline, nav_rule_block, side_bg) = match self.shell {
+            ShellLayout::Sidebar => (
+                "column",
+                "var(--st-space-4) var(--st-space-2)",
+                "1px",
+                "0",
+                "var(--st-surface)",
+            ),
+            ShellLayout::Rail => (
+                "column",
+                "var(--st-space-4) var(--st-space-2)",
+                "1px",
+                "0",
+                "transparent",
+            ),
+            ShellLayout::Topbar => ("row", "var(--st-space-2)", "0", "1px", "var(--st-surface)"),
+        };
+        // Where the Bar nav style marks the current primary link: the
+        // leading edge in a column, under the link in a row.
+        let (bar_block, bar_inline, bar_w, bar_h) = match self.shell {
+            ShellLayout::Topbar => ("auto 0", "var(--st-space-3)", "auto", "3px"),
+            _ => ("var(--st-space-1)", "0 auto", "3px", "auto"),
+        };
+        let surface_radius = match self.corners {
+            CornerStyle::Hand => concat!(
+                "calc(var(--st-radius-lg) * 0.75) calc(var(--st-radius-lg) * 1.25) ",
+                "calc(var(--st-radius-lg) * 0.9) calc(var(--st-radius-lg) * 1.15) / ",
+                "calc(var(--st-radius-lg) * 1.1) calc(var(--st-radius-lg) * 0.8) ",
+                "calc(var(--st-radius-lg) * 1.2) calc(var(--st-radius-lg) * 0.85)"
+            ),
+            _ => "var(--st-radius-lg)",
+        };
+        let corner_shape = match self.corners {
+            CornerStyle::Even | CornerStyle::Hand => "round",
+            CornerStyle::Squircle => "squircle",
+            CornerStyle::Bevel => "bevel",
+        };
+        // (border, top rule, fill, radius, inline padding, shadow,
+        //  header fill, header padding, header margin, header rule)
+        let panel = match self.panels {
+            PanelStyle::Boxed => [
+                "1px solid var(--st-border)",
+                "1px solid var(--st-border)",
+                "var(--st-surface)",
+                "var(--st-surface-radius)",
+                "var(--st-space-6)",
+                "var(--st-surface-shadow)",
+                "transparent",
+                "0",
+                "0 0 var(--st-space-4)",
+                "0 solid transparent",
+            ],
+            PanelStyle::Ruled => [
+                "0 solid transparent",
+                "2px solid var(--st-border-strong)",
+                "transparent",
+                "0",
+                "0",
+                "none",
+                "transparent",
+                "0",
+                "0 0 var(--st-space-4)",
+                "0 solid transparent",
+            ],
+            PanelStyle::Headed => [
+                "1px solid var(--st-border)",
+                "1px solid var(--st-border)",
+                "var(--st-surface)",
+                "var(--st-surface-radius)",
+                "var(--st-space-6)",
+                "var(--st-surface-shadow)",
+                "var(--st-surface-raised)",
+                "var(--st-space-4) var(--st-space-6)",
+                "calc(-1 * var(--st-space-6)) calc(-1 * var(--st-space-6)) var(--st-space-5)",
+                "1px solid var(--st-border)",
+            ],
+        };
         vec![
             ("surface-shadow", surface_shadow),
             ("card-shadow", card_shadow),
@@ -301,6 +453,31 @@ impl Personality {
             ("focus-width", focus_width),
             ("focus-offset", focus_offset),
             ("finish", self.finish.image()),
+            ("shell-columns", columns),
+            ("shell-areas", areas),
+            ("shell-columns-solo", solo_columns),
+            ("shell-areas-solo", solo_areas),
+            ("shell-nav-direction", nav_dir),
+            ("shell-nav-pad-block", nav_pad),
+            ("shell-nav-rule-inline", nav_rule_inline),
+            ("shell-nav-rule-block", nav_rule_block),
+            ("shell-side-bg", side_bg),
+            ("shell-bar-inset-block", bar_block),
+            ("shell-bar-inset-inline", bar_inline),
+            ("shell-bar-inline-size", bar_w),
+            ("shell-bar-block-size", bar_h),
+            ("surface-radius", surface_radius),
+            ("corner-shape", corner_shape),
+            ("panel-border", panel[0]),
+            ("panel-rule", panel[1]),
+            ("panel-bg", panel[2]),
+            ("panel-radius", panel[3]),
+            ("panel-pad-inline", panel[4]),
+            ("panel-shadow", panel[5]),
+            ("panel-head-bg", panel[6]),
+            ("panel-head-pad", panel[7]),
+            ("panel-head-margin", panel[8]),
+            ("panel-head-rule", panel[9]),
         ]
     }
 }

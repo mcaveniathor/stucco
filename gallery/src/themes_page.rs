@@ -2,9 +2,10 @@
 //! and a dark panel with the same sample interface.
 
 use stucco::actions::Button;
-use stucco::data::{Card, Row, Table};
+use stucco::data::{Card, Panel, Row, Table};
 use stucco::forms::{Field, Input, Select};
 use stucco::layout::{Cluster, Grid, Stack};
+use stucco::navigation::NavLink;
 use stucco::theme::{
     ControlStyle, Finish, Fonts, HeaderStyle, LinkStyle, Preset, Radius, Seeded, TableStyle, Theme,
 };
@@ -79,14 +80,74 @@ pub fn page(bundle: &Bundle) -> String {
     )
 }
 
-/// The sample interface in a light and a dark panel, both under the named
-/// theme `name`.
+/// The sample interface in a light and a dark panel, then a small app
+/// shell across both, all under the named theme `name`.
 pub fn panels(name: &'static str) -> impl Render + 'static {
     el::div()
         .class("g-panels")
         .attr("data-st-theme", name)
         .child(sample(name, "light", "Light"))
         .child(sample(name, "dark", "Dark"))
+        .child(shell_sample(name))
+}
+
+/// An app shell built from the shell's own classes, with primary links and
+/// a section sidebar, so the theme's layout, nav, panel and corner styles
+/// show. It uses plain elements rather than `AppShell`, which owns the
+/// page's `main` landmark.
+fn shell_sample(name: &'static str) -> impl Render + 'static {
+    el::div()
+        .class("g-panel g-shell-sample st-app-shell")
+        .child(
+            el::div()
+                .class("st-app-header g-sample-header")
+                .child(Heading::new(3, "App layout").size(Size::Lg)),
+        )
+        .child(
+            el::div()
+                .class("st-app-body")
+                .bool_attr("data-nav", true)
+                .bool_attr("data-sidebar", true)
+                .child(
+                    el::nav()
+                        .class("st-app-nav")
+                        .aria("label", format!("Sample primary navigation, {name}"))
+                        .child(NavLink::new("Orders", "#").current(true))
+                        .child(NavLink::new("Customers", "#"))
+                        .child(NavLink::new("Reports", "#")),
+                )
+                .child(
+                    el::div().class("st-app-sidebar").child(
+                        el::details()
+                            .bool_attr("open", true)
+                            .child(el::summary().text("Orders"))
+                            .child(
+                                el::nav()
+                                    .aria("label", format!("Sample section navigation, {name}"))
+                                    .child(NavLink::new("This week", "#").current(true))
+                                    .child(NavLink::new("Archive", "#")),
+                            ),
+                    ),
+                )
+                .child(
+                    el::div().class("st-app-main").child(
+                        Stack::new()
+                            .space(Space::S4)
+                            .child(
+                                Panel::new(format!("This week, {name}"))
+                                    .level(4)
+                                    .description(
+                                        Text::new("Orders placed since Monday.").tone(Tone::Muted),
+                                    )
+                                    .body(Text::new("42 orders, 3 awaiting payment.")),
+                            )
+                            .child(
+                                Card::new()
+                                    .child(Text::new("A card beside the panel.").tone(Tone::Muted)),
+                            ),
+                    ),
+                ),
+        )
 }
 
 fn sample(name: &'static str, scheme: &'static str, label: &'static str) -> impl Render + 'static {
@@ -132,18 +193,6 @@ fn sample(name: &'static str, scheme: &'static str, label: &'static str) -> impl
                                 .text("."),
                         )
                         .child(Text::new("Muted text for hints and captions.").tone(Tone::Muted)),
-                )
-                .child(
-                    // The sidebar's own classes, so the nav style shows here.
-                    el::div().class("st-app-sidebar g-sample-nav").child(
-                        el::nav()
-                            .aria(
-                                "label",
-                                format!("Sample navigation, {name}, {}", label.to_lowercase()),
-                            )
-                            .child(el::a().href("#").aria("current", "page").text("Orders"))
-                            .child(el::a().href("#").text("Customers")),
-                    ),
                 )
                 .child(
                     Cluster::new()

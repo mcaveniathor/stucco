@@ -13,7 +13,7 @@ Components are grouped into families, each behind a cargo feature. The facade en
 | `actions` | `Button`, `ButtonLink`, `IconButton` |
 | `forms` | `Form`, `Field`, `Input`, `Select`, `Textarea`, `Checkbox`, `RadioGroup`, `Fieldset`, `ErrorSummary` |
 | `feedback` | `EmptyState`, `LiveRegion` |
-| `navigation` | `Pagination` |
+| `navigation` | `Pagination`, `NavLink` |
 | `data` | `Card`, `Panel`, `Table`, `ResultCount` |
 | `app` | `AppShell`, `PageHeader`, `SectionHeader`, `Footer` |
 | `collections` | `DataTable`, `Col`, `FilterBar`, `SearchForm`, `SortControl` |
@@ -81,6 +81,26 @@ impl Render for Disclosure<'_> {
 ```
 
 For one-off markup, `render_fn(|cx| ...)` wraps a closure as a component.
+
+## Application shell
+
+`AppShell` lays out a page with a header, navigation, the main content and a footer. It has two kinds of navigation:
+
+- **Primary links**, added with `link`, are the app's top-level pages. They are a flat list of `NavLink`s in a `<nav>` landmark.
+- **The sidebar**, set with `sidebar`, holds anything else: section links, filters or a nested outline. It sits in a disclosure so it can collapse.
+
+```rust
+use stucco::app::{AppShell, PageHeader};
+use stucco::navigation::NavLink;
+
+let shell = AppShell::new()
+    .header(PageHeader::new("Orders"))
+    .link(NavLink::new("Orders", "/orders").current(true))
+    .link(NavLink::new("Customers", "/customers"))
+    .main(/* … */);
+```
+
+The theme's shell layout decides where the primary links go: at the top of the side column, or in a row under the header. The sidebar is always a column beside the content, and narrow screens stack everything.
 
 ## Accessibility
 

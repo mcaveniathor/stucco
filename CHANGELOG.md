@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+- `AppShell` separates primary navigation from the sidebar: `link` and
+  `links` add a flat list of `NavLink`s in a `<nav>` landmark (named with
+  `nav_label`, default "Main"), and `sidebar` holds section navigation or a
+  nested outline. The shell body is now a grid placed by the theme's shell
+  layout, with `data-nav` and `data-sidebar` marking which regions exist.
+- `NavLink` renders a navigation link that can mark the current page with
+  `aria-current="page"`.
+- Three more personality options, each seedable and in `ThemeSpec`, the CLI
+  and the playground (`shell`, `panels`, `corners`):
+  - `ShellLayout` (Sidebar, Rail, Topbar) arranges `AppShell`: the primary
+    links sit at the top of the side column, or in a row under the header,
+    and the sidebar stays a column beside the content;
+  - `PanelStyle` (Boxed, Ruled, Headed) frames `Panel`;
+  - `CornerStyle` (Even, Squircle, Bevel, Hand) shapes cards, panels, filter
+    bars and table cards, using `corner-shape` where browsers support it.
+  The playground preview gains an app-shell sample. Defaults reproduce the
+  previous look, and existing seeds keep every option they had.
 - Four more personality options, each seedable, in `ThemeSpec` and the CLI
   (`links`, `nav`, `focus`, `finish`) and in the playground:
   - `LinkStyle` (Underlined, Subtle, Bold, Highlight) for `.st-link`;
