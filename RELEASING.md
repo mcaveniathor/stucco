@@ -38,7 +38,9 @@ git push origin vX.Y.Z
 The Release workflow checks that the tag matches the workspace version, is
 on `main` and has a changelog section, runs the tests, publishes every crate
 in dependency order with `cargo publish --workspace`, and creates the GitHub
-release from the changelog section.
+release from the changelog section. Creating the release on GitHub instead
+also creates the tag and starts the same workflow; it then keeps your
+release as it is.
 
 If publishing stops partway, the crates already uploaded stay published.
 Fix the cause, then publish the rest by hand from the tagged commit with
