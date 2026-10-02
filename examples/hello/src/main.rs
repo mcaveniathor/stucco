@@ -4,22 +4,13 @@
 //! Run: `cargo run -p hello` (listens on `127.0.0.1:${PORT:-4180}`).
 
 use std::collections::HashMap;
-use std::sync::Arc;
 
 use axum::Router;
-use axum::extract::{Query, State};
+use axum::extract::Query;
 use axum::response::IntoResponse;
 use axum::routing::get;
-use stucco::actions::Button;
-use stucco::forms::{Field, Form, Input};
-use stucco::layout::{Container, SkipLink, Stack};
-use stucco::theme::Preset;
-use stucco::typography::{Heading, Text};
-use stucco::{Bundle, Page, Render, Size, Space, Tone, el, render_fragment};
-use stucco_tower::{
-    FragmentResponse, LayerConfig, PageResponse, RequestKind, assets_router, respond,
-    with_standard_layers,
-};
+use stucco::prelude::*;
+use stucco::server::{RequestKind, respond};
 
 /// The greeting region: replaced in place by fragment requests.
 fn greeting(name: Option<&str>) -> impl Render + '_ {
@@ -28,7 +19,7 @@ fn greeting(name: Option<&str>) -> impl Render + '_ {
         .child(name.map(|n| Text::new(format!("Hello, {n}!")).size(Size::Lg)))
 }
 
-fn page(bundle: &Bundle, name: Option<&str>) -> String {
+fn content(name: Option<&str>) -> impl Render + '_ {
     let form = Form::get("/").child(
         Stack::new()
             .space(Space::S4)
@@ -38,28 +29,18 @@ fn page(bundle: &Bundle, name: Option<&str>) -> String {
             ))
             .child(Button::new("Greet").submit()),
     );
-    Page::new(bundle, "Hello — stucco")
-        .body((
-            SkipLink::new(),
-            el::main().id("main").child(
-                Container::new().child(
-                    Stack::new()
-                        .space(Space::S6)
-                        .child(Heading::new(1, "Hello"))
-                        .child(
-                            Text::new("A stucco page served by axum through stucco-tower.")
-                                .tone(Tone::Muted),
-                        )
-                        .child(form)
-                        .child(greeting(name)),
-                ),
-            ),
-        ))
-        .render()
+    Container::new().child(
+        Stack::new()
+            .space(Space::S6)
+            .child(Heading::new(1, "Hello"))
+            .child(Text::new("A stucco page served by axum.").tone(Tone::Muted))
+            .child(form)
+            .child(greeting(name)),
+    )
 }
 
 async fn index(
-    State(bundle): State<Arc<Bundle>>,
+    page: PageCx,
     kind: RequestKind,
     Query(params): Query<HashMap<String, String>>,
 ) -> impl IntoResponse {
@@ -75,24 +56,20 @@ async fn index(
     };
     respond(
         &kind,
-        || PageResponse::new(page(&bundle, name)),
-        |_| FragmentResponse::new(&render_fragment("greeting", &greeting(name)), &bundle),
+        || page.title("Hello — stucco").main(content(name)).into(),
+        |_| page.fragment("greeting", &greeting(name)),
     )
 }
 
 /// The application: routes, assets and the standard layers.
-fn app(bundle: Arc<Bundle>) -> Router {
-    let routes = Router::new()
-        .route("/", get(index))
-        .with_state(bundle.clone());
-    with_standard_layers(routes.merge(assets_router(bundle)), &LayerConfig::default())
+fn app() -> Router {
+    Router::new().route("/", get(index)).stucco(Preset::Slate)
 }
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
     let port = std::env::var("PORT").unwrap_or_else(|_| "4180".to_owned());
-    let bundle = Arc::new(Bundle::new(Preset::Slate));
     let listener = tokio::net::TcpListener::bind(format!("127.0.0.1:{port}")).await?;
     println!("hello listening on http://{}", listener.local_addr()?);
-    axum::serve(listener, app(bundle)).await
+    axum::serve(listener, app()).await
 }

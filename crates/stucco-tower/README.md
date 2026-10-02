@@ -6,18 +6,26 @@ request negotiation, request context, and backend collection source traits.
 The default `axum` and `tower-http` features add Axum asset routing and the
 standard middleware stack. Disable defaults for the base Tower/HTTP interfaces.
 
-With direct dependencies on stucco-core, stucco-theme, and axum:
+Most applications use it through the `stucco` crate's `axum` feature, which
+puts the setup in `stucco::prelude` and the rest under `stucco::server`.
+Directly, with stucco-core, stucco-theme and axum:
 
 ```rust
-use std::sync::Arc;
-use stucco_core::Bundle;
+use axum::{Router, routing::get};
+use stucco_core::el;
 use stucco_theme::Preset;
-use stucco_tower::{LayerConfig, assets_router, with_standard_layers};
+use stucco_tower::{Document, PageCx, StuccoRouter};
 
-let bundle = Arc::new(Bundle::new(Preset::Slate));
-let routes = axum::Router::new().merge(assets_router(bundle));
-let app = with_standard_layers(routes, &LayerConfig::default());
+async fn index(page: PageCx) -> Document {
+    page.title("Hello").body(el::main().id("main").child(el::h1().text("Hello")))
+}
+
+// Assets under /_stucco/, the standard layers, and the bundle for `PageCx`.
+let app: Router = Router::new().route("/", get(index)).stucco(Preset::Slate);
 ```
+
+For finer control, `assets_router` and `with_standard_layers` are the
+pieces `stucco` puts together.
 
 `CollectionSource` loads owned pages through a Send future.
 `RequestContext` preserves typed request extensions, allowing applications to

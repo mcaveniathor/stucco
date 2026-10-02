@@ -15,6 +15,7 @@ categories = ["web-programming"]
 
 [dependencies]
 stucco-core.workspace = true
+stucco-theme.workspace = true
 tower.workspace = true
 http.workspace = true
 http-body.workspace = true
@@ -32,7 +33,6 @@ axum = ["dep:axum"]
 tower-http = ["dep:tower-http", "dep:tokio", "dep:tracing", "tower/util"]
 
 [dev-dependencies]
-stucco-theme.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "time", "test-util"] }
 tower = { workspace = true, features = ["util"] }
 tracing.workspace = true

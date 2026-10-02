@@ -9,20 +9,10 @@ use axum::{
 };
 use model::Order;
 use source::OrdersMapping;
-use std::{path::Path, sync::Arc};
-use stucco::{
-    Bundle, CollectionQuery, Page,
-    app::{AppShell, Footer, PageHeader},
-    collections::{Col, DataTable},
-    el,
-    navigation::NavLink,
-    theme::Preset,
-};
+use std::path::Path;
+use stucco::prelude::*;
+use stucco::server::{CollectionSource, RequestContext};
 use stucco_redb::{IndexTable, PostcardCodec, RedbCollection, Store, StoreError, U64Key};
-use stucco_tower::{
-    CollectionSource, LayerConfig, PageResponse, RequestContext, assets_router,
-    with_standard_layers,
-};
 
 type OrdersTable = IndexTable<u64, Order>;
 type OrdersSource = RedbCollection<u64, Order, U64Key, PostcardCodec<Order>, OrdersMapping>;
@@ -30,7 +20,6 @@ type OrdersSource = RedbCollection<u64, Order, U64Key, PostcardCodec<Order>, Ord
 struct AppState {
     cursor: OrdersSource,
     pages: OrdersSource,
-    bundle: Arc<Bundle>,
 }
 
 fn open(path: &Path) -> Result<OrdersTable, StoreError> {
@@ -53,26 +42,19 @@ fn open(path: &Path) -> Result<OrdersTable, StoreError> {
 pub fn app(db_path: &Path) -> Result<Router, StoreError> {
     let cursor = RedbCollection::new(open(db_path)?, OrdersMapping { pages: false });
     let pages = cursor.with_mapping(OrdersMapping { pages: true });
-    let state = AppState {
-        cursor,
-        pages,
-        bundle: Arc::new(Bundle::new(Preset::Slate)),
-    };
-    let routes = Router::new()
+    let state = AppState { cursor, pages };
+    Ok(Router::new()
         .route("/", get(|| async { Redirect::to("/orders") }))
         .route("/orders", get(list))
-        .with_state(state.clone());
-    Ok(with_standard_layers(
-        routes.merge(assets_router(state.bundle)),
-        &LayerConfig::default(),
-    ))
+        .with_state(state)
+        .stucco(Preset::Slate))
 }
-/// A sidebar link, marked as the current page when `current`.
 async fn list(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
     context: RequestContext,
-) -> PageResponse {
+    cx: PageCx,
+) -> Document {
     let raw = raw.unwrap_or_default();
     let pages = form_urlencoded::parse(raw.as_bytes()).any(|(k, v)| k == "mode" && v == "pages");
     let source = if pages { &state.pages } else { &state.cursor };
@@ -117,35 +99,27 @@ async fn list(
                 .column(
                     Col::date("created", "Created", |row: &Order| row.created.clone()).filter(),
                 );
-            PageResponse::new(
-                Page::new(&state.bundle, "Orders — stucco")
-                    .body(
-                        AppShell::new()
-                            .header(PageHeader::new("Orders").description(
-                                "A persistent collection with ordinary GET navigation.",
-                            ))
-                            .link(NavLink::new("Orders", "/orders").current(!pages))
-                            .link(
-                                NavLink::new("Numbered pages", "/orders?mode=pages").current(pages),
-                            )
-                            .main(table)
-                            .footer(Footer::new().child(el::p().text("Read-only demo data"))),
+            cx.title("Orders — stucco").app(
+                AppShell::new()
+                    .header(
+                        PageHeader::new("Orders")
+                            .description("A persistent collection with ordinary GET navigation."),
                     )
-                    .render(),
+                    .link(NavLink::new("Orders", "/orders").current(!pages))
+                    .link(NavLink::new("Numbered pages", "/orders?mode=pages").current(pages))
+                    .main(table)
+                    .footer(Footer::new().child(el::p().text("Read-only demo data"))),
             )
         }
         Err(error) => {
             tracing::error!(%error, request_id = %context.request_id, "orders query failed");
-            PageResponse::new(
-                Page::new(&state.bundle, "Orders unavailable")
-                    .body(
-                        AppShell::new().main(PageHeader::new("Orders unavailable").description(
-                            format!("Please try again. Request ID: {}", context.request_id),
-                        )),
-                    )
-                    .render(),
-            )
-            .status(axum::http::StatusCode::INTERNAL_SERVER_ERROR)
+            cx.title("Orders unavailable")
+                .app(
+                    AppShell::new().main(PageHeader::new("Orders unavailable").description(
+                        format!("Please try again. Request ID: {}", context.request_id),
+                    )),
+                )
+                .status(axum::http::StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
 }

@@ -61,6 +61,20 @@ impl Meta {
     }
 }
 
+/// A document whose `<body>` can be filled: [`Page`], and documents built
+/// on it such as a server's owned page. Component crates build shortcuts on
+/// this trait, such as filling the body with a main landmark.
+pub trait WithBody<'a>: Sized {
+    /// Sets the `<body>` content.
+    fn with_body(self, body: impl Render + 'a) -> Self;
+}
+
+impl<'a> WithBody<'a> for Page<'_, 'a> {
+    fn with_body(self, body: impl Render + 'a) -> Self {
+        self.body(body)
+    }
+}
+
 /// A complete HTML document.
 #[derive(Debug)]
 pub struct Page<'b, 'a> {

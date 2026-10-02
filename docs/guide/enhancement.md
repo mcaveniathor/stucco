@@ -11,10 +11,10 @@ Everything in stucco works with JavaScript turned off: links navigate, GET forms
 An enhanced request sends two headers: `Stucco-Request: fragment` and `Stucco-Target: <element id>`. `RequestKind` reads them in Axum handlers, and `respond` runs exactly one of two closures, so your handler performs its work once and only chooses the output format:
 
 ```rust
-use stucco::{Bundle, render_fragment};
-use stucco_tower::{FragmentResponse, PageResponse, RequestKind, respond};
+use stucco::prelude::*;
+use stucco::server::{RequestKind, respond};
 
-async fn index(State(bundle): State<Arc<Bundle>>, kind: RequestKind, query: Query<Params>) -> impl IntoResponse {
+async fn index(page: PageCx, kind: RequestKind, query: Query<Params>) -> impl IntoResponse {
     let name = query.name.as_deref();
     // Only the greeting can be requested as a fragment.
     let kind = match kind {
@@ -23,13 +23,13 @@ async fn index(State(bundle): State<Arc<Bundle>>, kind: RequestKind, query: Quer
     };
     respond(
         &kind,
-        || PageResponse::new(page(&bundle, name)),
-        |_| FragmentResponse::new(&render_fragment("greeting", &greeting(name)), &bundle),
+        || page.title("Hello").main(content(name)).into(),
+        |_| page.fragment("greeting", &greeting(name)),
     )
 }
 ```
 
-`render_fragment` prefixes generated ids with a namespace so a fragment's ids can't collide with the page's. Responses vary on `Stucco-Request`, and fragments are never cached, so a cache never serves one in place of the other. The [hello example](https://github.com/mcaveniathor/stucco/tree/main/examples/hello) is a complete program.
+`PageCx::fragment` renders through `render_fragment`, which prefixes generated ids with a namespace so a fragment's ids can't collide with the page's. Responses vary on `Stucco-Request`, and fragments are never cached, so a cache never serves one in place of the other. The [hello example](https://github.com/mcaveniathor/stucco/tree/main/examples/hello) is a complete program.
 
 ## Behaviours
 
