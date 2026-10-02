@@ -26,6 +26,7 @@ icons = []
 data = ["layout", "typography"]
 feedback = ["typography"]
 navigation = []
+overlay = ["actions", "typography"]
 app = ["layout", "navigation", "typography"]
 collections = ["data", "forms", "navigation", "feedback"]
 

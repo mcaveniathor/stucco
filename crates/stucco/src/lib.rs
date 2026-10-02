@@ -100,7 +100,9 @@ pub mod prelude {
         Center, Cluster, Container, Grid, Separator, Sidebar, Stack, Switcher,
     };
     #[cfg(feature = "navigation")]
-    pub use crate::navigation::{NavLink, Pagination};
+    pub use crate::navigation::{NavLink, Pagination, Tabs};
+    #[cfg(feature = "overlay")]
+    pub use crate::overlay::{Dialog, Menu, Toast, Tooltip};
     #[cfg(feature = "typography")]
     pub use crate::typography::{Code, Heading, Kbd, Link, Text};
     #[cfg(feature = "collections")]

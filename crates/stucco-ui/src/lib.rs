@@ -25,6 +25,8 @@ pub mod icon;
 pub mod layout;
 #[cfg(feature = "navigation")]
 pub mod navigation;
+#[cfg(feature = "overlay")]
+pub mod overlay;
 mod page;
 #[cfg(feature = "typography")]
 pub mod typography;
@@ -57,5 +59,7 @@ pub fn ui_assets() -> Vec<&'static Asset> {
     assets.push(&navigation::NAVIGATION);
     #[cfg(feature = "collections")]
     assets.push(&collections::COLLECTIONS);
+    #[cfg(feature = "overlay")]
+    assets.push(&overlay::OVERLAY);
     assets
 }
