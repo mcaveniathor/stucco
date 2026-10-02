@@ -7,10 +7,9 @@ use std::collections::HashMap;
 
 use axum::Router;
 use axum::extract::Query;
-use axum::response::IntoResponse;
+use axum::response::Response;
 use axum::routing::get;
 use stucco::prelude::*;
-use stucco::server::{RequestKind, respond};
 
 /// The greeting region: replaced in place by fragment requests.
 fn greeting(name: Option<&str>) -> impl Render + '_ {
@@ -21,44 +20,33 @@ fn greeting(name: Option<&str>) -> impl Render + '_ {
 
 fn content(name: Option<&str>) -> impl Render + '_ {
     let form = Form::get("/").child(
-        Stack::new()
-            .space(Space::S4)
-            .child(Field::new(
-                "Name",
-                Input::text("q").value(name.unwrap_or_default()),
-            ))
-            .child(Button::new("Greet").submit()),
+        Stack::of((
+            Field::new("Name", Input::text("q").value(name.unwrap_or_default())),
+            Button::new("Greet").submit(),
+        ))
+        .space(Space::S4),
     );
-    Container::new().child(
-        Stack::new()
-            .space(Space::S6)
-            .child(Heading::new(1, "Hello"))
-            .child(Text::new("A stucco page served by axum.").tone(Tone::Muted))
-            .child(form)
-            .child(greeting(name)),
+    Container::of(
+        Stack::of((
+            Heading::new(1, "Hello"),
+            Text::new("A stucco page served by axum.").tone(Tone::Muted),
+            form,
+            greeting(name),
+        ))
+        .space(Space::S6),
     )
 }
 
-async fn index(
-    page: PageCx,
-    kind: RequestKind,
-    Query(params): Query<HashMap<String, String>>,
-) -> impl IntoResponse {
+async fn index(page: PageCx, Query(params): Query<HashMap<String, String>>) -> Response {
     let name = params
         .get("q")
         .map(String::as_str)
         .filter(|q| !q.is_empty());
-    // Only the greeting can be requested as a fragment; anything else gets
-    // the full page.
-    let kind = match kind {
-        RequestKind::Fragment { ref target } if target == "greeting" => kind,
-        _ => RequestKind::Full,
-    };
-    respond(
-        &kind,
-        || page.title("Hello — stucco").main(content(name)).into(),
-        |_| page.fragment("greeting", &greeting(name)),
-    )
+    // Enhanced requests for the greeting get just that region; everything
+    // else gets the full page.
+    page.respond()
+        .fragment("greeting", || greeting(name))
+        .page(|| page.title("Hello — stucco").main(content(name)))
 }
 
 /// The application: routes, assets and the standard layers.

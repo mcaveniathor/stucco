@@ -23,8 +23,8 @@ pub use stucco_core::{
 };
 
 pub use stucco_core::{
-    Capabilities, CollectionPage, CollectionQuery, ColumnKind, ColumnSpec, Cursor, Direction,
-    Filter, Window,
+    Capabilities, Collection, CollectionPage, CollectionQuery, ColumnKind, ColumnSpec, Cursor,
+    Direction, Filter, Window,
 };
 pub use stucco_ui::*;
 
@@ -71,8 +71,6 @@ pub mod prelude {
         Attrs, Bundle, Cx, Href, Measure, Page, PageExt, Render, Size, Space, Tone, Variant, el,
     };
 
-    #[cfg(feature = "collections")]
-    pub use crate::CollectionQuery;
     #[cfg(feature = "actions")]
     pub use crate::actions::{Button, ButtonLink, IconButton};
     #[cfg(feature = "app")]
@@ -95,6 +93,8 @@ pub mod prelude {
     pub use crate::navigation::{NavLink, Pagination};
     #[cfg(feature = "typography")]
     pub use crate::typography::{Code, Heading, Kbd, Link, Text};
+    #[cfg(feature = "collections")]
+    pub use crate::{Collection, CollectionQuery};
     #[cfg(feature = "axum")]
-    pub use stucco_tower::{Document, PageCx, StuccoRouter};
+    pub use stucco_tower::{CollectionSource, Document, PageCx, StuccoRouter};
 }

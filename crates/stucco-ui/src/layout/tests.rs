@@ -149,3 +149,17 @@ fn switcher_limit_is_clamped() {
     assert!(to_html(&Switcher::new().limit(9)).contains(r#"data-limit="6""#));
     assert!(to_html(&Switcher::new().limit(0)).contains(r#"data-limit="2""#));
 }
+
+#[test]
+fn of_takes_every_child_at_once() {
+    let one_by_one = Stack::new()
+        .space(Space::S2)
+        .child("a")
+        .child(stucco_core::el::b().text("b"));
+    let at_once = Stack::of(("a", stucco_core::el::b().text("b"))).space(Space::S2);
+    assert_eq!(to_html(&at_once), to_html(&one_by_one));
+    assert_eq!(
+        to_html(&Cluster::of("x")),
+        to_html(&Cluster::new().child("x"))
+    );
+}

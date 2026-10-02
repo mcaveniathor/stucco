@@ -66,7 +66,8 @@ async fn main() -> std::io::Result<()> {
 - Call `stucco` last, after your routes and `with_state`, so the setup covers every route. `stucco_with` takes a `LayerConfig` to change the body limit and timeout.
 - `PageCx` is an extractor. `title` starts a `Document`, which handlers return like any response. Set its `status` for errors, such as 422 for a form that failed validation.
 - A document renders its content as soon as you set it, so the content can borrow request data such as a query or a page of rows.
-- `PageCx::fragment` answers fragment requests; see [Progressive enhancement](enhancement.html).
+- `PageCx::respond` answers fragment requests for one region of a page; see [Progressive enhancement](enhancement.html).
+- Containers take their children in one call: `Stack::of((heading, text, button))` is the same as three `child` calls.
 
 ## Run the examples
 

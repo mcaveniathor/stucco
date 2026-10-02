@@ -115,6 +115,22 @@ impl Theme {
     }
 }
 
+/// Builds `theme`, so a [`Theme`] can go wherever a built theme is taken,
+/// such as a bundle.
+///
+/// # Panics
+///
+/// If the theme fails its contrast checks, with the report. Seeded themes
+/// and presets never fail; call [`Theme::build`] to handle a failure.
+impl From<Theme> for BuiltTheme {
+    fn from(theme: Theme) -> BuiltTheme {
+        match theme.build() {
+            Ok(built) => built,
+            Err(report) => panic!("the theme fails its contrast checks:\n{report}"),
+        }
+    }
+}
+
 impl From<Preset> for BuiltTheme {
     fn from(preset: Preset) -> BuiltTheme {
         Theme::preset(preset)

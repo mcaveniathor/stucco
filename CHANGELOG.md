@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- `Stack::of`, and `of` on every layout container, takes all the children in
+  one call: one item, or a tuple of up to twelve.
+- A `Theme` can go straight into `Bundle::new` (and `Router::stucco`): it is
+  built there, and panics with the contrast report if it fails.
+  `Bundle::try_new` returns the report instead. `From<Theme> for
+  BuiltTheme` makes this work anywhere a built theme is taken.
+- `CollectionSource::load` parses a request's query string and reads the
+  page in one call, returning a `Collection` (query, capabilities and page)
+  that `DataTable::from_collection` takes whole.
+- `PageCx::respond` routes fragment requests: name the regions with
+  `fragment(id, || content)`, then `page(|| document)`. Only the output that
+  is sent is rendered, and requests for other regions get the full page.
+  `PageCx::kind` exposes the request kind.
+- The hello and orders examples use these.
 - Easier setup for axum apps:
   - `Router::stucco(theme)` (the `StuccoRouter` trait in `stucco-tower`)
     serves a bundle's assets, adds the standard layers and makes the bundle

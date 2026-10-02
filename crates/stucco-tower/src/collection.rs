@@ -3,7 +3,7 @@ use http::Extensions;
 use std::error::Error;
 use std::fmt;
 use std::future::Future;
-use stucco_core::{Capabilities, CollectionPage, CollectionQuery};
+use stucco_core::{Capabilities, Collection, CollectionPage, CollectionQuery, ColumnSpec};
 
 /// Request metadata shared by data sources.
 #[derive(Clone, Debug, Default)]
@@ -70,6 +70,26 @@ pub trait CollectionSource: Send + Sync + 'static {
         query: &CollectionQuery,
         cx: &RequestContext,
     ) -> impl Future<Output = Result<CollectionPage<Self::Row>, SourceError>> + Send;
+    /// Parses the raw query string `raw` against `columns` and this
+    /// source's capabilities, then reads the page: everything a data table
+    /// needs, in one call.
+    fn load(
+        &self,
+        raw: &str,
+        columns: &[ColumnSpec],
+        cx: &RequestContext,
+    ) -> impl Future<Output = Result<Collection<Self::Row>, SourceError>> + Send {
+        let capabilities = self.capabilities();
+        let query = CollectionQuery::parse(raw, &capabilities, columns);
+        async move {
+            let page = self.query(&query, cx).await?;
+            Ok(Collection {
+                query,
+                capabilities,
+                page,
+            })
+        }
+    }
 }
 #[cfg(feature = "axum")]
 impl<S: Send + Sync> axum::extract::FromRequestParts<S> for RequestContext {
