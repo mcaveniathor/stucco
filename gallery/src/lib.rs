@@ -9,9 +9,14 @@ use std::path::Path;
 use stucco::theme::Preset;
 use stucco::{Asset, Bundle, register_asset};
 
+pub mod actions_page;
 pub mod fixtures;
+pub mod forms_page;
 pub mod index;
+pub mod layout_page;
 pub mod palette;
+mod shell;
+pub mod typography_page;
 
 /// Layout styles for gallery pages (not part of the library).
 pub static GALLERY: Asset = Asset {
@@ -35,6 +40,10 @@ pub fn write_site(dir: &Path) -> io::Result<()> {
     let mut pages = vec![
         ("index.html".to_owned(), index::index_page(&bundle)),
         ("palette.html".to_owned(), palette::palette_page(&bundle)),
+        ("layout.html".to_owned(), layout_page::page(&bundle)),
+        ("typography.html".to_owned(), typography_page::page(&bundle)),
+        ("actions.html".to_owned(), actions_page::page(&bundle)),
+        ("forms.html".to_owned(), forms_page::page(&bundle)),
     ];
     pages.extend(fixtures::fixtures(&bundle));
     for (name, html) in pages {

@@ -9,13 +9,14 @@ license.workspace = true
 [dependencies]
 stucco-core.workspace = true
 stucco-theme.workspace = true
+stucco-ui.workspace = true
 
 [features]
 default = ["layout", "typography", "actions", "forms", "feedback", "navigation", "overlay", "data", "app"]
-layout = []
-typography = []
-actions = []
-forms = ["actions"]
+layout = ["stucco-ui/layout"]
+typography = ["stucco-ui/typography"]
+actions = ["stucco-ui/actions"]
+forms = ["actions", "stucco-ui/forms"]
 feedback = []
 navigation = []
 overlay = ["actions"]
@@ -24,7 +25,7 @@ collections = ["data", "forms", "navigation", "feedback"]
 app = ["navigation", "layout"]
 marketing = ["layout", "typography", "actions"]
 diagram = ["icons"]
-icons = []
+icons = ["stucco-ui/icons"]
 markdown = ["typography"]
 askama = []
 maud = []

@@ -180,8 +180,10 @@ el::section().class("hero").id("intro")
 
 Rules:
 
-- Text and attribute values are always escaped, including inside `<script>` and
-  `<style>`.
+- Text and attribute values are always escaped, except text inside `<script>`
+  and `<style>`, which is written as-is with `</` neutralised so the element
+  cannot be closed early; script content is code, so untrusted text must not go
+  there. Attribute names are case-insensitive (stored lowercased).
 - Attribute names: ASCII letter first, then letters, digits, `-`, `_`, `:`, `.`.
   `data(name)` and `aria(name)` names: `[a-z0-9-]+`; `aria` names are checked against
   the WAI-ARIA 1.2 attribute list in debug builds.
@@ -464,7 +466,9 @@ them (execution: integration spec).
   `Enhance { target: String, swap: Swap::{Replace, Append}, push_url: bool }`.
 - `FormState` — submitted values per field, field errors, form-level errors.
   Fields marked sensitive (`PasswordInput`, `.sensitive()`) never redisplay values.
-  `Field::bind(&state, "email")` fills value, error and `aria-invalid`.
+  `Field::new("Email", Input::email("email")).bind(&state)` fills value, error and
+  `aria-invalid`, keyed by the control's name (`Input::password` is sensitive by
+  default). `FormState` is built with `with_value`/`with_error`/`with_form_error`.
 - `CollectionQuery` — shareable query state for collections: sort, direction,
   search, filters per column, and a `Window`: `Offset { page, per_page }` or
   `After(Cursor)` / `Before(Cursor)` for key-ordered stores. `CollectionQuery::parse`

@@ -39,6 +39,11 @@ impl Attrs {
         self
     }
 
+    /// The id, if one is set.
+    pub fn get_id(&self) -> Option<&str> {
+        self.id.as_deref()
+    }
+
     /// Sets the id, replacing any previous one.
     pub fn id(mut self, id: impl Into<String>) -> Attrs {
         self.id = Some(id.into());
@@ -56,9 +61,14 @@ impl Attrs {
     /// The value is still escaped. This is a trust decision.
     pub fn trusted_attr(mut self, name: &str, value: impl Into<String>) -> Attrs {
         if valid_name(name) {
-            self.set(name, Some(value.into()));
-            if !self.trusted.iter().any(|t| t == name) {
-                self.trusted.push(name.to_owned());
+            let name = name.to_ascii_lowercase();
+            match name.as_str() {
+                "id" => self.id = Some(value.into()),
+                "class" => return self.class(value.into()),
+                _ => {
+                    self.set(&name, Some(value.into()));
+                    self.trusted.push(name);
+                }
             }
         }
         self
@@ -70,10 +80,26 @@ impl Attrs {
             if on {
                 self.set(name, None);
             } else {
-                self.list.retain(|(n, _)| n != name);
+                self.list.retain(|(n, _)| !n.eq_ignore_ascii_case(name));
             }
         }
         self
+    }
+
+    /// A copy without the attributes in `names` (`"id"` and `"class"` included),
+    /// compared case-insensitively.
+    pub fn without(&self, names: &[&str]) -> Attrs {
+        let listed = |n: &str| names.iter().any(|x| x.eq_ignore_ascii_case(n));
+        let mut out = self.clone();
+        if listed("id") {
+            out.id = None;
+        }
+        if listed("class") {
+            out.classes.clear();
+        }
+        out.list.retain(|(n, _)| !listed(n));
+        out.trusted.retain(|n| !listed(n));
+        out
     }
 
     /// Sets `data-{name}`; `name` must match `[a-z0-9-]+`.
@@ -99,17 +125,18 @@ impl Attrs {
     /// Names in this set (including `id` and `class`) that appear in
     /// `reserved`, in insertion order.
     pub fn reserved_conflicts(&self, reserved: &[&str]) -> Vec<String> {
+        let listed = |n: &str| reserved.iter().any(|r| r.eq_ignore_ascii_case(n));
         let mut out = Vec::new();
-        if self.id.is_some() && reserved.contains(&"id") {
+        if self.id.is_some() && listed("id") {
             out.push("id".to_owned());
         }
-        if !self.classes.is_empty() && reserved.contains(&"class") {
+        if !self.classes.is_empty() && listed("class") {
             out.push("class".to_owned());
         }
         out.extend(
             self.list
                 .iter()
-                .filter(|(n, _)| reserved.contains(&n.as_str()))
+                .filter(|(n, _)| listed(n))
                 .map(|(n, _)| n.clone()),
         );
         out
@@ -176,11 +203,14 @@ impl Attrs {
         }
     }
 
+    /// Stores `name` lowercased (HTML attribute names are case-insensitive),
+    /// replacing an existing value.
     fn set(&mut self, name: &str, value: Option<String>) {
-        self.trusted.retain(|t| t != name);
-        match self.list.iter_mut().find(|(n, _)| n == name) {
+        let name = name.to_ascii_lowercase();
+        self.trusted.retain(|t| *t != name);
+        match self.list.iter_mut().find(|(n, _)| *n == name) {
             Some(slot) => slot.1 = value,
-            None => self.list.push((name.to_owned(), value)),
+            None => self.list.push((name, value)),
         }
     }
 

@@ -1,0 +1,32 @@
+@layer stucco.components {
+  .st-heading { font-weight: 650; line-height: 1.2; letter-spacing: -0.01em; color: var(--st-text); }
+  .st-heading[data-size="xs"], .st-text[data-size="xs"] { font-size: var(--st-text-xs); }
+  .st-heading[data-size="sm"], .st-text[data-size="sm"] { font-size: var(--st-text-sm); }
+  .st-heading[data-size="md"], .st-text[data-size="md"] { font-size: var(--st-text-base); }
+  .st-heading[data-size="lg"], .st-text[data-size="lg"] { font-size: var(--st-text-lg); }
+  .st-heading[data-size="xl"], .st-text[data-size="xl"] { font-size: var(--st-text-xl); }
+  .st-heading[data-size="2xl"], .st-text[data-size="2xl"] { font-size: var(--st-text-2xl); }
+  .st-heading[data-size="3xl"], .st-text[data-size="3xl"] { font-size: var(--st-text-3xl); }
+  .st-text { color: var(--st-text); }
+  .st-text[data-tone="muted"] { color: var(--st-text-muted); }
+  .st-text[data-tone="accent"] { color: var(--st-accent-text); }
+  .st-text[data-tone="success"] { color: var(--st-success-text); }
+  .st-text[data-tone="warning"] { color: var(--st-warning-text); }
+  .st-text[data-tone="danger"] { color: var(--st-danger-text); }
+  .st-text[data-tone="info"] { color: var(--st-info-text); }
+  .st-text[data-weight="normal"] { font-weight: 400; }
+  .st-text[data-weight="medium"] { font-weight: 550; }
+  .st-text[data-weight="bold"] { font-weight: 700; }
+  .st-link { color: var(--st-accent-text); text-decoration-line: underline; text-underline-offset: 0.2em; }
+  .st-link:hover { text-decoration-thickness: 2px; }
+  .st-code {
+    font-family: var(--st-font-mono); font-size: 0.9em;
+    background: var(--st-surface-raised); color: var(--st-text);
+    padding: 0.1em 0.35em; border-radius: var(--st-radius-sm);
+  }
+  .st-kbd { font-family: var(--st-font-mono); font-size: 0.85em; white-space: nowrap; }
+  .st-kbd > kbd {
+    font-family: inherit; padding: 0.1em 0.4em; border: 1px solid var(--st-border-strong);
+    border-block-end-width: 2px; border-radius: var(--st-radius-sm); background: var(--st-surface);
+  }
+}

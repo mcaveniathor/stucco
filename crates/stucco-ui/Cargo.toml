@@ -1,0 +1,17 @@
+[package]
+name = "stucco-ui"
+description = "Components for stucco: layout, typography, actions, forms and icons."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+stucco-core.workspace = true
+
+[features]
+layout = []
+typography = []
+actions = []
+forms = ["actions"]
+icons = []

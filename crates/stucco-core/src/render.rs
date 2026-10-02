@@ -42,6 +42,8 @@ impl Cx {
 
     /// Returns a fresh id `"{prefix}-{n}"` (or `"{namespace}-{prefix}-{n}"`),
     /// counting per prefix from 1. It is recorded when emitted as an element id.
+    /// A generated id can equal an explicit one such as `tabs-1`; keep explicit
+    /// ids distinct from the `{prefix}-{n}` shape.
     pub fn id(&mut self, prefix: &str) -> String {
         self.ids.generate(prefix)
     }

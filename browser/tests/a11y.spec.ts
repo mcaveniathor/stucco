@@ -1,7 +1,15 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-for (const path of ["/index.html", "/palette.html", "/fixtures/enhanced.html"]) {
+for (const path of [
+  "/index.html",
+  "/palette.html",
+  "/layout.html",
+  "/typography.html",
+  "/actions.html",
+  "/forms.html",
+  "/fixtures/enhanced.html",
+]) {
   for (const colorScheme of ["light", "dark"] as const) {
     test(`${path} has no axe violations (${colorScheme})`, async ({ page }) => {
       await page.emulateMedia({ colorScheme });

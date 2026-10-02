@@ -1,6 +1,9 @@
 #[test]
 fn palette_page_shows_every_preset_in_both_schemes() {
-    let html = gallery::palette::palette_page(&gallery::bundle());
+    let bundle = gallery::bundle();
+    // The stylesheet hash changes whenever any component CSS changes.
+    let html = gallery::palette::palette_page(&bundle)
+        .replace(bundle.stylesheet_url(), "/_stucco/stucco.HASH.css");
     for p in stucco::theme::Preset::ALL {
         assert!(
             html.contains(&format!("data-st-theme=\"{}\"", p.name())),
@@ -29,4 +32,51 @@ fn enhanced_fixture_lacks_the_probe_module_that_fragments_require() {
 #[test]
 fn gallery_css_obeys_the_component_rules() {
     stucco::check_component_css("gallery", gallery::GALLERY.css.unwrap()).unwrap();
+}
+
+fn page_snapshot(name: &str, html: String, bundle: &stucco::Bundle) {
+    assert!(
+        !html.contains("style="),
+        "{name} uses an inline style attribute"
+    );
+    assert!(
+        html.contains(r##"<a class="st-skip-link" href="#main">"##),
+        "{name}"
+    );
+    assert!(html.contains(r#"<main id="main""#), "{name}");
+    let html = html.replace(bundle.stylesheet_url(), "/_stucco/stucco.HASH.css");
+    insta::assert_snapshot!(name, html);
+}
+
+#[test]
+fn component_pages_render_every_family() {
+    let bundle = gallery::bundle();
+    page_snapshot("layout", gallery::layout_page::page(&bundle), &bundle);
+    page_snapshot(
+        "typography",
+        gallery::typography_page::page(&bundle),
+        &bundle,
+    );
+    page_snapshot("actions", gallery::actions_page::page(&bundle), &bundle);
+    page_snapshot("forms", gallery::forms_page::page(&bundle), &bundle);
+}
+
+#[test]
+fn the_forms_page_never_redisplays_the_submitted_password() {
+    let html = gallery::forms_page::page(&gallery::bundle());
+    assert!(!html.contains(gallery::forms_page::SUBMITTED_PASSWORD));
+}
+
+#[test]
+fn index_links_every_page() {
+    let html = gallery::index::index_page(&gallery::bundle());
+    for page in [
+        "palette.html",
+        "layout.html",
+        "typography.html",
+        "actions.html",
+        "forms.html",
+    ] {
+        assert!(html.contains(&format!("href=\"{page}\"")), "{page}");
+    }
 }

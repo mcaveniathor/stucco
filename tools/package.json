@@ -1,0 +1,11 @@
+{
+  "name": "stucco-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "icons": "node gen-icons.mjs"
+  },
+  "devDependencies": {
+    "lucide-static": "1.49.0"
+  }
+}
