@@ -5,7 +5,7 @@ CSS. Compose layouts, forms, tables, and application shells with ordinary Rust
 builders. Search, filters, sorting, and pagination can work through native GET
 requests without JavaScript.
 
-Stucco **0.2.0** is available on [crates.io](https://crates.io/crates/stucco).
+Stucco **0.2.1** is available on [crates.io](https://crates.io/crates/stucco).
 The [documentation site](https://mcaveniathor.github.io/stucco/) has the guide,
 a theme playground with Rust, CSS and JSON export, the component gallery and
 the API reference.
