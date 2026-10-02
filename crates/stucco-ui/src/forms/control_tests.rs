@@ -1,0 +1,133 @@
+use super::*;
+use stucco_core::{FormState, to_html};
+
+#[test]
+fn field_wires_label_hint_error_and_invalid_state() {
+    let html = to_html(
+        &Field::new("Email", Input::email("email"))
+            .hint("Work address")
+            .error("Required"),
+    );
+    assert!(
+        html.contains(r#"<label class="st-label" for="field-1">Email</label>"#),
+        "{html}"
+    );
+    assert!(
+        html.contains(r#"<input id="field-1" class="st-input" type="email" name="email" aria-describedby="field-1-hint field-1-error" aria-invalid="true">"#),
+        "{html}"
+    );
+    assert!(html.contains(r#"<p id="field-1-hint" class="st-field-hint">Work address</p>"#));
+    assert!(html.contains(r#"<p id="field-1-error" class="st-field-error">"#));
+}
+
+#[test]
+fn two_fields_get_distinct_ids_and_explicit_ids_are_kept() {
+    let html = to_html(&(
+        Field::new("A", Input::text("a")),
+        Field::new("B", Input::text("b").id("bee")).hint("h"),
+    ));
+    assert!(
+        html.contains(r#"for="field-1""#) && html.contains(r#"for="bee""#),
+        "{html}"
+    );
+    assert!(html.contains(r#"id="bee-hint""#) && html.contains(r#"aria-describedby="bee-hint""#));
+    assert!(!html.contains("aria-invalid"));
+}
+
+#[test]
+fn binding_redisplays_values_but_never_sensitive_ones() {
+    let state = FormState::new()
+        .with_value("email", "a@b.c\"")
+        .with_value("password", "hunter2")
+        .with_error("password", "Too short");
+    let email = to_html(&Field::new("Email", Input::email("email")).bind(&state));
+    assert!(email.contains(r#"value="a@b.c&quot;""#), "{email}");
+    let password = to_html(&Field::new("Password", Input::password("password")).bind(&state));
+    assert!(
+        !password.contains("hunter2") && !password.contains("value="),
+        "{password}"
+    );
+    assert!(password.contains("Too short"));
+    let notes = to_html(&Field::new("Notes", Textarea::new("password").sensitive()).bind(&state));
+    assert!(!notes.contains("hunter2"), "{notes}");
+}
+
+#[test]
+fn textareas_put_values_in_content() {
+    let html = to_html(&Textarea::new("bio").rows(4).value("<hi>"));
+    assert_eq!(
+        html,
+        r#"<textarea class="st-textarea" name="bio" rows="4">&lt;hi&gt;</textarea>"#
+    );
+}
+
+#[test]
+fn selects_mark_the_selected_option_and_escape_labels() {
+    let html = to_html(
+        &Select::new("plan")
+            .placeholder("Choose…")
+            .option("free", "Free <tier>")
+            .option("pro", "Pro")
+            .selected("pro"),
+    );
+    assert!(
+        html.contains(r#"<option value="" disabled>Choose…</option>"#),
+        "{html}"
+    );
+    assert!(html.contains(
+        r#"<option value="free">Free &lt;tier&gt;</option><option value="pro" selected>Pro</option>"#
+    ));
+}
+
+#[test]
+fn bound_selects_select_the_submitted_value() {
+    let state = FormState::new().with_value("plan", "free");
+    let html = to_html(
+        &Field::new(
+            "Plan",
+            Select::new("plan")
+                .option("free", "Free")
+                .option("pro", "Pro"),
+        )
+        .bind(&state),
+    );
+    assert!(
+        html.contains(r#"<option value="free" selected>Free</option>"#),
+        "{html}"
+    );
+}
+
+#[test]
+fn adornments_wrap_the_input() {
+    let html = to_html(&Input::url("site").prefix("https://"));
+    assert!(
+        html.starts_with(
+            r#"<div class="st-input-group"><span class="st-input-adornment">https://</span><input"#
+        ),
+        "{html}"
+    );
+}
+
+#[test]
+fn required_fields_mark_the_label_and_control() {
+    let html = to_html(&Field::new("Name", Input::text("name")).required());
+    assert!(
+        html.contains(r#"<span class="st-required" aria-hidden="true">*</span>"#),
+        "{html}"
+    );
+    assert!(html.contains(" required"));
+}
+
+#[test]
+#[cfg(debug_assertions)]
+#[should_panic(expected = "reserved attribute")]
+fn field_wiring_cannot_be_overridden() {
+    let _ = to_html(&Field::new("x", Input::text("x")).attr("aria-describedby", "y"));
+}
+
+#[test]
+#[cfg(debug_assertions)]
+#[should_panic(expected = "reserved attribute")]
+fn control_names_cannot_be_overridden() {
+    let _ = to_html(&Input::text("x").attr("name", "y"));
+}

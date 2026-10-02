@@ -39,6 +39,11 @@ impl Attrs {
         self
     }
 
+    /// The id, if one is set.
+    pub fn get_id(&self) -> Option<&str> {
+        self.id.as_deref()
+    }
+
     /// Sets the id, replacing any previous one.
     pub fn id(mut self, id: impl Into<String>) -> Attrs {
         self.id = Some(id.into());

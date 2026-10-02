@@ -3,10 +3,22 @@
 
 use stucco_core::{Asset, register_asset};
 
+mod control;
+mod field;
+mod input;
+mod select;
 mod structure;
+mod textarea;
 
+pub use control::{Control, Wiring};
+pub use field::Field;
+pub use input::Input;
+pub use select::Select;
 pub use structure::{CsrfToken, FieldError, FieldHint, Fieldset, Form, HiddenInput, Legend};
+pub use textarea::Textarea;
 
+#[cfg(test)]
+mod control_tests;
 #[cfg(test)]
 mod tests;
 
