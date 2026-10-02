@@ -4,7 +4,17 @@ use stucco::layout::{Container, SkipLink, Stack};
 use stucco::typography::{Heading, Link, Text};
 use stucco::{Bundle, Page, Size, Space, Tone, el};
 
-const PAGES: [(&str, &str, &str); 5] = [
+const PAGES: [(&str, &str, &str); 7] = [
+    (
+        "collections.html",
+        "Data and collections",
+        "Tables, panels and server collection controls.",
+    ),
+    (
+        "app.html",
+        "Application shells",
+        "Page headings, navigation and footer composition.",
+    ),
     (
         "palette.html",
         "Palettes",

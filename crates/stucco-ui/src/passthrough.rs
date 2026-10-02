@@ -7,8 +7,10 @@ use stucco_core::el::Element;
 /// with an `attrs: Attrs` field.
 #[allow(unused_macros)] // unused when no component family is enabled
 macro_rules! passthrough {
-    ($ty:ty) => {
-        impl $ty {
+    (<$generic:ident> $ty:ty) => { passthrough!(@impl [<$generic>] $ty); };
+    ($ty:ty) => { passthrough!(@impl [] $ty); };
+    (@impl [$($generics:tt)*] $ty:ty) => {
+        impl $($generics)* $ty {
             /// Adds space-separated classes to the root element.
             pub fn class(mut self, classes: impl AsRef<str>) -> Self {
                 self.attrs = self.attrs.class(classes);

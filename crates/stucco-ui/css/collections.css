@@ -1,0 +1,8 @@
+@layer stucco.components {
+  .st-filter-bar { display: flex; flex-wrap: wrap; align-items: end; gap: var(--st-space-4); }
+  .st-collection-control, .st-collection-range { display: flex; flex-direction: column; gap: var(--st-space-2); min-inline-size: 0; }
+  .st-filter-bar input, .st-filter-bar select { max-inline-size: 100%; padding: var(--st-space-2); border: 1px solid var(--st-border-strong); border-radius: var(--st-radius-md); background: var(--st-surface); color: var(--st-text); }
+  .st-filter-bar button { padding: var(--st-space-2) var(--st-space-4); background: var(--st-accent); color: var(--st-on-accent); border: 0; border-radius: var(--st-radius-md); }
+  .st-collection-range { border: 1px solid var(--st-border); padding: var(--st-space-2); }
+  .st-data-table { min-inline-size: 0; }
+}

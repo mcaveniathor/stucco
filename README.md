@@ -20,6 +20,17 @@ let app = with_standard_layers(routes.merge(assets_router(bundle)), &LayerConfig
 
 A complete app is in `examples/hello` (`cargo run -p hello`).
 
+The persistent collection example is in [examples/orders](examples/orders/README.md)
+(`cargo run -p orders`, then http://localhost:4181/orders). It composes typed
+columns, native GET filters, semantic tables and an application shell over
+`CollectionSource` and the optional `stucco-redb` adapter. Enable the facade's
+`collections` feature to use these components; components do not depend on
+storage or Tokio.
+
+Core, components and Tower support Rust 1.85. The latest redb adapter (4.3)
+and orders example require Rust 1.90. Numbered mode counts through a full scan;
+default cursor mode leaves the total unknown.
+
 ## Icons
 
 The `icons` feature vendors the [Lucide](https://lucide.dev) icon set

@@ -8,6 +8,8 @@ for (const path of [
   "/typography.html",
   "/actions.html",
   "/forms.html",
+  "/collections.html",
+  "/app.html",
   "/fixtures/enhanced.html",
 ]) {
   for (const colorScheme of ["light", "dark"] as const) {
