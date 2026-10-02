@@ -146,7 +146,8 @@ without cloning. Builders infer the lifetime; users rarely write it.
   derives internal ids from it: `orders-label`, `orders-panel-2`. Explicit ids are
   stable across rerenders regardless of render order.
 - Components without an explicit id get generated ids `{namespace}{prefix}-{n}`,
-  where `n` counts per prefix within one render. `Page` renders with the empty
+  where `n` counts per prefix within one render. Prefixes match `[a-z0-9]+` (no
+  hyphen), so an id parses uniquely and different namespaces can never collide. `Page` renders with the empty
   namespace; `render_fragment` requires a non-empty namespace (validated:
   `[a-z0-9-]+`, rendered as `{namespace}-`). Generated ids are stable across rerenders
   that use the same namespace and render the same structure.
@@ -301,7 +302,10 @@ Page::new(&bundle, "Orders")
   dynamic fragment insertion; the runtime is not included.
 
 The theme-flash prevention script is inlined in `<head>`; when a CSP nonce is set,
-every inline `<script>` and `<style>` carries it.
+every `<script>` (inline or `src`), `<style>` and stylesheet `<link>` carries it, and
+inline content has `</` written as `<\/` so it cannot close its element early.
+Unregistered assets' CSS is inlined in a `<style>` on linked pages. Named theme names
+match `[a-z0-9-]+`; font family names are CSS-escaped.
 
 ### 4.8 Client runtime and fragment protocol
 
@@ -388,7 +392,11 @@ Theme::from_seed(250.0)
 - Other tokens: type steps, spacing steps, radii, elevation, motion, z-index layers,
   control height (density).
 - `build()` checks text/background role pairs against WCAG AA (4.5:1 text, 3:1 UI)
-  in both schemes and returns a `ContrastReport` listing every failing pair.
+  in both schemes, including `on-accent` on `accent-hover` (the hover step moves away
+  from the label colour), and rejects non-finite or non-positive options; the
+  `ContrastReport` lists every failing pair and invalid option. `border-strong` and
+  `focus` use step 9 so UI boundaries reach 3:1. `Theme::high_contrast()` steepens
+  steps 9–11 for AAA.
 
 ### 5.2 Presets
 

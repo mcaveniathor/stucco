@@ -1,0 +1,11 @@
+[package]
+name = "stucco-core"
+description = "Rendering core for stucco: safe markup, identity, assets, pages and fragments."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+stucco-theme.workspace = true
+inventory.workspace = true

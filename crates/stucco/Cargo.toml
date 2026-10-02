@@ -1,0 +1,30 @@
+[package]
+name = "stucco"
+description = "Server-rendered, themeable, accessible UI components for Rust."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+stucco-core.workspace = true
+stucco-theme.workspace = true
+
+[features]
+default = ["layout", "typography", "actions", "forms", "feedback", "navigation", "overlay", "data", "app"]
+layout = []
+typography = []
+actions = []
+forms = ["actions"]
+feedback = []
+navigation = []
+overlay = ["actions"]
+data = []
+collections = ["data", "forms", "navigation", "feedback"]
+app = ["navigation", "layout"]
+marketing = ["layout", "typography", "actions"]
+diagram = ["icons"]
+icons = []
+markdown = ["typography"]
+askama = []
+maud = []

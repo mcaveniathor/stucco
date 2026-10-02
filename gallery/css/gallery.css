@@ -1,0 +1,30 @@
+@layer stucco.utilities {
+  .g-page { max-inline-size: 72rem; margin-inline: auto; padding: var(--st-space-8) var(--st-space-4); }
+  .g-page > * + * { margin-block-start: var(--st-space-6); }
+  .g-lead { color: var(--st-text-muted); }
+  .g-preset > * + * { margin-block-start: var(--st-space-3); }
+  .g-panels { display: grid; gap: var(--st-space-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); }
+  .g-panel {
+    background: var(--st-bg); color: var(--st-text);
+    border: 1px solid var(--st-border); border-radius: var(--st-radius-lg);
+    padding: var(--st-space-4); font-family: var(--st-font-sans);
+  }
+  .g-panel > * + * { margin-block-start: var(--st-space-3); }
+  .g-scale { display: grid; grid-template-columns: 5rem repeat(12, 1fr); gap: 2px; align-items: center; }
+  .g-scale-name { font-size: var(--st-text-sm); color: var(--st-text-muted); }
+  .g-swatch { block-size: 1.5rem; border-radius: var(--st-radius-sm); }
+  .g-roles { display: flex; flex-wrap: wrap; gap: var(--st-space-2); align-items: center; }
+  .g-surface { background: var(--st-surface); padding: var(--st-space-2) var(--st-space-3); border-radius: var(--st-radius-md); }
+  .g-muted { color: var(--st-text-muted); }
+  .g-accent {
+    background: var(--st-accent); color: var(--st-on-accent); border: 0;
+    border-radius: var(--st-radius-md); padding: var(--st-space-2) var(--st-space-4);
+  }
+  .g-link { color: var(--st-accent-text); }
+  .g-boxed { border: 1px solid var(--st-border-strong); border-radius: var(--st-radius-md); padding: var(--st-space-2) var(--st-space-3); }
+  .g-status { padding: var(--st-space-1) var(--st-space-2); border-radius: var(--st-radius-sm); font-size: var(--st-text-sm); }
+  .g-success { background: var(--st-success-soft); color: var(--st-success-text); }
+  .g-warning { background: var(--st-warning-soft); color: var(--st-warning-text); }
+  .g-danger { background: var(--st-danger-soft); color: var(--st-danger-text); }
+  .g-info { background: var(--st-info-soft); color: var(--st-info-text); }
+}

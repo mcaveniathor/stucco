@@ -1,0 +1,9 @@
+[package]
+name = "stucco-theme"
+description = "Theme engine for stucco: OKLCH scales, semantic roles, presets and contrast validation."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
