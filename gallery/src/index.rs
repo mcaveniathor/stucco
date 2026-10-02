@@ -5,7 +5,7 @@ use stucco::layout::{Container, Grid, SkipLink, Stack};
 use stucco::typography::{Heading, Link, Text};
 use stucco::{Bundle, Measure, Page, Size, Space, Tone, el};
 
-const PAGES: [(&str, &str, &str); 9] = [
+const PAGES: [(&str, &str, &str); 10] = [
     (
         "collections.html",
         "Data and collections",
@@ -49,7 +49,12 @@ const PAGES: [(&str, &str, &str); 9] = [
     (
         "overlays.html",
         "Overlays",
-        "Dialogs, menus, tabs, tooltips and toasts.",
+        "Dialogs, menus, tooltips and toasts.",
+    ),
+    (
+        "tabs.html",
+        "Tabs",
+        "Sections of a page, each with its own URL.",
     ),
 ];
 

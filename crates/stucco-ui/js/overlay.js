@@ -89,11 +89,21 @@ function place(popover) {
   popover.style.left = `${left}px`;
 }
 
-document.addEventListener("toggle", (event) => {
-  const popover = event.target;
-  if (popover instanceof HTMLElement && popover.matches(".st-menu-popover") && event.newState === "open") {
-    place(popover);
+const isMenu = (target) => target instanceof HTMLElement && target.matches(".st-menu-popover");
+
+// "toggle" fires after the opened menu is first painted, where the browser
+// centres popovers, so the menu would flash in the middle of the screen. An
+// animation frame requested as it opens runs after it is shown and before
+// that paint, so it appears in place.
+document.addEventListener("beforetoggle", (event) => {
+  if (isMenu(event.target) && event.newState === "open") {
+    requestAnimationFrame(() => {
+      if (event.target.matches(":popover-open")) place(event.target);
+    });
   }
+}, true);
+document.addEventListener("toggle", (event) => {
+  if (isMenu(event.target) && event.newState === "open") place(event.target);
 }, true);
 
 function placeOpenMenus() {

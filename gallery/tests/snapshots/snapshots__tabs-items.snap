@@ -1,0 +1,9 @@
+---
+source: gallery/tests/snapshots.rs
+expression: html
+---
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" media="(prefers-color-scheme: light)" content="oklch(99.00% 0.0012 250.00)"><meta name="theme-color" media="(prefers-color-scheme: dark)" content="oklch(16.00% 0.0012 250.00)"><title>Tabs — stucco gallery</title><script>try {
+  const t = localStorage.getItem("stucco-theme");
+  if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+} catch (_) {}
+</script><link rel="stylesheet" href="/_stucco/stucco.HASH.css"></head><body><a class="st-skip-link" href="#main">Skip to main content</a><main id="main"><div class="st-container g-page" data-size="xl"><div class="st-stack" data-space="10"><div class="st-stack" data-space="3"><a class="st-link" href="index.html">← Gallery</a><h1 class="st-heading" data-size="3xl">Tabs</h1><p class="st-text" data-size="lg" data-tone="muted">Each tab is a link to its own page, so tabs work without script, can be bookmarked and keep the back button. The server marks the current tab and renders only its content.</p></div><section><div class="st-stack" data-space="4"><h2 class="st-heading" data-size="2xl">Order 1042</h2><div class="st-card"><div class="st-stack" data-space="4"><nav class="st-tabs" aria-label="Order sections"><a href="tabs.html">Details</a><a href="tabs-items.html" aria-current="page">Items</a><a href="tabs-history.html">History</a></nav><div class="st-stack" data-space="3"><div class="st-table-scroll" role="region" aria-label="Items in order 1042" tabindex="0"><table class="st-table"><caption>Items in order 1042</caption><thead><tr><th scope="col">Item</th><th scope="col">Quantity</th></tr></thead><tbody><tr><td>Linen shirt</td><td>2</td></tr><tr><td>Canvas tote</td><td>1</td></tr></tbody></table></div></div></div></div></div></section></div></div></main></body></html>
