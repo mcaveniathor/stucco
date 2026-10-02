@@ -18,6 +18,7 @@ pub mod layout_page;
 pub mod overlays_page;
 pub mod palette;
 mod shell;
+pub mod tabs_page;
 pub mod themes_page;
 pub mod typography_page;
 
@@ -62,6 +63,7 @@ pub fn pages(bundle: &Bundle) -> Vec<(String, String)> {
         ),
         ("app.html".to_owned(), collections_page::app_page(bundle)),
     ];
+    pages.extend(tabs_page::pages(bundle));
     pages.extend(fixtures::fixtures(bundle));
     pages
 }

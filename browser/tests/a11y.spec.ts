@@ -10,6 +10,8 @@ for (const path of [
   "/actions.html",
   "/forms.html",
   "/overlays.html",
+  "/tabs.html",
+  "/tabs-items.html",
   "/collections.html",
   "/app.html",
   "/fixtures/enhanced.html",
