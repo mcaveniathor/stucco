@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- A `DataTable` page with no rows still shows its pagination, so a visitor
+  past the last page (from a stale link, or after deleting the last row)
+  can get back with their search and filters kept. `Pagination` links back
+  to page 1 from past the end even when everything fits on one page, and
+  never links to a page 0.
+- Page and fragment responses send `Vary: Stucco-Request, Stucco-Target`,
+  since negotiation reads both, so a cache can't serve a full page cached
+  for an invalid fragment request in place of a fragment.
+- A dialog's link opener opens the dialog only on a plain primary click;
+  Ctrl/Cmd, Shift, Alt and middle clicks, links with a `target`, and clicks
+  another handler already cancelled follow the link as usual.
 - The `overlay` family (on by default) adds `Dialog`, `Menu`, `Toast` and
   `Tooltip`, built on native `<dialog>`, the popover API and invoker
   commands. One behaviour script, loaded only where they are used, adds

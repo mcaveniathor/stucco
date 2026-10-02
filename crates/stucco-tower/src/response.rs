@@ -4,14 +4,14 @@ use bytes::Bytes;
 use http::header::{CACHE_CONTROL, CONTENT_TYPE, LOCATION, VARY, X_CONTENT_TYPE_OPTIONS};
 use http::{HeaderValue, Response, StatusCode};
 use http_body_util::Full;
-use stucco_core::{Bundle, Href, RenderedFragment, behavior};
+use stucco_core::{Bundle, Href, RenderedFragment};
 
 /// A full HTML page response.
 ///
 /// ```
 /// use stucco_tower::PageResponse;
 /// let res = PageResponse::new("<!doctype html>…".into()).into_response();
-/// assert_eq!(res.headers()["vary"], "Stucco-Request");
+/// assert_eq!(res.headers()["vary"], "Stucco-Request, Stucco-Target");
 /// ```
 #[derive(Clone, Debug)]
 pub struct PageResponse {
@@ -127,12 +127,17 @@ fn header_safe(url: &str) -> HeaderValue {
     HeaderValue::from_str(&out).expect("visible ASCII is a valid header value")
 }
 
+/// The request headers a page or fragment response depends on.
+const VARY_HEADERS: &str = "Stucco-Request, Stucco-Target";
+
 /// An HTML response with the headers every stucco page and fragment carries.
 fn html_response(status: StatusCode, html: String, fragment: bool) -> Response<Full<Bytes>> {
     let mut builder = Response::builder()
         .status(status)
         .header(CONTENT_TYPE, "text/html; charset=utf-8")
-        .header(VARY, behavior::HEADER_REQUEST)
+        // Negotiation reads both headers (`RequestKind::from_headers`), so a
+        // cache must key on both.
+        .header(VARY, VARY_HEADERS)
         .header(X_CONTENT_TYPE_OPTIONS, "nosniff");
     if fragment {
         builder = builder.header(CACHE_CONTROL, "no-store");
@@ -166,6 +171,7 @@ impl axum::response::IntoResponse for FragmentResponse {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use stucco_core::behavior;
     use stucco_theme::Preset;
 
     #[test]
@@ -173,9 +179,15 @@ mod tests {
         let res = PageResponse::new("<p>x</p>".into()).into_response();
         assert_eq!(res.status(), 200);
         assert_eq!(res.headers()["content-type"], "text/html; charset=utf-8");
-        assert_eq!(res.headers()["vary"], "Stucco-Request");
+        assert_eq!(res.headers()["vary"], "Stucco-Request, Stucco-Target");
         assert_eq!(res.headers()["x-content-type-options"], "nosniff");
         assert!(!res.headers().contains_key("cache-control"));
+    }
+
+    #[test]
+    fn responses_vary_on_every_header_negotiation_reads() {
+        let vary: Vec<&str> = VARY_HEADERS.split(", ").collect();
+        assert_eq!(vary, [behavior::HEADER_REQUEST, behavior::HEADER_TARGET]);
     }
 
     #[test]
@@ -191,7 +203,7 @@ mod tests {
             .into_response();
         assert_eq!(res.status(), 409);
         assert_eq!(res.headers()["cache-control"], "no-store");
-        assert_eq!(res.headers()["vary"], "Stucco-Request");
+        assert_eq!(res.headers()["vary"], "Stucco-Request, Stucco-Target");
         assert_eq!(res.headers()["content-type"], "text/html; charset=utf-8");
     }
 
@@ -217,7 +229,7 @@ mod tests {
             PageResponse::new("x".into()).status(StatusCode::CONFLICT),
         );
         assert_eq!(res.status(), 409);
-        assert_eq!(res.headers()["vary"], "Stucco-Request");
+        assert_eq!(res.headers()["vary"], "Stucco-Request, Stucco-Target");
         assert_eq!(res.headers()["x-content-type-options"], "nosniff");
     }
 }

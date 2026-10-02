@@ -23,7 +23,7 @@ async fn index(page: PageCx, query: Query<Params>) -> Response {
 
 For finer control, `RequestKind` is an extractor of its own, and `stucco::server::respond` runs exactly one of a full-page and a fragment closure.
 
-Fragments render through `render_fragment`, which prefixes generated ids with a namespace so a fragment's ids can't collide with the page's. Responses vary on `Stucco-Request`, and fragments are never cached, so a cache never serves one in place of the other. The [hello example](https://github.com/mcaveniathor/stucco/tree/main/examples/hello) is a complete program.
+Fragments render through `render_fragment`, which prefixes generated ids with a namespace so a fragment's ids can't collide with the page's. Responses vary on `Stucco-Request` and `Stucco-Target`, and fragments are never cached, so a cache never serves one in place of the other. The [hello example](https://github.com/mcaveniathor/stucco/tree/main/examples/hello) is a complete program.
 
 ## Behaviours
 
