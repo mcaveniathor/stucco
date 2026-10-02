@@ -2,6 +2,12 @@
   .g-page { max-inline-size: 72rem; margin-inline: auto; padding: var(--st-space-8) var(--st-space-4); }
   .g-page > * + * { margin-block-start: var(--st-space-6); }
   .g-lead { color: var(--st-text-muted); }
+  /* Whole-card links: the title link's hit area covers the card. */
+  .g-card { position: relative; transition: border-color var(--st-duration-fast) var(--st-ease); }
+  .g-card:hover { border-color: var(--st-border-strong); }
+  .g-card-link { color: var(--st-text); text-decoration: none; }
+  .g-card-link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+  .g-card:hover .g-card-link { text-decoration: underline; text-underline-offset: 0.2em; }
   .g-preset > * + * { margin-block-start: var(--st-space-3); }
   .g-panels { display: grid; gap: var(--st-space-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); }
   .g-panel {

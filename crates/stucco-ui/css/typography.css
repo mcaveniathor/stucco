@@ -24,7 +24,7 @@
     background: var(--st-surface-raised); color: var(--st-text);
     padding: 0.1em 0.35em; border-radius: var(--st-radius-sm);
   }
-  .st-kbd { font-family: var(--st-font-mono); font-size: 0.85em; white-space: nowrap; }
+  .st-kbd { display: inline-flex; align-items: baseline; gap: 0.2em; font-family: var(--st-font-mono); font-size: 0.85em; white-space: nowrap; }
   .st-kbd > kbd {
     font-family: inherit; padding: 0.1em 0.4em; border: 1px solid var(--st-border-strong);
     border-block-end-width: 2px; border-radius: var(--st-radius-sm); background: var(--st-surface);
