@@ -28,6 +28,7 @@ const PAGES: &[(&str, &str)] = &[
         "enhancement",
         include_str!("../../docs/guide/enhancement.md"),
     ),
+    ("recipes", include_str!("../../docs/guide/recipes.md")),
 ];
 
 /// A parsed guide page.

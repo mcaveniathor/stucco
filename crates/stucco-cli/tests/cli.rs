@@ -19,6 +19,14 @@ fn stdout(args: &[&str]) -> String {
     String::from_utf8(out.stdout).unwrap()
 }
 
+/// Runs `args`, expecting exit `code` and `message` on standard error.
+fn bad(args: &[&str], code: i32, message: &str) {
+    let out = stucco(args);
+    assert_eq!(out.status.code(), Some(code), "{args:?}");
+    let stderr = String::from_utf8(out.stderr).unwrap();
+    assert!(stderr.contains(message), "{args:?}: {stderr}");
+}
+
 #[test]
 fn css_is_the_default_format() {
     let css = stdout(&["theme", "--preset", "pine"]);
@@ -102,12 +110,6 @@ fn output_files_are_written() {
 
 #[test]
 fn mistakes_fail_with_a_message() {
-    let bad = |args: &[&str], code: i32, message: &str| {
-        let out = stucco(args);
-        assert_eq!(out.status.code(), Some(code), "{args:?}");
-        let stderr = String::from_utf8(out.stderr).unwrap();
-        assert!(stderr.contains(message), "{args:?}: {stderr}");
-    };
     bad(&["theme", "seed=1&bogus=2"], 1, "unknown key `bogus`");
     bad(
         &["theme", "seed=1&preset=sol"],
@@ -139,4 +141,45 @@ fn lists_presets_and_options() {
     assert_eq!(line("radius"), "sharp, soft, round");
     assert_eq!(line("finish"), "smooth, sand, float, knockdown");
     assert_eq!(line("heading-font"), "body, serif, rounded, mono");
+}
+
+#[test]
+fn new_writes_a_starter_app() {
+    let root = std::env::temp_dir().join(format!("stucco-new-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&root);
+    let app = root.join("shop-front");
+    let app_arg = app.to_str().unwrap();
+    let repo = concat!(env!("CARGO_MANIFEST_DIR"), "/../..");
+    stdout(&["new", app_arg, "--seed", "7", "--stucco-path", repo]);
+    let read = |file: &str| std::fs::read_to_string(app.join(file)).unwrap();
+    let manifest = read("Cargo.toml");
+    assert!(manifest.contains("name = \"shop-front\""));
+    assert!(manifest.contains("crates/stucco\", features = [\"axum\", \"derive\"]"));
+    let main = read("src/main.rs");
+    assert!(main.contains(".stucco(Theme::seeded(7))"));
+    assert!(main.contains("PageHeader::new(\"Shop front\")"));
+    assert!(!main.contains("{{"));
+    assert_eq!(read(".gitignore"), "/target\n");
+
+    // The default takes stucco from crates.io, at this version.
+    let plain = root.join("plain");
+    stdout(&["new", plain.to_str().unwrap()]);
+    let manifest = std::fs::read_to_string(plain.join("Cargo.toml")).unwrap();
+    assert!(manifest.contains("stucco = { version = \"0.1\""));
+    let main = std::fs::read_to_string(plain.join("src/main.rs")).unwrap();
+    assert!(main.contains(".stucco(Preset::Slate)"));
+
+    bad(&["new", app_arg], 1, "isn't empty");
+    let numbered = root.join("1st-app");
+    bad(
+        &["new", numbered.to_str().unwrap()],
+        1,
+        "can't name a crate",
+    );
+    bad(
+        &["new", "x", "--git", "--stucco-path", repo],
+        2,
+        "cannot be used with",
+    );
+    std::fs::remove_dir_all(&root).unwrap();
 }
