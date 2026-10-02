@@ -66,8 +66,13 @@ fn every_format_renders() {
         "summary",
     ]);
     assert!(summary.starts_with("Slate\npreset=slate&buttons=pill\n"));
-    assert!(summary.contains("Buttons    Pill  (set)\n"));
-    assert!(summary.contains("Elevation  Outlined\n"));
+    let rows: Vec<Vec<&str>> = summary
+        .lines()
+        .map(|l| l.split_whitespace().collect())
+        .collect();
+    assert!(rows.contains(&vec!["Buttons", "Pill", "(set)"]));
+    assert!(rows.contains(&vec!["Elevation", "Outlined"]));
+    assert!(rows.contains(&vec!["Finish", "Smooth"]));
 }
 
 #[test]
@@ -125,4 +130,5 @@ fn lists_presets_and_options() {
     assert_eq!(presets.lines().count(), 14);
     let options = stdout(&["options"]);
     assert!(options.contains("radius     sharp, soft, round\n"));
+    assert!(options.contains("finish     smooth, sand, float, knockdown\n"));
 }

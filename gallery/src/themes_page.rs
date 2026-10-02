@@ -5,8 +5,10 @@ use stucco::actions::Button;
 use stucco::data::{Card, Row, Table};
 use stucco::forms::{Field, Input, Select};
 use stucco::layout::{Cluster, Grid, Stack};
-use stucco::theme::{ControlStyle, Fonts, HeaderStyle, Preset, Radius, Seeded, TableStyle, Theme};
-use stucco::typography::{Heading, Text};
+use stucco::theme::{
+    ControlStyle, Finish, Fonts, HeaderStyle, LinkStyle, Preset, Radius, Seeded, TableStyle, Theme,
+};
+use stucco::typography::{Heading, Link, Text};
 use stucco::{Attrs, Bundle, Measure, Render, Size, Space, Tone, Variant, el};
 
 use crate::shell::{component_page, section};
@@ -46,6 +48,8 @@ pub fn mixed() -> stucco::theme::BuiltTheme {
         .control_style(ControlStyle::seeded(14))
         .table_style(TableStyle::seeded(14))
         .header_style(HeaderStyle::seeded(14))
+        .link_style(LinkStyle::seeded(14))
+        .finish(Finish::seeded(14))
         .build()
         .expect("Slate's colours pass with any personality")
 }
@@ -120,8 +124,26 @@ fn sample(name: &'static str, scheme: &'static str, label: &'static str) -> impl
                 .child(
                     Stack::new()
                         .space(Space::S1)
-                        .child(Text::new("Body text in the theme's sans stack."))
+                        .child(
+                            el::p()
+                                .class("st-text")
+                                .text("Body text in the theme's sans stack, with ")
+                                .child(Link::new("a link", "#"))
+                                .text("."),
+                        )
                         .child(Text::new("Muted text for hints and captions.").tone(Tone::Muted)),
+                )
+                .child(
+                    // The sidebar's own classes, so the nav style shows here.
+                    el::div().class("st-app-sidebar g-sample-nav").child(
+                        el::nav()
+                            .aria(
+                                "label",
+                                format!("Sample navigation, {name}, {}", label.to_lowercase()),
+                            )
+                            .child(el::a().href("#").aria("current", "page").text("Orders"))
+                            .child(el::a().href("#").text("Customers")),
+                    ),
                 )
                 .child(
                     Cluster::new()
