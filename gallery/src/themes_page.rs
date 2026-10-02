@@ -5,6 +5,7 @@ use stucco::actions::Button;
 use stucco::data::{Card, Panel, Row, Table};
 use stucco::forms::{Field, Input, Select};
 use stucco::layout::{Cluster, Grid, Stack};
+use stucco::navigation::NavLink;
 use stucco::theme::{
     ControlStyle, Finish, Fonts, HeaderStyle, LinkStyle, Preset, Radius, Seeded, TableStyle, Theme,
 };
@@ -90,20 +91,13 @@ pub fn panels(name: &'static str) -> impl Render + 'static {
         .child(shell_sample(name))
 }
 
-/// An app shell built from the shell's own classes, so the theme's layout,
-/// nav, panel and corner styles show. It uses plain elements rather than
-/// `AppShell`, which owns the page's `main` landmark.
+/// An app shell built from the shell's own classes, with primary links and
+/// a section sidebar, so the theme's layout, nav, panel and corner styles
+/// show. It uses plain elements rather than `AppShell`, which owns the
+/// page's `main` landmark.
 fn shell_sample(name: &'static str) -> impl Render + 'static {
-    let link = |label: &'static str, current: bool| {
-        let a = el::a().href("#").text(label);
-        if current {
-            a.aria("current", "page")
-        } else {
-            a
-        }
-    };
     el::div()
-        .class("g-panel g-shell-sample")
+        .class("g-panel g-shell-sample st-app-shell")
         .child(
             el::div()
                 .class("st-app-header g-sample-header")
@@ -112,17 +106,26 @@ fn shell_sample(name: &'static str) -> impl Render + 'static {
         .child(
             el::div()
                 .class("st-app-body")
+                .bool_attr("data-nav", true)
+                .bool_attr("data-sidebar", true)
+                .child(
+                    el::nav()
+                        .class("st-app-nav")
+                        .aria("label", format!("Sample primary navigation, {name}"))
+                        .child(NavLink::new("Orders", "#").current(true))
+                        .child(NavLink::new("Customers", "#"))
+                        .child(NavLink::new("Reports", "#")),
+                )
                 .child(
                     el::div().class("st-app-sidebar").child(
                         el::details()
                             .bool_attr("open", true)
-                            .child(el::summary().text("Navigation"))
+                            .child(el::summary().text("Orders"))
                             .child(
                                 el::nav()
-                                    .aria("label", format!("Sample navigation, {name}"))
-                                    .child(link("Orders", true))
-                                    .child(link("Customers", false))
-                                    .child(link("Reports", false)),
+                                    .aria("label", format!("Sample section navigation, {name}"))
+                                    .child(NavLink::new("This week", "#").current(true))
+                                    .child(NavLink::new("Archive", "#")),
                             ),
                     ),
                 )

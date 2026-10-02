@@ -3,10 +3,9 @@ use crate::shell::{component_page, section};
 use stucco::app::{AppShell, Footer, PageHeader, SectionHeader};
 use stucco::collections::{Col, DataTable};
 use stucco::data::{Card, Panel, ResultCount, Row, Table};
+use stucco::navigation::NavLink;
 use stucco::navigation::Pagination;
-use stucco::{
-    Bundle, Capabilities, CollectionPage, CollectionQuery, Cursor, Page, Size, Window, el,
-};
+use stucco::{Bundle, Capabilities, CollectionPage, CollectionQuery, Cursor, Page, Size, Window};
 
 /// Tables, typed controls, empty states and both pagination styles.
 pub fn page(bundle: &Bundle) -> String {
@@ -86,12 +85,9 @@ pub fn app_page(bundle: &Bundle) -> String {
                 .header(
                     PageHeader::new("Application shell").description("A server-rendered workspace"),
                 )
-                .sidebar(
-                    el::nav()
-                        .aria("label", "Gallery")
-                        .child(el::a().href("index.html").text("Gallery"))
-                        .child(el::a().href("collections.html").text("Collections")),
-                )
+                .nav_label("Gallery")
+                .link(NavLink::new("Gallery", "index.html"))
+                .link(NavLink::new("Collections", "collections.html"))
                 .main(
                     Panel::new("Workspace").body(
                         SectionHeader::new("Recent activity")

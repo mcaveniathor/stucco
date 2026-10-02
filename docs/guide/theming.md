@@ -58,7 +58,7 @@ Each option sets tokens such as `--st-card-shadow` or `--st-table-rule` that the
 
 ### Layout and shape
 
-`shell_layout` arranges the application shell. Sidebar puts a filled navigation column beside the content, Rail a narrower one on the page background, and Topbar a row of links under the header with the content at full width. Topbar suits a flat list of links; a sidebar holding a nested outline is better left as a column.
+`shell_layout` arranges `AppShell`. Sidebar puts the primary links at the top of a filled column beside the content, and Rail does the same in a narrower column on the page background. Topbar puts the primary links in a row under the header. The sidebar, if the page has one, stays a column beside the content in every layout, so nested navigation keeps working. See [Application shell](components.html#application-shell).
 
 `panel_style` frames panels: Boxed is a bordered box, Ruled drops the box for a strong rule above the title, and Headed sets the title in a raised band.
 
