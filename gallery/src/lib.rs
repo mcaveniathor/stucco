@@ -17,6 +17,7 @@ pub mod index;
 pub mod layout_page;
 pub mod palette;
 mod shell;
+pub mod themes_page;
 pub mod typography_page;
 
 /// Layout styles for gallery pages (not part of the library).
@@ -28,10 +29,14 @@ pub static GALLERY: Asset = Asset {
 };
 register_asset!(GALLERY);
 
-/// The gallery bundle: Slate at the root plus every preset as a named theme.
+/// The gallery bundle: Slate at the root, every preset and the seeded themes
+/// as named themes.
 pub fn bundle() -> Bundle {
-    Preset::ALL.iter().fold(Bundle::new(Preset::Slate), |b, p| {
+    let presets = Preset::ALL.iter().fold(Bundle::new(Preset::Slate), |b, p| {
         b.with_theme(p.name(), *p)
+    });
+    themes_page::SEEDS.iter().fold(presets, |b, (seed, name)| {
+        b.with_theme(name, themes_page::seeded(*seed))
     })
 }
 
@@ -41,6 +46,7 @@ pub fn write_site(dir: &Path) -> io::Result<()> {
     let mut pages = vec![
         ("index.html".to_owned(), index::index_page(&bundle)),
         ("palette.html".to_owned(), palette::palette_page(&bundle)),
+        ("themes.html".to_owned(), themes_page::page(&bundle)),
         ("layout.html".to_owned(), layout_page::page(&bundle)),
         ("typography.html".to_owned(), typography_page::page(&bundle)),
         ("actions.html".to_owned(), actions_page::page(&bundle)),

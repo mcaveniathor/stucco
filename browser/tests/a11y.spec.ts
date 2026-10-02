@@ -4,6 +4,7 @@ import AxeBuilder from "@axe-core/playwright";
 for (const path of [
   "/index.html",
   "/palette.html",
+  "/themes.html",
   "/layout.html",
   "/typography.html",
   "/actions.html",

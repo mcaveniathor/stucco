@@ -31,8 +31,9 @@ pub use stucco_ui::*;
 /// Themes: colours, scales, presets and contrast validation.
 pub mod theme {
     pub use stucco_theme::{
-        BuiltTheme, Color, ContrastFailure, ContrastReport, Density, Fonts, Preset, Radius, Scale,
-        Scheme, Scope, Theme, TypeScale, contrast,
+        BuiltTheme, ButtonShape, Color, ContrastFailure, ContrastReport, ControlStyle, Density,
+        Elevation, Fonts, HeaderStyle, HeadingWeight, Preset, Radius, Scale, Scheme, Scope,
+        TableStyle, Theme, TypeScale, contrast,
     };
 }
 

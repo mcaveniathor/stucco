@@ -5,7 +5,7 @@ use stucco::layout::{Container, Grid, SkipLink, Stack};
 use stucco::typography::{Heading, Link, Text};
 use stucco::{Bundle, Measure, Page, Size, Space, Tone, el};
 
-const PAGES: [(&str, &str, &str); 7] = [
+const PAGES: [(&str, &str, &str); 8] = [
     (
         "collections.html",
         "Data and collections",
@@ -20,6 +20,11 @@ const PAGES: [(&str, &str, &str); 7] = [
         "palette.html",
         "Palettes",
         "Every preset's scales and roles, light and dark.",
+    ),
+    (
+        "themes.html",
+        "Seeded themes",
+        "Whole themes generated from a single number.",
     ),
     (
         "layout.html",

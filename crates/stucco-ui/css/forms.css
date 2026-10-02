@@ -19,8 +19,9 @@
   .st-input, .st-textarea, .st-select {
     inline-size: 100%; min-block-size: var(--st-control-h);
     padding: var(--st-space-2) calc(var(--st-space-3) * var(--st-pad-scale));
-    background: var(--st-surface); color: var(--st-text);
-    border: 1px solid var(--st-border-strong); border-radius: var(--st-radius-md);
+    background: var(--st-control-bg); color: var(--st-text);
+    border: 0 solid var(--st-border-strong); border-width: var(--st-control-border-width);
+    border-radius: var(--st-control-radius);
     font: inherit;
   }
   .st-input, .st-select { block-size: var(--st-control-h); padding-block: 0; }
@@ -28,19 +29,20 @@
   .st-input::placeholder, .st-textarea::placeholder { color: var(--st-text-muted); }
   .st-input:disabled, .st-textarea:disabled, .st-select:disabled { opacity: 0.55; cursor: not-allowed; }
   .st-input[aria-invalid="true"], .st-textarea[aria-invalid="true"], .st-select[aria-invalid="true"] {
-    border-color: var(--st-danger); border-width: 2px;
+    border-color: var(--st-danger); box-shadow: var(--st-control-invalid-ring);
   }
   .st-input-group { display: flex; align-items: stretch; }
   .st-input-group > .st-input { flex: 1; min-inline-size: 0; }
   .st-input-adornment {
     display: inline-flex; align-items: center; padding-inline: var(--st-space-3);
     background: var(--st-surface-raised); color: var(--st-text-muted);
-    border: 1px solid var(--st-border-strong);
+    border: 0 solid var(--st-border-strong); border-width: var(--st-control-border-width);
+    border-radius: var(--st-control-radius);
   }
   .st-input-group > :first-child { border-start-end-radius: 0; border-end-end-radius: 0; }
   .st-input-group > :last-child { border-start-start-radius: 0; border-end-start-radius: 0; }
-  .st-input-group > .st-input-adornment:first-child { border-inline-end: 0; border-start-start-radius: var(--st-radius-md); border-end-start-radius: var(--st-radius-md); }
-  .st-input-group > .st-input-adornment:last-child { border-inline-start: 0; border-start-end-radius: var(--st-radius-md); border-end-end-radius: var(--st-radius-md); }
+  .st-input-group > .st-input-adornment:first-child { border-inline-end-width: 0; }
+  .st-input-group > .st-input-adornment:last-child { border-inline-start-width: 0; }
   .st-input-group > .st-input:not(:first-child):not(:last-child) { border-radius: 0; }
   .st-checkbox, .st-radio { display: flex; align-items: center; gap: var(--st-space-2); color: var(--st-text); cursor: pointer; }
   .st-checkbox > input, .st-radio > input { inline-size: 1.125em; block-size: 1.125em; margin: 0; accent-color: var(--st-accent); }

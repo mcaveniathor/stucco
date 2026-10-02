@@ -1,6 +1,6 @@
 @layer stucco.components {
   .st-app-shell { --st-app-gutter: clamp(var(--st-space-4), 3vw, var(--st-space-8)); min-block-size: 100dvh; display: flex; flex-direction: column; }
-  .st-app-header { padding: var(--st-space-6) var(--st-app-gutter); background: var(--st-surface); border-block-end: 1px solid var(--st-border); }
+  .st-app-header { padding: var(--st-space-6) var(--st-app-gutter); background: var(--st-header-bg); border-block-end: 1px solid var(--st-header-border); }
   .st-app-body { flex: 1; display: flex; flex-wrap: wrap; min-inline-size: 0; container-type: inline-size; }
   /* Inline padding puts link text on the header's gutter edge. */
   .st-app-sidebar { flex: 1 1 15rem; padding: var(--st-space-4) max(var(--st-space-1), calc(var(--st-app-gutter) - var(--st-space-3))); background: var(--st-surface); border-inline-end: 1px solid var(--st-border); }

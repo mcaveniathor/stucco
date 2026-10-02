@@ -2,6 +2,9 @@
 
 use std::fmt;
 
+use crate::personality::{
+    ButtonShape, ControlStyle, Elevation, HeaderStyle, HeadingWeight, Personality, TableStyle,
+};
 use crate::roles::{INK_ACCENT, Kind, PAIRS, ROLES, STATUS, Source};
 use crate::{Color, Scale, Scheme, contrast};
 
@@ -114,6 +117,7 @@ pub struct Theme {
     pub(crate) radius: Radius,
     pub(crate) density: Density,
     pub(crate) min_contrast: f64,
+    pub(crate) personality: Personality,
 }
 
 impl Theme {
@@ -133,6 +137,7 @@ impl Theme {
             radius: Radius::Soft,
             density: Density::Comfortable,
             min_contrast: 4.5,
+            personality: Personality::default(),
         }
     }
 
@@ -203,6 +208,42 @@ impl Theme {
     /// Control density.
     pub fn density(mut self, density: Density) -> Theme {
         self.density = density;
+        self
+    }
+
+    /// How surfaces separate from the page.
+    pub fn elevation(mut self, elevation: Elevation) -> Theme {
+        self.personality.elevation = elevation;
+        self
+    }
+
+    /// How table rows are separated.
+    pub fn table_style(mut self, style: TableStyle) -> Theme {
+        self.personality.table = style;
+        self
+    }
+
+    /// How text inputs and selects are drawn.
+    pub fn control_style(mut self, style: ControlStyle) -> Theme {
+        self.personality.controls = style;
+        self
+    }
+
+    /// How the application header sits against the page.
+    pub fn header_style(mut self, style: HeaderStyle) -> Theme {
+        self.personality.header = style;
+        self
+    }
+
+    /// Heading weight and tracking.
+    pub fn heading_weight(mut self, weight: HeadingWeight) -> Theme {
+        self.personality.headings = weight;
+        self
+    }
+
+    /// Button corner shape.
+    pub fn button_shape(mut self, shape: ButtonShape) -> Theme {
+        self.personality.buttons = shape;
         self
     }
 
