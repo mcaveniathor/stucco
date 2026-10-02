@@ -1,0 +1,98 @@
+@layer stucco.components {
+  /* A modal dialog: the native <dialog>, styled as a raised surface. */
+  .st-dialog {
+    inline-size: min(32rem, calc(100vw - 2 * var(--st-space-4)));
+    max-block-size: calc(100dvh - 2 * var(--st-space-6));
+    /* The reset zeroes margins; a modal dialog centres itself with auto ones. */
+    margin: auto; padding: 0; overflow: auto;
+    border: var(--st-line, 1px) solid var(--st-border);
+    border-radius: var(--st-surface-radius); corner-shape: var(--st-corner-shape);
+    background: var(--st-surface); color: var(--st-text);
+    box-shadow: var(--st-shadow-3);
+    transition: opacity var(--st-duration) var(--st-ease), translate var(--st-duration) var(--st-ease);
+  }
+  .st-dialog[open] { display: flex; flex-direction: column; }
+  @starting-style { .st-dialog[open] { opacity: 0; translate: 0 var(--st-space-3); } }
+  .st-dialog::backdrop { background: color-mix(in oklch, var(--st-shadow-ink, currentColor) 45%, transparent); }
+  .st-dialog-header {
+    display: flex; align-items: start; justify-content: space-between; gap: var(--st-space-4);
+    padding: var(--st-space-5) var(--st-space-6) 0;
+  }
+  .st-dialog-header > .st-heading { margin: 0; }
+  .st-dialog-close {
+    flex: none; display: inline-flex; align-items: center; justify-content: center;
+    inline-size: 2rem; block-size: 2rem; margin-block-start: calc(-1 * var(--st-space-1)); margin-inline-end: calc(-1 * var(--st-space-2));
+    border: 0; border-radius: var(--st-radius-md); background: transparent; color: var(--st-text-muted);
+    font: inherit; font-size: var(--st-text-xl); line-height: 1; cursor: pointer;
+  }
+  .st-dialog-close:hover { background: var(--st-hover); color: var(--st-text); }
+  .st-dialog-body { padding: var(--st-space-4) var(--st-space-6); }
+  .st-dialog-body > * + * { margin-block-start: var(--st-space-3); }
+  .st-dialog-actions {
+    display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--st-space-2);
+    padding: 0 var(--st-space-6) var(--st-space-5);
+  }
+  .st-dialog-actions form { display: contents; }
+
+  /* A menu: a popover list under its button. Without script it opens centred. */
+  .st-menu { display: inline-block; }
+  .st-menu-button::after {
+    content: ""; inline-size: 0.4em; block-size: 0.4em; margin-inline-start: var(--st-space-1);
+    border: solid currentColor; border-width: 0 1.5px 1.5px 0; rotate: 45deg; translate: 0 -0.15em;
+  }
+  .st-menu-popover {
+    margin: auto; padding: var(--st-space-1);
+    min-inline-size: 11rem; max-inline-size: min(20rem, calc(100vw - 2 * var(--st-space-4)));
+    border: var(--st-line, 1px) solid var(--st-border); border-radius: var(--st-radius-md);
+    background: var(--st-surface); color: var(--st-text); box-shadow: var(--st-shadow-2);
+  }
+  .st-menu-list { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+  .st-menu-list form { margin: 0; }
+  .st-menu-item, .st-menu-list li > form > button {
+    display: flex; inline-size: 100%; padding: var(--st-space-2) var(--st-space-3);
+    border: 0; border-radius: var(--st-radius-sm); background: transparent; color: var(--st-text);
+    font: inherit; text-align: start; text-decoration: none; cursor: pointer;
+  }
+  .st-menu-item:hover, .st-menu-list li > form > button:hover { background: var(--st-hover); }
+  .st-menu-separator { block-size: var(--st-line, 1px); margin: var(--st-space-1) 0; background: var(--st-border); }
+
+  /* A toast: a status message at the edge of the screen. */
+  .st-toast {
+    position: fixed; z-index: var(--st-z-toast); inset-block-end: var(--st-space-4); inset-inline-end: var(--st-space-4);
+    display: flex; align-items: center; gap: var(--st-space-3);
+    max-inline-size: min(24rem, calc(100vw - 2 * var(--st-space-8)));
+    padding: var(--st-space-3) var(--st-space-3) var(--st-space-3) var(--st-space-4);
+    border: var(--st-line, 1px) solid var(--st-border); border-inline-start: 4px solid var(--st-toast-edge, var(--st-border-strong));
+    border-radius: var(--st-radius-md); background: var(--st-surface); color: var(--st-text); box-shadow: var(--st-shadow-2);
+    transition: opacity var(--st-duration) var(--st-ease), translate var(--st-duration) var(--st-ease);
+  }
+  @starting-style { .st-toast { opacity: 0; translate: 0 var(--st-space-3); } }
+  .st-toast[data-tone="success"] { --st-toast-edge: var(--st-success); }
+  .st-toast[data-tone="warning"] { --st-toast-edge: var(--st-warning); }
+  .st-toast[data-tone="danger"] { --st-toast-edge: var(--st-danger); }
+  .st-toast[data-tone="info"] { --st-toast-edge: var(--st-info); }
+  .st-toast[data-tone="accent"] { --st-toast-edge: var(--st-accent); }
+  .st-toast-message { margin: 0; }
+  /* The dismiss button only works with script, so only shows with it. */
+  .st-toast-dismiss { display: none; }
+  :root[data-st-script] .st-toast-dismiss {
+    display: inline-flex; flex: none; padding: var(--st-space-1) var(--st-space-2);
+    border: 0; border-radius: var(--st-radius-sm); background: transparent; color: var(--st-text-muted);
+    font: inherit; font-size: var(--st-text-sm); font-weight: 550; cursor: pointer;
+  }
+  :root[data-st-script] .st-toast-dismiss:hover { background: var(--st-hover); color: var(--st-text); }
+
+  /* A tooltip: the control's name, shown on hover and focus. */
+  .st-tooltip-anchor { position: relative; display: inline-flex; }
+  .st-tooltip {
+    position: absolute; z-index: var(--st-z-overlay); bottom: calc(100% + var(--st-space-1)); left: 50%; translate: -50% 0;
+    padding: var(--st-space-1) var(--st-space-2); border-radius: var(--st-radius-sm);
+    background: var(--st-text); color: var(--st-bg); font-size: var(--st-text-sm); line-height: 1.3; white-space: nowrap;
+    opacity: 0; visibility: hidden;
+    transition: opacity var(--st-duration-fast) var(--st-ease), visibility var(--st-duration-fast);
+  }
+  /* A bridge over the gap, so the pointer can move onto the tooltip. */
+  .st-tooltip::after { content: ""; position: absolute; inset-inline: 0; top: 100%; block-size: var(--st-space-1); }
+  .st-tooltip-anchor:hover > .st-tooltip, .st-tooltip-anchor:focus-within > .st-tooltip { opacity: 1; visibility: visible; }
+  .st-tooltip-anchor[data-dismissed] > .st-tooltip { opacity: 0; visibility: hidden; }
+}

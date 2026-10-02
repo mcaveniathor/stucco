@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- The `overlay` family (on by default) adds `Dialog`, `Menu`, `Toast` and
+  `Tooltip`, built on native `<dialog>`, the popover API and invoker
+  commands. One behaviour script, loaded only where they are used, adds
+  invoker commands and outside-click closing to browsers without them,
+  anchors menus under their buttons, makes toasts dismissible and lets
+  Escape hide tooltips.
+- `Tabs` (navigation) are links to sections of a page, each with its own
+  URL, styled as tabs.
+- The gallery has an Overlays page, and the browser tests cover each
+  component, the fallback script, and accessibility with them open.
+
 ## 0.2.0 — 2026-10-02
 
 Applications get easier to start and write: one-call axum setup, page

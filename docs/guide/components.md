@@ -13,7 +13,8 @@ Components are grouped into families, each behind a cargo feature. The facade en
 | `actions` | `Button`, `ButtonLink`, `IconButton` |
 | `forms` | `Form`, `Field`, `Input`, `Select`, `Textarea`, `Checkbox`, `RadioGroup`, `Fieldset`, `ErrorSummary` |
 | `feedback` | `EmptyState`, `LiveRegion` |
-| `navigation` | `Pagination`, `NavLink` |
+| `navigation` | `Pagination`, `NavLink`, `Tabs` |
+| `overlay` | `Dialog`, `Menu`, `Toast`, `Tooltip` |
 | `data` | `Card`, `Panel`, `Table`, `ResultCount` |
 | `app` | `AppShell`, `PageHeader`, `SectionHeader`, `Footer` |
 | `collections` | `DataTable`, `Col`, `FilterBar`, `SearchForm`, `SortControl` |
@@ -101,6 +102,33 @@ let shell = AppShell::new()
 ```
 
 The theme's shell layout decides where the primary links go: at the top of the side column, or in a row under the header. The sidebar is always a column beside the content, and narrow screens stack everything.
+
+## Overlays
+
+The `overlay` family, on by default, puts content above the page. Each component is native HTML first, and one small behaviour script, loaded only on pages that use them, fills the gaps.
+
+```rust
+use stucco::prelude::*;
+
+let confirm = Dialog::new("delete-order", "Delete order 1042?")
+    .child(Text::new("The order and its history are removed."))
+    .actions(Dialog::close_button("delete-order", "Cancel"))
+    .actions(
+        Form::post("/orders/1042/delete")
+            .child(Button::new("Delete order").submit().variant(Variant::Danger)),
+    );
+let row_actions = Menu::new("Actions")
+    .link("Edit", "/orders/1042/edit")
+    .separator()
+    .item(confirm.opener("Delete").variant(Variant::Ghost));
+```
+
+- **`Dialog`** is a native modal `<dialog>`: it moves focus in, keeps it there, closes on Escape or a click outside, and returns focus to its opener. `opener` gives a button that opens it with the HTML invoker commands, which the script adds to browsers without them. Where a page must work without script, `link_opener` is a link to a page with the same content, which the script turns into opening the dialog in place. A form inside submits as usual.
+- **`Menu`** is a popover list behind a button: links, or buttons in their own forms. It opens and closes without script and closes on Escape or a click elsewhere; the script anchors it under its button. The items stay an ordinary list of links and buttons rather than an ARIA menu, so they work the usual way with every keyboard and screen reader.
+- **`Toast`** is a status message at the edge of the screen, such as "Order saved" after a form redirects. It never disappears on its own; with script it has a Dismiss button. Show one by putting it on the page the redirect lands on.
+- **`Tooltip`** shows a control's name beside it on hover and keyboard focus, and Escape hides it. It is for controls whose accessible name already says the same thing, such as an icon button, so it is hidden from assistive technology.
+
+`Tabs`, in the `navigation` family, are links to sections of a page, each with its own URL; the server renders the current one, so they need no script and keep the back button working.
 
 ## Accessibility
 
