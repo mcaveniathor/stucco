@@ -1,0 +1,11 @@
+[package]
+name = "stucco"
+description = "Server-rendered, themeable, accessible UI components for Rust."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+stucco-core.workspace = true
+stucco-theme.workspace = true
