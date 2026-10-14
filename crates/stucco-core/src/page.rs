@@ -87,6 +87,8 @@ pub struct Page<'b, 'a> {
     body_attrs: Attrs,
     nonce: Option<String>,
     enhanced: bool,
+    theme_init: bool,
+    scheme: Option<Scheme>,
     delivery: Delivery,
 }
 
@@ -103,6 +105,8 @@ impl<'b, 'a> Page<'b, 'a> {
             body_attrs: Attrs::default(),
             nonce: None,
             enhanced: false,
+            theme_init: true,
+            scheme: None,
             delivery: Delivery::Linked,
         }
     }
@@ -150,6 +154,18 @@ impl<'b, 'a> Page<'b, 'a> {
         self
     }
 
+    /// Uses a server-selected colour scheme instead of the localStorage theme initializer.
+    ///
+    /// Pass `Some(Scheme::Light)` or `Some(Scheme::Dark)` for a cookie/account preference,
+    /// or `None` to follow the browser's system preference through CSS. This only omits
+    /// the theme initializer; components that require scripts still load them normally.
+    /// Useful for native HTML applications and strict CSPs without inline scripts.
+    pub fn server_theme(mut self, scheme: Option<Scheme>) -> Self {
+        self.theme_init = false;
+        self.scheme = scheme;
+        self
+    }
+
     /// CSS and script delivery mode.
     pub fn delivery(mut self, delivery: Delivery) -> Self {
         self.delivery = delivery;
@@ -183,7 +199,14 @@ impl<'b, 'a> Page<'b, 'a> {
         });
         let mut out = String::from("<!doctype html><html lang=\"");
         escape_attr(&self.lang, &mut out);
-        out.push_str("\"><head><meta charset=\"utf-8\">");
+        out.push('"');
+        if let Some(scheme) = self.scheme {
+            out.push_str(match scheme {
+                Scheme::Light => " data-theme=\"light\"",
+                Scheme::Dark => " data-theme=\"dark\"",
+            });
+        }
+        out.push_str("><head><meta charset=\"utf-8\">");
         out.push_str("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
         for (scheme, media) in [(Scheme::Light, "light"), (Scheme::Dark, "dark")] {
             if let Some(bg) = self.bundle.root.role(scheme, "bg") {
@@ -197,10 +220,12 @@ impl<'b, 'a> Page<'b, 'a> {
         escape_text(&self.title, &mut out);
         out.push_str("</title>");
         self.write_meta(&mut out);
-        out.push_str(&format!(
-            "<script{nonce}>{}</script>",
-            raw_text(&substitute_placeholders(THEME_INIT_JS))
-        ));
+        if self.theme_init {
+            out.push_str(&format!(
+                "<script{nonce}>{}</script>",
+                raw_text(&substitute_placeholders(THEME_INIT_JS))
+            ));
+        }
         let inline_script = |out: &mut String, js: &str| {
             out.push_str(&format!(
                 "<script type=\"module\"{nonce}>{}</script>",
@@ -313,6 +338,33 @@ mod tests {
         fn render(&self, cx: &mut Cx) {
             cx.require(&LOOSE);
         }
+    }
+
+    #[test]
+    fn server_theme_is_script_free_and_sets_the_requested_scheme() {
+        let b = Bundle::new(Preset::Slate);
+        for (scheme, attr) in [
+            (Some(Scheme::Light), " data-theme=\"light\""),
+            (Some(Scheme::Dark), " data-theme=\"dark\""),
+            (None, ""),
+        ] {
+            let html = Page::new(&b, "Server theme").server_theme(scheme).render();
+            assert!(html.contains(&format!("<html lang=\"en\"{attr}>")));
+            assert!(!html.contains("<script"));
+            assert!(html.contains(b.stylesheet_url()));
+        }
+        assert!(Page::new(&b, "Default").render().contains("localStorage"));
+    }
+
+    #[test]
+    fn server_theme_preserves_required_component_scripts() {
+        let b = Bundle::new(Preset::Slate);
+        let html = Page::new(&b, "Enhanced")
+            .server_theme(None)
+            .enhanced()
+            .render();
+        assert!(html.contains(b.runtime_url()));
+        assert!(!html.contains("localStorage"));
     }
 
     #[test]
