@@ -34,3 +34,16 @@ elements! {
 void_elements! {
     area base br col embed hr img input link meta source track wbr
 }
+
+// SVG elements use explicit closing tags, including shapes. Attribute values still pass
+// through the same escaping and URL checks as HTML. The HTML parser adjusts SVG names
+// such as `viewBox` from their canonical lowercase attribute serialization.
+elements! {
+    svg g defs symbol path rect circle ellipse line polyline polygon text tspan
+    stop mask pattern marker desc
+}
+
+/// An SVG reference to a reusable shape.
+pub fn use_<'a>() -> Element<'a> {
+    Element::new("use")
+}
