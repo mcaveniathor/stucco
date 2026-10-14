@@ -1,3 +1,15 @@
 @layer stucco.components {
   .st-empty-state { padding: var(--st-space-8); text-align: center; border: 1px dashed var(--st-border); }
 }
+
+@layer stucco.components {
+  .st-readiness { padding: var(--st-space-5); border: var(--st-line, 1px) solid var(--st-border); border-radius: var(--st-surface-radius); background: var(--st-surface); }
+  .st-readiness h2 { font-size: var(--st-text-lg); }
+  .st-readiness > * + * { margin-block-start: var(--st-space-3); }
+  .st-readiness-list { padding-inline-start: var(--st-space-5); }
+  .st-readiness-list > li + li { margin-block-start: var(--st-space-4); }
+  .st-readiness-list li > * + * { margin-block-start: var(--st-space-2); }
+  .st-readiness-label { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--st-space-2) var(--st-space-4); }
+  .st-readiness-status { font-size: var(--st-text-sm); font-weight: 600; color: var(--st-warning-text); }
+  [data-ready="true"] > .st-readiness-label > .st-readiness-status { color: var(--st-success-text); }
+}

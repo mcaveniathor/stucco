@@ -4,7 +4,9 @@
 use stucco_core::{Asset, register_asset};
 
 mod choice;
+mod conflict_notice;
 mod control;
+pub use conflict_notice::ConflictNotice;
 mod error_summary;
 mod field;
 mod input;

@@ -7,6 +7,7 @@ pub struct Table<'a> {
     caption: String,
     header: Option<Row<'a>>,
     rows: Vec<Row<'a>>,
+    card_labels: Option<Vec<String>>,
 }
 impl<'a> Table<'a> {
     /// An empty table with a required accessible caption.
@@ -16,7 +17,18 @@ impl<'a> Table<'a> {
             caption: caption.into(),
             header: None,
             rows: vec![],
+            card_labels: None,
         }
+    }
+    /// Presents rows as labelled cards below 48rem of available container width.
+    /// Supply one label per column, in order, and use rows without cell spans.
+    /// Cells and controls render only once;
+    /// explicit table roles retain semantics when CSS changes their display.
+    /// Header links remain visible and keyboard accessible in the card layout.
+    /// Without CSS this is an ordinary table. Missing labels render as empty text.
+    pub fn card_labels(mut self, labels: impl IntoIterator<Item = impl Into<String>>) -> Self {
+        self.card_labels = Some(labels.into_iter().map(Into::into).collect());
+        self
     }
     /// Column headings.
     pub fn header(mut self, row: Row<'a>) -> Self {
@@ -33,19 +45,37 @@ passthrough!(Table<'_>);
 impl Render for Table<'_> {
     fn render(&self, cx: &mut Cx) {
         cx.require(&super::DATA);
-        let heading = self
-            .header
-            .as_ref()
-            .map(|r| el::thead().child(r.element(true)));
-        let body = el::tbody().children(self.rows.iter().map(|r| r.element(false)));
-        let table = el::table()
-            .class("st-table")
+        let responsive = self.card_labels.is_some();
+        let heading = self.header.as_ref().map(|r| {
+            let head = el::thead().child(r.element(true, self.card_labels.as_deref()));
+            if responsive {
+                head.attr("role", "rowgroup")
+            } else {
+                head
+            }
+        });
+        let mut body = el::tbody().children(
+            self.rows
+                .iter()
+                .map(|r| r.element(false, self.card_labels.as_deref())),
+        );
+        if responsive {
+            body = body.attr("role", "rowgroup");
+        }
+        let mut table = el::table().class("st-table");
+        if responsive {
+            table = table.attr("role", "table");
+        }
+        let table = table
             .child(el::caption().text(&self.caption))
             .child(heading)
             .child(body);
+        let mut wrapper = el::div().class("st-table-scroll");
+        if responsive {
+            wrapper = wrapper.class("st-table-cards");
+        }
         apply(
-            el::div()
-                .class("st-table-scroll")
+            wrapper
                 .attr("role", "region")
                 .aria("label", &self.caption)
                 .attr("tabindex", "0")
@@ -87,26 +117,64 @@ impl<'a> Row<'a> {
         self.cells.push((true, Slot::new(value), attrs));
         self
     }
-    fn element(&self, header: bool) -> stucco_core::el::Element<'_> {
-        apply(
-            el::tr().children(self.cells.iter().map(|(heading, value, attrs)| {
-                if *heading {
-                    el::th()
-                        .attr("scope", if header { "col" } else { "row" })
-                        .attrs(&attrs.without(&["scope"]))
-                        .child(value)
+    fn element<'s>(
+        &'s self,
+        header: bool,
+        labels: Option<&'s [String]>,
+    ) -> stucco_core::el::Element<'s> {
+        let mut row = el::tr().children(self.cells.iter().enumerate().map(
+            |(index, (heading, value, attrs))| {
+                let mut cell = if *heading {
+                    el::th().attr("scope", if header { "col" } else { "row" })
                 } else {
-                    el::td().attrs(attrs).child(value)
+                    el::td()
+                };
+                if labels.is_some() {
+                    cell = cell.attr(
+                        "role",
+                        if *heading {
+                            if header { "columnheader" } else { "rowheader" }
+                        } else {
+                            "cell"
+                        },
+                    );
                 }
-            })),
+                // Keep the ordinary table's attribute behavior unchanged.
+                let attrs = if *heading {
+                    attrs.without(&["scope"])
+                } else {
+                    attrs.clone()
+                };
+                cell = apply(cell, &attrs, if labels.is_some() { &["role"] } else { &[] });
+                if !header {
+                    if let Some(labels) = labels {
+                        cell = cell
+                            .child(
+                                el::span()
+                                    .class("st-table-card-label")
+                                    .aria("hidden", "true")
+                                    .text(labels.get(index).map_or("", String::as_str)),
+                            )
+                            .child(el::div().class("st-table-card-value").child(value));
+                        return cell;
+                    }
+                }
+                cell.child(value)
+            },
+        ));
+        if labels.is_some() {
+            row = row.attr("role", "row");
+        }
+        apply(
+            row,
             &self.attrs,
-            &[],
+            if labels.is_some() { &["role"] } else { &[] },
         )
     }
 }
 passthrough!(Row<'_>);
 impl Render for Row<'_> {
     fn render(&self, cx: &mut Cx) {
-        self.element(false).render(cx);
+        self.element(false, None).render(cx);
     }
 }
