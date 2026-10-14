@@ -222,3 +222,21 @@ fn script_text_cannot_enter_the_double_escaped_state() {
         "{upper}"
     );
 }
+
+#[test]
+fn svg_shapes_and_labels_escape_untrusted_content() {
+    let html = crate::to_html(
+        &super::svg()
+            .attr("viewBox", "0 0 100 100")
+            .attr("role", "img")
+            .aria("label", "Rate history")
+            .child(super::path().attr("d", "M 0 0 L 100 100"))
+            .child(super::text().text("<script>alert(1)</script>"))
+            .child(super::circle().attr("cx", "5\" onload=\"alert(1)")),
+    );
+    assert!(html.contains("<svg") && html.contains("</svg>"));
+    assert!(html.contains("viewbox=\"0 0 100 100\""));
+    assert!(html.contains("<path d=\"M 0 0 L 100 100\"></path>"));
+    assert!(!html.contains("<script>"));
+    assert!(!html.contains(" onload=\""));
+}

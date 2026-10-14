@@ -193,3 +193,25 @@ fn delete_order(id: u64) -> impl Render {
 ```
 
 After the redirect, show a `Toast::new("Order deleted").tone(Tone::Success)` on the page it lands on.
+
+## Use a server-side theme preference without JavaScript
+
+`Page::server_theme` renders an explicit scheme on the document and omits the
+localStorage initializer. Pass `None` to follow the OS through CSS; pass a scheme
+read from your own validated cookie or account preference to override it.
+
+```rust
+use stucco::{Bundle, Page, el};
+use stucco::theme::{Preset, Scheme};
+let bundle = Bundle::new(Preset::Slate);
+let html = Page::new(&bundle, "Account")
+    .server_theme(Some(Scheme::Dark))
+    .body(el::main().text("Server-rendered content"))
+    .render();
+assert!(!html.contains("<script"));
+```
+
+This does not disable component behavior: enhanced pages and components that need
+scripts still load those scripts. `el::svg`, `el::path`, `el::circle`, `el::line`,
+`el::polyline`, and `el::text` also support server-rendered charts with escaped
+attributes and labels, without a charting runtime.
