@@ -97,6 +97,7 @@ fn index_links_every_page() {
         "overlays.html",
         "tabs.html",
         "collections.html",
+        "workflows.html",
         "app.html",
     ] {
         assert!(html.contains(&format!("href=\"{page}\"")), "{page}");

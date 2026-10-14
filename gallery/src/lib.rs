@@ -21,6 +21,7 @@ mod shell;
 pub mod tabs_page;
 pub mod themes_page;
 pub mod typography_page;
+pub mod workflows_page;
 
 /// Layout styles for gallery pages (not part of the library).
 pub static GALLERY: Asset = Asset {
@@ -48,6 +49,12 @@ pub fn bundle() -> Bundle {
 /// Every gallery page as `(file name, HTML)`, rendered with `bundle` (which
 /// must contain the gallery's named themes; see [`bundle`]).
 pub fn pages(bundle: &Bundle) -> Vec<(String, String)> {
+    pages_at(bundle, "/")
+}
+
+/// Gallery pages hosted at a canonical root-relative `base`, ending in `/`.
+/// Workflow examples use this prefix in validated return destinations.
+pub fn pages_at(bundle: &Bundle, base: &str) -> Vec<(String, String)> {
     let mut pages = vec![
         ("index.html".to_owned(), index::index_page(bundle)),
         ("palette.html".to_owned(), palette::palette_page(bundle)),
@@ -62,6 +69,14 @@ pub fn pages(bundle: &Bundle) -> Vec<(String, String)> {
             collections_page::page(bundle),
         ),
         ("app.html".to_owned(), collections_page::app_page(bundle)),
+        (
+            "workflows.html".to_owned(),
+            workflows_page::page(bundle, false, base),
+        ),
+        (
+            "workflows-latest.html".to_owned(),
+            workflows_page::page(bundle, true, base),
+        ),
     ];
     pages.extend(tabs_page::pages(bundle));
     pages.extend(fixtures::fixtures(bundle));

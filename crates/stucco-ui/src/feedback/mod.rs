@@ -8,6 +8,9 @@
 //! assert!(to_html(&empty).contains("No orders"));
 //! assert!(to_html(&LiveRegion::new().child("Showing 25 orders")).contains("aria-live"));
 //! ```
+mod readiness;
+pub use readiness::{ReadinessPanel, Requirement};
+
 use crate::{passthrough::apply, typography::Heading};
 use stucco_core::{Attrs, Cx, Render, Slot, el};
 /// Feedback styles.

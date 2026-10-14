@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "playwright test"
+    "test": "playwright test",
+    "test:workflows": "playwright test --config playwright.workflows.config.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.0",

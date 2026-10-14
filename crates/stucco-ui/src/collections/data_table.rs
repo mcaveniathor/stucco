@@ -20,6 +20,7 @@ pub struct DataTable<'a, T> {
     query: Option<&'a CollectionQuery>,
     caps: Option<&'a Capabilities>,
     action: Href,
+    responsive: bool,
 }
 impl<'a, T: 'a> DataTable<'a, T> {
     /// Creates a table over already-loaded rows.
@@ -33,6 +34,7 @@ impl<'a, T: 'a> DataTable<'a, T> {
             query: None,
             caps: None,
             action: Href::new(""),
+            responsive: false,
         }
     }
     /// Uses a page's rows and metadata without duplicated state.
@@ -44,6 +46,14 @@ impl<'a, T: 'a> DataTable<'a, T> {
         Self::from_page(&collection.page, caption)
             .query(&collection.query)
             .capabilities(&collection.capabilities)
+    }
+    /// Uses labelled cards below 48rem of container width, with the same cells,
+    /// controls and column order as the desktop table. Put a record's primary
+    /// action in the first column to keep it prominent on narrow screens.
+    /// Sort links, filters and pagination remain available without JavaScript.
+    pub fn responsive(mut self) -> Self {
+        self.responsive = true;
+        self
     }
     /// Adds a column.
     pub fn column(mut self, col: Col<'a, T>) -> Self {
@@ -193,6 +203,9 @@ impl<T> Render for DataTable<'_, T> {
                 header = header.header_with_attrs(content, attrs);
             }
             let mut table = Table::new(&self.caption).header(header);
+            if self.responsive {
+                table = table.card_labels(self.columns.iter().map(|c| c.label.clone()));
+            }
             for record in self.rows {
                 let mut row = Row::new();
                 for column in &self.columns {
