@@ -28,22 +28,24 @@ for (const width of [320, 390, 1280]) {
     test("context survives detail links and form submissions without replacing the stale revision", async ({ page }) => {
       await page.goto("/workflows.html");
       await page.getByRole("link", { name: "Open 42", exact: true }).click();
+      await expect(page).toHaveURL(url => url.searchParams.get("record") === "42");
       const detail = new URL(page.url());
       expect(detail.searchParams.get("return_to")).toBe("/collections.html?dir=desc&page=2&q=Ada&sort=name");
       await expect(page.getByLabel("Customer", { exact: true })).toHaveValue("Ada (my unsaved edit)");
       await expect(page.locator('input[name="revision"]')).toHaveValue("v1");
       await page.getByLabel("Customer", { exact: true }).fill("My retained edit");
       await page.getByRole("button", { name: "Preview submission" }).click();
+      await expect(page).toHaveURL(url => url.searchParams.get("customer") === "My retained edit");
       const submitted = new URL(page.url());
-      expect(submitted.searchParams.get("customer")).toBe("My retained edit");
       expect(submitted.searchParams.get("revision")).toBe("v1");
       expect(submitted.searchParams.get("return_to")).toBe(detail.searchParams.get("return_to"));
       await page.getByRole("link", { name: "Discard entries and reload latest version" }).click();
+      await expect(page).toHaveURL(/\/workflows-latest\.html/);
       await expect(page.getByRole("group", { name: "This record has changed" })).toHaveCount(0);
       await expect(page.getByLabel("Customer", { exact: true })).toHaveValue("Ada (latest saved)");
       await expect(page.locator('input[name="revision"]')).toHaveValue("v2");
       await page.getByRole("link", { name: "Back to queue" }).click();
-      expect(new URL(page.url()).searchParams.get("page")).toBe("2");
+      await expect(page).toHaveURL(url => url.pathname === "/collections.html" && url.searchParams.get("page") === "2");
     });
 
     test("blockers include a reason, role guidance and a working remedy", async ({ page }) => {
@@ -57,12 +59,14 @@ for (const width of [320, 390, 1280]) {
     });
   });
   for (const colorScheme of ["light", "dark"] as const) {
-    test(`workflow accessibility at ${width}px in ${colorScheme}`, async ({ page }, testInfo) => {
-      await page.setViewportSize({ width, height: 900 });
-      await page.emulateMedia({ colorScheme });
-      await page.goto("/workflows.html");
-      expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-      await page.screenshot({ path: testInfo.outputPath("workflow.png"), fullPage: true });
+    test.describe(`workflow accessibility at ${width}px in ${colorScheme}`, () => {
+      test.use({ colorScheme, viewport: { width, height: 900 } });
+
+      test("has no axe violations", async ({ page }, testInfo) => {
+        await page.goto("/workflows.html");
+        expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+        await page.screenshot({ path: testInfo.outputPath("workflow.png"), fullPage: true });
+      });
     });
   }
 }

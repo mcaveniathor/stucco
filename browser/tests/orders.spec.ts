@@ -36,20 +36,22 @@ test("cursor, sorting and numbered navigation preserve state", async ({ page }) 
   await expect(page.getByRole("heading", { name: "No results" })).toBeVisible();
 });
 for (const scheme of ["light", "dark"] as const) {
-  test(`orders is accessible in ${scheme} at narrow width`, async ({ page }) => {
-    await page.emulateMedia({ colorScheme: scheme });
-    await page.setViewportSize({ width: 320, height: 800 });
-    await page.goto("/orders");
-    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-    const skip = page.getByRole("link", { name: "Skip to main content" });
-    // Some WebKit builds skip links according to the platform preference.
-    // Test activation there after focusing the link, and tab order elsewhere.
-    if (test.info().project.name === "webkit") await skip.focus();
-    else await page.keyboard.press("Tab");
-    await expect(skip).toBeFocused();
-    await page.keyboard.press("Enter");
-    await expect(page).toHaveURL(/#main$/);
+  test.describe(`orders in ${scheme}`, () => {
+    test.use({ colorScheme: scheme, viewport: { width: 320, height: 800 } });
+
+    test("is accessible at narrow width", async ({ page }) => {
+      await page.goto("/orders");
+      expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+      const skip = page.getByRole("link", { name: "Skip to main content" });
+      // Some WebKit builds skip links according to the platform preference.
+      // Test activation there after focusing the link, and tab order elsewhere.
+      if (test.info().project.name === "webkit") await skip.focus();
+      else await page.keyboard.press("Tab");
+      await expect(skip).toBeFocused();
+      await page.keyboard.press("Enter");
+      await expect(page).toHaveURL(/#main$/);
+    });
   });
 }
 test("server collections add no behavior module", async ({ page }) => {
