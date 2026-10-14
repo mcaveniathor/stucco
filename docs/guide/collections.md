@@ -173,3 +173,60 @@ Cursors are locators, not authorisation tokens: always scope queries to what the
 ## Embedded storage
 
 `stucco-redb` stores typed records in [redb](https://github.com/cberner/redb) with transactional secondary indexes and a `CollectionSource` implementation whose blocking scans run within a bounded budget. The [orders example](https://github.com/mcaveniathor/stucco/tree/main/examples/orders) shows the complete flow with 67 seeded records.
+
+## Responsive cards
+
+Opt in with `DataTable::responsive()`. Below 48rem of **container** width,
+rows become labelled cards; wider containers keep the table. Both layouts use
+the same cells, so a form, ID or primary action is rendered only once. Explicit
+table roles retain the row/column relationships, and header sort links remain
+visible and keyboard accessible. Without CSS it remains a native table.
+
+```rust
+let table = DataTable::from_collection(&orders, "Orders")
+    .responsive()
+    .action("/orders")
+    .columns(Order::columns());
+```
+
+Put the record's primary link in the first column (a `Col::custom` can render
+`ButtonLink`). Cards keep column order and display every value. For hand-built
+tables, `Table::card_labels(["Customer", "Status"])` supplies the mobile labels;
+use one label per column and rows without merged cells.
+
+## Returning to the same collection
+
+`ReturnContext` carries a local destination through links, forms and redirects.
+Build it from a trusted route and a validated `CollectionQuery`, or validate an
+incoming decoded `return_to` value against exact paths and query keys:
+
+```rust
+use stucco::{CollectionQuery, ReturnContext};
+use stucco::forms::HiddenInput;
+
+let query = CollectionQuery::default().with_search("Ada");
+let context = ReturnContext::collection("/orders", &query).unwrap();
+let detail = context.carry("/orders/42?tab=history#details").unwrap();
+let hidden = HiddenInput::new(ReturnContext::FIELD, context.as_str());
+let back_link = context.href();
+
+// On each subsequent request, validate the decoded query/form value again.
+let incoming = "/orders?q=Ada&page=2&sort=customer&dir=desc";
+let context = ReturnContext::parse(incoming,
+    &["/orders", "/review"],
+    &["q", "page", "sort", "dir", "per", "after", "before", "f.status"]);
+let destination = context.as_ref().map_or("/orders", ReturnContext::as_str);
+```
+
+Use `carry` for edit, cancel, reload and remedy links, a `HiddenInput` for POST
+forms, and the validated destination for a successful redirect. Unknown keys
+and nested `return_to` values are dropped; permitted duplicate keys use their
+last value. Paths must be canonical root-relative ASCII paths: no origins,
+encoded segments, dot segments, repeated slashes, backslashes or fragments.
+Invalid or oversized input returns `None` so the handler can choose a known
+fallback. `carry` preserves a detail link's other query parameters and fragment.
+
+Path/query allowlists belong to the application. `ReturnContext` prevents an
+external return redirect; it neither authorizes access nor validates filter
+values. Parse those values with your normal query parser at the destination.
+Do not put secrets in return context: it travels in URLs.

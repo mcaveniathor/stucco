@@ -21,6 +21,7 @@ pub struct FormState {
     values: BTreeMap<String, Vec<String>>,
     errors: BTreeMap<String, Vec<String>>,
     form_errors: Vec<String>,
+    conflict: Option<RevisionConflict>,
 }
 
 impl FormState {
@@ -51,6 +52,27 @@ impl FormState {
     pub fn with_form_error(mut self, message: impl Into<String>) -> FormState {
         self.form_errors.push(message.into());
         self
+    }
+
+    /// Records a failed atomic revision check without changing submitted values.
+    /// Keep the submitted revision in subsequent forms; never replace it with
+    /// the current revision until the user deliberately reloads/reconciles.
+    /// The application must perform the comparison atomically in storage.
+    pub fn with_conflict(
+        mut self,
+        submitted: impl Into<String>,
+        current: impl Into<String>,
+    ) -> Self {
+        self.conflict = Some(RevisionConflict {
+            submitted: submitted.into(),
+            current: current.into(),
+        });
+        self
+    }
+
+    /// The conflict reported by the application, if any.
+    pub fn conflict(&self) -> Option<&RevisionConflict> {
+        self.conflict.as_ref()
     }
 
     /// Parses an `application/x-www-form-urlencoded` body, keeping repeated
@@ -101,9 +123,28 @@ impl FormState {
             .map(|(name, messages)| (name.as_str(), messages.as_slice()))
     }
 
-    /// Whether any field or form error is present.
+    /// Whether any field error, form error or revision conflict is present.
     pub fn has_errors(&self) -> bool {
-        !self.form_errors.is_empty() || self.errors.values().any(|e| !e.is_empty())
+        self.conflict.is_some()
+            || !self.form_errors.is_empty()
+            || self.errors.values().any(|e| !e.is_empty())
+    }
+}
+
+/// Opaque revisions from a rejected save. No ordering or comparison is implied.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RevisionConflict {
+    submitted: String,
+    current: String,
+}
+impl RevisionConflict {
+    /// Revision the user's edit was based on.
+    pub fn submitted(&self) -> &str {
+        &self.submitted
+    }
+    /// Revision observed by the application's failed atomic save.
+    pub fn current(&self) -> &str {
+        &self.current
     }
 }
 
@@ -128,6 +169,22 @@ mod tests {
         assert_eq!(names, ["email"]);
     }
 
+    #[test]
+    fn conflicts_preserve_values_and_prevent_validation_success() {
+        let state = FormState::from_urlencoded(b"revision=v1&name=My+edit&tags=a&tags=b")
+            .with_error("name", "Check this name")
+            .with_conflict("v1", "v2");
+        assert_eq!(state.value("revision"), Some("v1"));
+        assert_eq!(state.values("tags"), ["a", "b"]);
+        assert_eq!(state.errors("name"), ["Check this name"]);
+        assert!(state.has_errors());
+        let conflict_only = FormState::new().with_conflict("one", "two");
+        assert!(
+            crate::Validator::new(conflict_only)
+                .finish(|| Some(42))
+                .is_err()
+        );
+    }
     #[test]
     fn urlencoded_bodies_decode_and_drop_the_csrf_field() {
         let s = FormState::from_urlencoded(b"a=1&b=x%26y&a=2&empty=&_csrf=secret&flag");

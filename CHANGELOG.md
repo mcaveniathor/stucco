@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Responsive `DataTable` cards and `Table::card_labels` adapt to container width with one copy of each cell/control and retained table semantics.
+- `ReturnContext` validates local return destinations and carries collection state through links, forms and redirects.
+- `FormState::with_conflict`, `RevisionConflict` and `ConflictNotice` support recoverable stale-edit feedback without changing submitted values or revision tokens. `ErrorSummary` also reports conflicts.
+- `ReadinessPanel` and `Requirement` present action prerequisites with reasons, role guidance and remedy links.
+- Workflow gallery examples, Rust regression tests, and Playwright desktop/mobile and accessibility checks cover the additions.
+
 ## 0.2.1 — 2026-10-02
 
 Interactive components arrive: dialogs, menus, toasts, tooltips and tabs,

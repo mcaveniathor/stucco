@@ -11,8 +11,8 @@ Components are grouped into families, each behind a cargo feature. The facade en
 | `layout` | `Stack`, `Cluster`, `Grid`, `Center`, `Container`, `Sidebar`, `Switcher`, `Surface`, `ThemeScope`, `SkipLink` |
 | `typography` | `Heading`, `Text`, `Link`, `Code`, `Kbd` |
 | `actions` | `Button`, `ButtonLink`, `IconButton` |
-| `forms` | `Form`, `Field`, `Input`, `Select`, `Textarea`, `Checkbox`, `RadioGroup`, `Fieldset`, `ErrorSummary` |
-| `feedback` | `EmptyState`, `LiveRegion` |
+| `forms` | `Form`, `Field`, `Input`, `Select`, `Textarea`, `Checkbox`, `RadioGroup`, `Fieldset`, `ErrorSummary`, `ConflictNotice` |
+| `feedback` | `EmptyState`, `LiveRegion`, `ReadinessPanel`, `Requirement` |
 | `navigation` | `Pagination`, `NavLink`, `Tabs` |
 | `overlay` | `Dialog`, `Menu`, `Toast`, `Tooltip` |
 | `data` | `Card`, `Panel`, `Table`, `ResultCount` |
@@ -141,3 +141,27 @@ Components carry the accessibility work so pages get it without extra effort:
 - Every theme passes WCAG contrast checks for its text and interface colours before it builds.
 
 The browser test suite runs axe against every gallery page in light and dark schemes.
+
+## Action readiness
+
+`ReadinessPanel` presents the application's prerequisite checks with textual
+statuses, concrete reasons, optional role guidance and ordinary remedy links:
+
+```rust
+use stucco::feedback::{ReadinessPanel, Requirement};
+
+let panel = ReadinessPanel::new("Ready to publish")
+    .requirement(Requirement::ready("Customer details"))
+    .requirement(Requirement::blocked("Approval", "A review is still needed.")
+        .guidance("An editor can approve this record.")
+        .remedy("Open review", "/orders/42/review"));
+```
+
+The panel labels its region, counts completed checks and lists prerequisites
+in application order. Empty panels say that no checks are available. Status
+text conveys readiness without relying on color. A remedy can use a URL from
+`ReturnContext::carry` to keep the user's queue context.
+
+This is a snapshot. Applications own eligibility, role rules and the actual
+submission controls, and must recheck every prerequisite when executing an
+action. Stucco does not infer permission from the displayed checks.

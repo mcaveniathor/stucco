@@ -29,3 +29,24 @@
   .st-table [data-kind="date"] { font-variant-numeric: tabular-nums; }
   .st-result-count { color: var(--st-text-muted); font-size: var(--st-text-sm); }
 }
+
+@layer stucco.components {
+  .st-table-cards { container: st-table-cards / inline-size; }
+  .st-table-card-label { display: none; }
+  @container st-table-cards (width < 48rem) {
+    .st-table-cards > .st-table { display: block; }
+    .st-table-cards > .st-table > caption { display: block; }
+    .st-table-cards > .st-table > thead { display: block; }
+    .st-table-cards > .st-table > thead > tr { display: flex; flex-wrap: wrap; }
+    .st-table-cards > .st-table > thead th { white-space: normal; }
+    .st-table-cards > .st-table > tbody { display: grid; gap: var(--st-space-4); padding: var(--st-space-4); }
+    .st-table-cards > .st-table > tbody > tr { display: block; padding: var(--st-space-3); border: var(--st-line, 1px) solid var(--st-border); border-radius: var(--st-surface-radius); background: var(--st-surface); box-shadow: var(--st-card-shadow); }
+    .st-table-cards > .st-table > tbody > tr > * { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: var(--st-space-3); white-space: normal; overflow-wrap: anywhere; text-align: start; border: 0; background: none; padding: var(--st-space-2); }
+    .st-table-cards .st-table-card-label { display: block; font-size: var(--st-text-sm); color: var(--st-text-muted); font-weight: 600; }
+    .st-table-cards .st-table-card-value { min-inline-size: 0; }
+    .st-table-cards .st-table-card-value :where(input, select, textarea, button, a) { max-inline-size: 100%; }
+  }
+  @media print {
+    .st-table-cards { container-type: normal; }
+  }
+}

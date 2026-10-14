@@ -59,7 +59,7 @@ pub fn build(out: &Path, options: &Options) -> io::Result<Vec<String>> {
         files.push((path, html.into_bytes()));
     }
     // The fixtures exist for the browser tests, not for readers.
-    for (name, html) in gallery::pages(site.bundle())
+    for (name, html) in gallery::pages_at(site.bundle(), &format!("{}gallery/", site.base()))
         .into_iter()
         .filter(|(name, _)| !name.starts_with("fixtures/"))
     {

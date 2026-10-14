@@ -79,6 +79,9 @@ impl Render for ErrorSummary<'_> {
         cx.require(&FORMS);
         let title_id = cx.id("errors");
         let mut list = el::ul().class("st-error-summary-list");
+        if self.state.conflict().is_some() {
+            list = list.child(el::li().text("This record changed. Your changes were not saved; reload the latest version before editing again."));
+        }
         for message in self.state.form_errors() {
             list = list.child(el::li().text(message.clone()));
         }

@@ -103,3 +103,38 @@ match result {
 ## CSRF
 
 `Form::csrf` adds the token field to a POST form. Issuing and verifying tokens is up to your application today; a signed double-submit layer for `stucco-tower` is planned.
+
+## Revision conflicts
+
+When an atomic save rejects a stale revision, record the failure on the submitted
+`FormState` and respond with `409 Conflict`. `with_conflict` stores opaque
+submitted/current revisions without changing any submitted values and makes
+`has_errors()` true. Bind controls to that state and keep the **submitted**
+revision in the form:
+
+```rust
+use stucco::{FormState, ReturnContext};
+use stucco::forms::{ConflictNotice, Field, Form, HiddenInput, Input};
+
+let submitted = FormState::from_urlencoded(b"customer=My+edit&revision=v1");
+// The storage transaction rejected expected revision v1 and observed v2.
+let state = submitted.with_conflict("v1", "v2");
+let context = ReturnContext::parse("/orders?page=2", &["/orders"], &["page"]).unwrap();
+let form = Form::post("/orders/42/edit")
+    .child(ConflictNotice::new(&state, context.carry("/orders/42/edit").unwrap()))
+    .child(HiddenInput::new("revision", state.conflict().unwrap().submitted()))
+    .child(HiddenInput::new(ReturnContext::FIELD, context.as_str()))
+    .child(Field::new("Customer", Input::text("customer")).bind(&state));
+```
+
+`ConflictNotice` explains the failure, takes focus on initial page load, and
+provides an ordinary GET link explicitly labelled as discarding entries and
+reloading. It renders nothing without a conflict. No client behavior silently
+refreshes the revision or overwrites edits. `ErrorSummary` also reports a
+conflict; if both are present, set `ConflictNotice::focus(false)` so only the
+summary requests focus.
+
+The handler must compare the expected revision and save atomically in storage,
+recheck authorization, and retain the original revision after any validation
+failure. Setting `with_conflict` does not perform a save or compare revisions.
+Only a deliberate reload or reconciliation should adopt a newer revision.

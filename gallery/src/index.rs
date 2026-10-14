@@ -5,7 +5,12 @@ use stucco::layout::{Container, Grid, SkipLink, Stack};
 use stucco::typography::{Heading, Link, Text};
 use stucco::{Bundle, Measure, Page, Size, Space, Tone, el};
 
-const PAGES: [(&str, &str, &str); 10] = [
+const PAGES: [(&str, &str, &str); 11] = [
+    (
+        "workflows.html",
+        "Workflows",
+        "Responsive cards, return context, conflicts and action readiness.",
+    ),
     (
         "collections.html",
         "Data and collections",

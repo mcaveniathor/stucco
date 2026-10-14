@@ -20,6 +20,7 @@ mod href;
 mod identity;
 mod page;
 mod render;
+mod return_context;
 mod validate;
 
 pub use asset::{Asset, AssetRef, AssetRequirements, Behavior, is_registered, registered_assets};
@@ -30,11 +31,12 @@ pub use collection::{
     Capabilities, Collection, CollectionPage, CollectionQuery, ColumnKind, ColumnSpec, Cursor,
     Direction, Filter, Window,
 };
-pub use form_state::FormState;
+pub use form_state::{FormState, RevisionConflict};
 pub use fragment::{RenderedFragment, render_fragment};
 pub use href::Href;
 #[doc(hidden)]
 pub use inventory;
 pub use page::{Delivery, Meta, Page, WithBody};
 pub use render::{Cx, Raw, Render, RenderFn, Slot, render_fn, to_html};
+pub use return_context::ReturnContext;
 pub use validate::{Check, Validator};

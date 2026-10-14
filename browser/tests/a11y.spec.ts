@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-for (const path of [
+const paths = [
   "/index.html",
   "/palette.html",
   "/themes.html",
@@ -15,15 +15,21 @@ for (const path of [
   "/collections.html",
   "/app.html",
   "/fixtures/enhanced.html",
-]) {
-  for (const colorScheme of ["light", "dark"] as const) {
-    test(`${path} has no axe violations (${colorScheme})`, async ({ page }) => {
-      await page.emulateMedia({ colorScheme });
-      await page.goto(path);
-      const results = await new AxeBuilder({ page }).analyze();
-      expect(results.violations).toEqual([]);
-    });
-  }
+];
+
+for (const colorScheme of ["light", "dark"] as const) {
+  test.describe(`${colorScheme} scheme`, () => {
+    // Set the scheme before creating any page, including axe's analysis page.
+    test.use({ colorScheme });
+
+    for (const path of paths) {
+      test(`${path} has no axe violations (${colorScheme})`, async ({ page }) => {
+        await page.goto(path);
+        const results = await new AxeBuilder({ page }).analyze();
+        expect(results.violations).toEqual([]);
+      });
+    }
+  });
 }
 
 test.describe("without JavaScript", () => {
