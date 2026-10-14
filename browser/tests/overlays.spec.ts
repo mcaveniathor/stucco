@@ -185,8 +185,12 @@ test("the fallback opens and closes dialogs where browsers lack commands", async
 
 test("open dialogs and menus have no axe violations", async ({ page }) => {
   await page.goto("/overlays.html");
+  // Exercise the readiness check even on fast machines: visible is not opaque.
+  await page.addStyleTag({ content: ".st-dialog { transition-duration: 2s; }" });
   await page.getByRole("button", { name: "Delete order" }).first().click();
   await expect(dialog(page)).toBeVisible();
+  // Contrast during the opening fade is not the dialog's settled contrast.
+  await expect(dialog(page)).toHaveCSS("opacity", "1");
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Actions" }).click();
