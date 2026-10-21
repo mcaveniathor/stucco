@@ -36,14 +36,17 @@ mod codec;
 mod collection;
 mod error;
 mod index;
+mod revision;
 mod scan;
 mod store;
 mod table;
+mod write;
 pub use codec::{Codec, KeyCodec, PostcardCodec, U64Key, Utf8Key};
 #[cfg(feature = "tokio")]
 pub use collection::{CollectionMapping, RedbCollection};
 pub use error::StoreError;
 pub use index::IndexTable;
+pub use revision::{InvalidRevision, Revision};
 pub use scan::ScanRequest;
 pub use store::Store;
 pub use table::Table;
