@@ -1,9 +1,10 @@
 #![cfg(feature = "collections")]
 use stucco_core::{
-    Capabilities, CollectionPage, CollectionQuery, ColumnKind, ColumnSpec, Direction, Filter,
+    Capabilities, CollectionPage, CollectionQuery, ColumnKind, ColumnSpec, Direction, Filter, Slot,
     Window, to_html,
 };
 use stucco_ui::collections::{Col, DataTable};
+use stucco_ui::data::Badge;
 #[derive(Debug)]
 struct Record {
     name: String,
@@ -17,6 +18,40 @@ fn caps() -> Capabilities {
         total_count: true,
         offset: true,
     }
+}
+#[test]
+fn cell_replaces_rendering_and_keeps_the_filter() {
+    let rows = [Record {
+        name: "Ada".into(),
+        status: "paid".into(),
+    }];
+    let capabilities = Capabilities {
+        sortable: vec!["status".into()],
+        ..caps()
+    };
+    let column = Col::enumeration(
+        "status",
+        "Status",
+        vec![("paid".into(), "Paid".into())],
+        |r: &Record| r.status.clone(),
+    )
+    .sortable()
+    .filter()
+    .cell(|r| Slot::new(Badge::new(r.status.clone())));
+    assert_eq!(
+        column.spec().kind,
+        ColumnKind::Enumeration(vec!["paid".into()])
+    );
+    let html = to_html(
+        &DataTable::new(&rows, "Orders")
+            .capabilities(&capabilities)
+            .column(column),
+    );
+    assert!(html.contains("name=\"f.status\""), "{html}");
+    assert!(html.contains("data-sortable=\"true\""), "{html}");
+    let cells = html.split("<tbody>").nth(1).unwrap();
+    assert!(cells.contains("class=\"st-badge\""), "{html}");
+    assert!(!cells.contains("st-tag"), "{html}");
 }
 #[test]
 fn server_controls_preserve_query_and_use_real_table_headers() {

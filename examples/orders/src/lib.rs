@@ -90,6 +90,15 @@ fn shell<'a>(main: impl Render + 'a) -> AppShell<'a> {
         .main(main)
 }
 
+fn tone_of(status: &str) -> Tone {
+    match status {
+        "pending" => Tone::Warning,
+        "paid" => Tone::Info,
+        "shipped" => Tone::Success,
+        _ => Tone::Default,
+    }
+}
+
 async fn list(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
@@ -115,7 +124,19 @@ async fn list(
                 } else {
                     "/orders"
                 })
-                .columns(Order::columns())
+                .columns(Order::columns().into_iter().map(|column| {
+                    if column.spec().key == "status" {
+                        column.cell(|o| {
+                            Slot::new(
+                                Badge::new(o.status.clone())
+                                    .tone(tone_of(&o.status))
+                                    .data("value", o.status.clone()),
+                            )
+                        })
+                    } else {
+                        column
+                    }
+                }))
                 .column(actions);
             cx.title("Orders — stucco").app(
                 AppShell::new()

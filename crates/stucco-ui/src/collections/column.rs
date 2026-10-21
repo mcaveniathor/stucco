@@ -78,6 +78,12 @@ impl<'a, T: 'a> Col<'a, T> {
         self.render = Box::new(move |r| Slot::new(show(r)));
         self
     }
+    /// Replaces cell rendering with arbitrary safe content. The column keeps
+    /// its kind, sorting, search and filter configuration for the underlying value.
+    pub fn cell(mut self, render: impl Fn(&T) -> Slot<'a> + 'a) -> Self {
+        self.render = Box::new(render);
+        self
+    }
     /// Requests sorting if the backend supports it.
     pub fn sortable(mut self) -> Self {
         if !matches!(self.spec.kind, ColumnKind::Custom) {

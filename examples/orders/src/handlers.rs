@@ -8,7 +8,6 @@ use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use stucco::FormState;
 use stucco::forms::HiddenInput;
-use stucco::layout::VisuallyHidden;
 use stucco::prelude::*;
 use stucco::server::{CsrfToken, SeeOther, Submission};
 use stucco_redb::{Revision, StoreError};
@@ -90,7 +89,9 @@ pub(crate) fn row_actions(order: &Order, revision: Revision, csrf: &str) -> impl
     let dialog = delete_dialog(order, revision, csrf);
     let menu = Menu::new((
         "Actions",
-        VisuallyHidden::new(format!(" for order {}", order.id)),
+        el::span()
+            .class("st-sr-only")
+            .text(format!(" for order {}", order.id)),
     ))
     .popover_id(&format!("order-{}-actions", order.id))
     .variant(Variant::Ghost)
@@ -160,19 +161,23 @@ pub(crate) async fn show(State(state): State<AppState>, cx: PageCx, path: IdPath
                 .link_opener("Delete…", format!("/orders/{id}/delete"))
                 .variant(Variant::Danger),
         );
-    let details = el::dl()
-        .child(el::dt().text("Customer"))
-        .child(el::dd().text(order.customer.clone()))
-        .child(el::dt().text("Status"))
-        .child(el::dd().text(order.status.clone()))
-        .child(el::dt().text("Total"))
-        .child(el::dd().text(money(&order)))
-        .child(el::dt().text("Created"))
-        .child(el::dd().text(order.created.clone()));
+    let details = DescriptionList::new()
+        .item("Customer", order.customer.clone())
+        .item("Status", order.status.clone())
+        .item("Total", money(&order))
+        .item("Created", order.created.clone());
     cx.title(format!("Order {id} — stucco"))
         .app(shell(
             Stack::new()
-                .child(PageHeader::new(format!("Order {id}")).actions(actions))
+                .child(
+                    PageHeader::new(format!("Order {id}"))
+                        .breadcrumbs(
+                            Breadcrumbs::new()
+                                .link("Orders", "/orders")
+                                .current(format!("Order {id}")),
+                        )
+                        .actions(actions),
+                )
                 .child(details)
                 .child(dialog),
         ))
@@ -201,7 +206,14 @@ fn edit_page(cx: &PageCx, id: u64, state: &FormState, revision: &str) -> Respons
     cx.title(format!("Edit order {id} — stucco"))
         .app(shell(
             Stack::new()
-                .child(PageHeader::new(format!("Edit order {id}")))
+                .child(
+                    PageHeader::new(format!("Edit order {id}")).breadcrumbs(
+                        Breadcrumbs::new()
+                            .link("Orders", "/orders")
+                            .link(format!("Order {id}"), format!("/orders/{id}"))
+                            .current("Edit"),
+                    ),
+                )
                 // The form's error summary already takes focus on a conflict.
                 .child(ConflictNotice::new(state, format!("/orders/{id}/edit")).focus(false))
                 .child(order_form(
@@ -297,7 +309,14 @@ fn confirm_page(cx: &PageCx, order: &Order, state: &FormState, revision: &str) -
     cx.title(format!("Delete order {id}? — stucco"))
         .app(shell(
             Stack::new()
-                .child(PageHeader::new(format!("Delete order {id}?")))
+                .child(
+                    PageHeader::new(format!("Delete order {id}?")).breadcrumbs(
+                        Breadcrumbs::new()
+                            .link("Orders", "/orders")
+                            .link(format!("Order {id}"), format!("/orders/{id}"))
+                            .current("Delete"),
+                    ),
+                )
                 .child(ConflictNotice::new(state, format!("/orders/{id}/delete")))
                 .child(Text::new(format!(
                     "The order for {} is removed. This can't be undone.",

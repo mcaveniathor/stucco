@@ -117,6 +117,66 @@ fn order<'a>(csrf: &'a str, customer: &'a str, total: &'a str) -> Vec<(&'a str, 
 }
 
 #[tokio::test]
+async fn statuses_render_as_badges() {
+    let mut c = Client::new();
+    let reply = c.get("/orders").await;
+    assert_eq!(reply.status, StatusCode::OK);
+    for (status, tone) in [
+        ("pending", "warning"),
+        ("paid", "info"),
+        ("shipped", "success"),
+    ] {
+        let badge = reply
+            .body
+            .split("<span ")
+            .find(|span| span.contains(&format!("data-value=\"{status}\"")))
+            .unwrap();
+        let badge = badge.split("</span>").next().unwrap();
+        assert!(badge.contains("class=\"st-badge\""), "{badge}");
+        assert!(badge.contains(&format!("data-tone=\"{tone}\"")), "{badge}");
+        assert!(badge.ends_with(&format!(">{status}")), "{badge}");
+    }
+    let filtered = c.get("/orders?f.status=paid").await;
+    assert_eq!(filtered.status, StatusCode::OK);
+    let rows = filtered.body.split("<tbody>").nth(1).unwrap();
+    assert!(rows.contains("data-value=\"paid\""));
+    assert!(!rows.contains("data-value=\"pending\""));
+    assert!(!rows.contains("data-value=\"shipped\""));
+}
+
+#[tokio::test]
+async fn detail_page_uses_a_description_list_and_breadcrumbs() {
+    let mut c = Client::new();
+    let reply = c.get("/orders/1").await;
+    assert_eq!(reply.status, StatusCode::OK);
+    assert!(reply.body.contains("class=\"st-dl\""));
+    assert!(reply.body.contains("aria-label=\"Breadcrumb\""));
+    assert!(reply.body.contains("href=\"/orders\""));
+    assert!(reply.body.contains("aria-current=\"page\">Order 1<"));
+}
+
+#[tokio::test]
+async fn edit_and_delete_pages_have_breadcrumbs() {
+    let mut c = Client::new();
+    for (path, current) in [("/orders/1/edit", "Edit"), ("/orders/1/delete", "Delete")] {
+        let reply = c.get(path).await;
+        assert_eq!(reply.status, StatusCode::OK);
+        let trail = reply
+            .body
+            .split("aria-label=\"Breadcrumb\"")
+            .nth(1)
+            .unwrap();
+        let trail = trail.split("</nav>").next().unwrap();
+        assert!(trail.contains("href=\"/orders\">Orders</a>"), "{trail}");
+        assert!(trail.contains("href=\"/orders/1\">Order 1</a>"), "{trail}");
+        assert!(
+            trail.contains(&format!("aria-current=\"page\">{current}<")),
+            "{trail}"
+        );
+    }
+}
+
+#[tokio::test]
 async fn valid_create_redirects_and_flashes() {
     let mut c = Client::new();
     let form = c.get("/orders/new").await;
