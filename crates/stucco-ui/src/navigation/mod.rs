@@ -7,11 +7,15 @@
 //!     .cursors(Cursor::new("next"), None);
 //! assert!(to_html(&nav).contains("after=next"));
 //! ```
+mod breadcrumbs;
 mod nav_link;
 mod pagination;
+mod steps;
 mod tabs;
+pub use breadcrumbs::Breadcrumbs;
 pub use nav_link::NavLink;
 pub use pagination::Pagination;
+pub use steps::Steps;
 pub use tabs::Tabs;
 /// Navigation stylesheet.
 pub static NAVIGATION: stucco_core::Asset = stucco_core::Asset {
@@ -21,3 +25,5 @@ pub static NAVIGATION: stucco_core::Asset = stucco_core::Asset {
     deps: &[],
 };
 stucco_core::register_asset!(NAVIGATION);
+#[cfg(test)]
+mod tests;
