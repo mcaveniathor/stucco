@@ -162,3 +162,23 @@
     .st-theme-scope { background-image: none; }
   }
 }
+
+@layer stucco.components {
+  /* Disclosure: a native details element with its marker replaced by a
+     chevron that turns when open. */
+  .st-disclosure { border-block-end: var(--st-line, 1px) solid var(--st-border); }
+  .st-disclosure > summary {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--st-space-3);
+    padding-block: var(--st-space-3); cursor: pointer; list-style: none; font-weight: 600; overflow-wrap: anywhere;
+  }
+  .st-disclosure > summary::-webkit-details-marker { display: none; }
+  .st-disclosure > summary > :is(h2, h3, h4, h5, h6) { margin: 0; font-size: inherit; font-weight: inherit; }
+  .st-disclosure > summary > svg { flex: none; inline-size: 1.25rem; block-size: 1.25rem; transition: transform 150ms ease; }
+  .st-disclosure[open] > summary > svg { transform: rotate(180deg); }
+  .st-disclosure > summary:focus-visible { outline: 2px solid var(--st-focus, var(--st-accent)); outline-offset: 2px; border-radius: var(--st-radius-sm); }
+  .st-disclosure-body { padding-block-end: var(--st-space-4); }
+  .st-accordion { border-block-start: var(--st-line, 1px) solid var(--st-border); }
+  @media (prefers-reduced-motion: reduce) {
+    .st-disclosure > summary > svg { transition: none; }
+  }
+}

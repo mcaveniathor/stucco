@@ -163,3 +163,82 @@ fn of_takes_every_child_at_once() {
         to_html(&Cluster::new().child("x"))
     );
 }
+
+#[test]
+fn disclosure_is_native_details() {
+    let html = to_html(&Disclosure::new("Shipping <details>").child("Body"));
+    assert!(
+        html.starts_with(r#"<details class="st-disclosure"><summary>"#),
+        "{html}"
+    );
+    assert!(html.contains("Shipping &lt;details&gt;"), "{html}");
+    assert!(html.contains(r#"aria-hidden="true""#), "{html}");
+    assert!(
+        html.contains(r#"<div class="st-disclosure-body">Body</div></details>"#),
+        "{html}"
+    );
+    let open = to_html(&Disclosure::new("x").open(true));
+    assert!(
+        open.starts_with(r#"<details class="st-disclosure" open>"#),
+        "{open}"
+    );
+}
+
+#[test]
+fn disclosure_heading_clamps() {
+    assert!(to_html(&Disclosure::new("x").heading(1)).contains("<summary><h2>x</h2>"));
+    assert!(to_html(&Disclosure::new("x").heading(9)).contains("<summary><h6>x</h6>"));
+    assert!(to_html(&Disclosure::new("x").heading(3)).contains("<summary><h3>x</h3>"));
+}
+
+/// Every `name="…"` value in `html`.
+fn names(html: &str) -> Vec<&str> {
+    html.split(r#" name=""#)
+        .skip(1)
+        .map(|r| &r[..r.find('"').unwrap()])
+        .collect()
+}
+
+#[test]
+fn exclusive_accordion_shares_one_name() {
+    let html = to_html(
+        &Accordion::new()
+            .item("A", "a")
+            .item("B", "b")
+            .item_open("C", "c")
+            .exclusive(),
+    );
+    assert_eq!(html.matches("<details").count(), 3, "{html}");
+    let names = names(&html);
+    assert_eq!(names.len(), 3, "{html}");
+    assert!(
+        names.iter().all(|n| *n == names[0] && !n.is_empty()),
+        "{html}"
+    );
+    assert_eq!(html.matches(" open").count(), 1, "{html}");
+}
+
+#[test]
+fn exclusive_accordions_get_distinct_names() {
+    let a = Accordion::new().item("A", "a").exclusive();
+    let b = Accordion::new().item("B", "b").exclusive();
+    let html = to_html(&(a, b));
+    let names = names(&html);
+    assert_eq!(names.len(), 2, "{html}");
+    assert_ne!(names[0], names[1], "{html}");
+}
+
+#[test]
+fn non_exclusive_accordion_has_no_name() {
+    let html = to_html(&Accordion::new().item("A", "a").heading(4));
+    assert!(!html.contains(" name="), "{html}");
+    assert!(html.contains("<summary><h4>A</h4>"), "{html}");
+}
+
+#[test]
+fn empty_accordion_is_an_empty_wrapper() {
+    assert_eq!(
+        to_html(&Accordion::new()),
+        r#"<div class="st-accordion"></div>"#
+    );
+}

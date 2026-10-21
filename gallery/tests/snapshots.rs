@@ -60,6 +60,7 @@ fn component_pages_render_every_family() {
     page_snapshot("actions", gallery::actions_page::page(&bundle), &bundle);
     page_snapshot("forms", gallery::forms_page::page(&bundle), &bundle);
     page_snapshot("overlays", gallery::overlays_page::page(&bundle), &bundle);
+    page_snapshot("display", gallery::display_page::page(&bundle), &bundle);
     for (file, html) in gallery::tabs_page::pages(&bundle) {
         page_snapshot(file.trim_end_matches(".html"), html, &bundle);
     }
@@ -95,6 +96,7 @@ fn index_links_every_page() {
         "actions.html",
         "forms.html",
         "overlays.html",
+        "display.html",
         "tabs.html",
         "collections.html",
         "workflows.html",

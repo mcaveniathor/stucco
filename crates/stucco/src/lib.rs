@@ -76,10 +76,31 @@ pub mod theme {
 ///     .render();
 /// assert!(html.contains(r#"<main id="main">"#));
 /// ```
+///
+/// Status, progress and disclosure components come with it too:
+///
+/// ```
+/// use stucco::prelude::*;
+///
+/// let details = (
+///     Breadcrumbs::new().link("Orders", "/orders").current("Order 42"),
+///     Steps::new("Checkout").step("Cart", "/cart").step("Pay", "/pay").current(1),
+///     Avatar::new("Ada Lovelace").decorative(),
+///     Badge::new("Paid").tone(Tone::Success),
+///     DescriptionList::new().item("Total", "$12.50"),
+///     Stat::new("Orders", "128").change("12%", Trend::Up),
+///     Progress::new("Import", 42.0, 100.0),
+///     Meter::new("Storage", 7.2, 0.0, 10.0),
+///     Callout::new(Tone::Warning).title("Payment overdue"),
+///     Accordion::new().item("Shipping", Disclosure::new("Courier").child("Two days")),
+/// );
+/// assert!(stucco::to_html(&details).contains("st-callout"));
+/// ```
 pub mod prelude {
     pub use crate::theme::{Preset, Random, Seeded, Theme};
     pub use crate::{
-        Attrs, Bundle, Cx, Href, Measure, Page, PageExt, Render, Size, Space, Tone, Variant, el,
+        Attrs, Bundle, Cx, Href, Measure, Page, PageExt, Render, Size, Space, Tone, Trend, Variant,
+        el,
     };
 
     #[cfg(feature = "actions")]
@@ -89,9 +110,12 @@ pub mod prelude {
     #[cfg(feature = "collections")]
     pub use crate::collections::{Col, Columns, DataTable};
     #[cfg(feature = "data")]
-    pub use crate::data::{Card, Panel, Row, Table};
+    pub use crate::data::{Avatar, Badge, Card, DescriptionList, Panel, Row, Stat, Table};
     #[cfg(feature = "feedback")]
-    pub use crate::feedback::{EmptyState, FlashMessages, LiveRegion, ReadinessPanel, Requirement};
+    pub use crate::feedback::{
+        Callout, EmptyState, FlashMessages, LiveRegion, Meter, Progress, ReadinessPanel,
+        Requirement,
+    };
     #[cfg(feature = "forms")]
     pub use crate::forms::{
         Checkbox, ConflictNotice, ErrorSummary, Field, Fieldset, Form, Input, RadioGroup, Select,
@@ -99,10 +123,11 @@ pub mod prelude {
     };
     #[cfg(feature = "layout")]
     pub use crate::layout::{
-        Center, Cluster, Container, Grid, Separator, Sidebar, Stack, Switcher,
+        Accordion, Center, Cluster, Container, Disclosure, Grid, Separator, Sidebar, Stack,
+        Switcher,
     };
     #[cfg(feature = "navigation")]
-    pub use crate::navigation::{NavLink, Pagination, Tabs};
+    pub use crate::navigation::{Breadcrumbs, NavLink, Pagination, Steps, Tabs};
     #[cfg(feature = "overlay")]
     pub use crate::overlay::{Dialog, Menu, Toast, Tooltip};
     #[cfg(feature = "typography")]

@@ -28,4 +28,29 @@
     content: ""; position: absolute; inset-inline: var(--st-space-2); bottom: calc(-1 * var(--st-line, 1px));
     block-size: 3px; border-radius: var(--st-radius-full); background: var(--st-accent);
   }
+
+  /* Breadcrumbs: the separators are decoration, with empty alternative text. */
+  .st-breadcrumbs ol { display: flex; flex-wrap: wrap; align-items: baseline; margin: 0; padding: 0; list-style: none; font-size: var(--st-text-sm); }
+  .st-breadcrumbs li { min-inline-size: 0; overflow-wrap: anywhere; }
+  .st-breadcrumbs li + li::before { content: "/"; content: "/" / ""; padding-inline: var(--st-space-2); color: var(--st-text-muted); }
+  .st-breadcrumbs a { color: var(--st-text-muted); }
+  .st-breadcrumbs a:hover { color: var(--st-text); }
+  .st-breadcrumbs [aria-current="page"] { color: var(--st-text); font-weight: 600; }
+
+  /* Steps: a row of numbered markers, a column when narrow. */
+  .st-steps { container-type: inline-size; }
+  .st-steps ol { display: flex; flex-direction: column; gap: var(--st-space-3); margin: 0; padding: 0; list-style: none; }
+  .st-steps li { display: flex; align-items: center; gap: var(--st-space-2); min-inline-size: 0; overflow-wrap: anywhere; color: var(--st-text-muted); }
+  .st-steps-marker {
+    display: inline-grid; place-items: center; flex: none; inline-size: 1.75rem; block-size: 1.75rem;
+    border: var(--st-line, 1px) solid var(--st-tag-border, var(--st-border)); border-radius: var(--st-radius-full);
+    background: var(--st-tag-bg, var(--st-surface-raised)); color: var(--st-text); font-size: var(--st-text-sm); font-weight: 600;
+  }
+  .st-steps li[data-state="done"] .st-steps-marker { background: var(--st-accent-soft); color: var(--st-accent-text); border-color: transparent; }
+  .st-steps li[data-state="current"] { color: var(--st-text); font-weight: 600; }
+  .st-steps li[data-state="current"] .st-steps-marker { background: var(--st-accent); color: var(--st-on-accent); border-color: transparent; }
+  @container (min-width: 36rem) {
+    .st-steps ol { flex-direction: row; }
+    .st-steps li { flex: 1 1 0; }
+  }
 }

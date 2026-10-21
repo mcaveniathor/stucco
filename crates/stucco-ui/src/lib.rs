@@ -31,7 +31,7 @@ mod page;
 #[cfg(feature = "typography")]
 pub mod typography;
 
-pub use common::{ColorScheme, Measure, Size, Space, Tone, Variant};
+pub use common::{ColorScheme, Measure, Size, Space, Tone, Trend, Variant};
 pub use icon::{Icon, LabelledIcon};
 pub use page::PageExt;
 

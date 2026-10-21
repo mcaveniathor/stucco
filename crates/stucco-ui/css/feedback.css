@@ -13,3 +13,49 @@
   .st-readiness-status { font-size: var(--st-text-sm); font-weight: 600; color: var(--st-warning-text); }
   [data-ready="true"] > .st-readiness-label > .st-readiness-status { color: var(--st-success-text); }
 }
+
+@layer stucco.components {
+  /* Progress and meter: native elements with a visible label. */
+  .st-progress, .st-meter {
+    display: grid; grid-template-columns: 1fr auto; align-items: center; gap: var(--st-space-1) var(--st-space-3);
+  }
+  .st-progress > label, .st-meter > label { grid-column: 1 / -1; font-size: var(--st-text-sm); font-weight: 600; }
+  .st-progress-value, .st-meter-text { color: var(--st-text-muted); font-size: var(--st-text-sm); font-variant-numeric: tabular-nums; }
+  .st-progress > progress, .st-meter > meter {
+    -webkit-appearance: none; appearance: none; inline-size: 100%; min-inline-size: 0; block-size: 0.625rem;
+    border: 0; border-radius: var(--st-radius-full); overflow: hidden;
+    background: var(--st-tag-bg, var(--st-surface-raised)); color: var(--st-accent);
+  }
+  .st-progress > progress:last-child, .st-meter > meter:last-child { grid-column: 1 / -1; }
+  .st-progress > progress::-webkit-progress-bar { background: var(--st-tag-bg, var(--st-surface-raised)); }
+  .st-progress > progress::-webkit-progress-value { background: var(--st-accent); border-radius: var(--st-radius-full); }
+  .st-progress > progress::-moz-progress-bar { background: var(--st-accent); border-radius: var(--st-radius-full); }
+  .st-meter > meter::-webkit-meter-bar { background: var(--st-tag-bg, var(--st-surface-raised)); border: 0; border-radius: var(--st-radius-full); }
+  .st-meter > meter::-webkit-meter-optimum-value { background: var(--st-success); }
+  .st-meter > meter::-webkit-meter-suboptimum-value { background: var(--st-warning); }
+  .st-meter > meter::-webkit-meter-even-less-good-value { background: var(--st-danger); }
+  .st-meter > meter:-moz-meter-optimum::-moz-meter-bar { background: var(--st-success); }
+  .st-meter > meter:-moz-meter-sub-optimum::-moz-meter-bar { background: var(--st-warning); }
+  .st-meter > meter:-moz-meter-sub-sub-optimum::-moz-meter-bar { background: var(--st-danger); }
+}
+
+@layer stucco.components {
+  /* Callout: an inline note. Text uses the tone's checked text colour, and
+     links inherit it, since accent links aren't checked on every soft fill. */
+  .st-callout {
+    display: flex; gap: var(--st-space-3); padding: var(--st-space-4);
+    border: var(--st-line, 1px) solid var(--st-tag-border, var(--st-border)); border-radius: var(--st-surface-radius);
+    background: var(--st-tag-bg, var(--st-surface-raised)); color: var(--st-text);
+  }
+  .st-callout > svg { flex: none; inline-size: 1.25rem; block-size: 1.25rem; margin-block-start: 0.125rem; }
+  .st-callout-body { display: grid; gap: var(--st-space-2); min-inline-size: 0; overflow-wrap: anywhere; }
+  .st-callout-body > * { margin: 0; }
+  .st-callout-title { font-weight: 600; }
+  .st-callout a:not(.st-button) { color: inherit; text-decoration: underline; }
+  .st-callout-actions { display: flex; flex-wrap: wrap; gap: var(--st-space-2); }
+  .st-callout[data-tone="accent"] { background: var(--st-accent-soft); color: var(--st-accent-text); border-color: transparent; }
+  .st-callout[data-tone="info"] { background: var(--st-info-soft); color: var(--st-info-text); border-color: transparent; }
+  .st-callout[data-tone="success"] { background: var(--st-success-soft); color: var(--st-success-text); border-color: transparent; }
+  .st-callout[data-tone="warning"] { background: var(--st-warning-soft); color: var(--st-warning-text); border-color: transparent; }
+  .st-callout[data-tone="danger"] { background: var(--st-danger-soft); color: var(--st-danger-text); border-color: transparent; }
+}
