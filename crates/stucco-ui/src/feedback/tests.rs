@@ -95,6 +95,50 @@ fn meter_without_text_has_no_description() {
 }
 
 #[test]
+fn meter_repairs_extreme_empty_ranges() {
+    for min in [9_007_199_254_740_992.0, 1e20, -1e20, f64::MAX, -f64::MAX] {
+        for max in [min, f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            let html = to_html(&Meter::new("x", f64::NAN, min, max));
+            let repaired_min: f64 = attr(&html, "<meter", "min").parse().unwrap();
+            let repaired_max: f64 = attr(&html, "<meter", "max").parse().unwrap();
+            let value: f64 = attr(&html, "<meter", "value").parse().unwrap();
+            assert!(
+                repaired_min.is_finite() && repaired_max.is_finite(),
+                "{html}"
+            );
+            assert!(repaired_max > repaired_min, "{html}");
+            assert_eq!(value, repaired_min, "{html}");
+            if min == f64::MAX {
+                assert_eq!(repaired_min, f64::from_bits(f64::MAX.to_bits() - 1));
+                assert_eq!(repaired_max, f64::MAX);
+            } else {
+                assert_eq!(repaired_min, min);
+                let bits = if min > 0.0 {
+                    min.to_bits() + 1
+                } else {
+                    min.to_bits() - 1
+                };
+                assert_eq!(repaired_max, f64::from_bits(bits));
+            }
+        }
+    }
+}
+
+#[test]
+fn meter_normalises_reversed_bands_independently_of_setter_order() {
+    for meter in [
+        Meter::new("x", 5.0, 0.0, 10.0).low(8.0).high(2.0),
+        Meter::new("x", 5.0, 0.0, 10.0).high(2.0).low(8.0),
+        Meter::new("x", 5.0, 0.0, 10.0).low(10.0).high(2.0).low(8.0),
+        Meter::new("x", 5.0, 0.0, 10.0).high(0.0).low(8.0).high(2.0),
+    ] {
+        let html = to_html(&meter);
+        assert_eq!(attr(&html, "<meter", "low"), "8", "{html}");
+        assert_eq!(attr(&html, "<meter", "high"), "8", "{html}");
+    }
+}
+
+#[test]
 fn callout_prefixes_title_by_tone() {
     use crate::Tone;
     for (tone, prefix) in [

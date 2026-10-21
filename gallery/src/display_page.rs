@@ -13,6 +13,9 @@ use crate::shell::{component_page, section};
 /// A label long enough to test wrapping at narrow widths.
 const LONG: &str = "Bartholomew Montgomery-Fitzwilliam Hargreaves the Third, Esq.";
 
+/// Sixty characters with no break opportunities, for the 320px wrapping check.
+const UNBROKEN: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234567";
+
 const TONES: [(Tone, &str); 7] = [
     (Tone::Default, "Draft"),
     (Tone::Muted, "Archived"),
@@ -32,7 +35,8 @@ pub fn page(bundle: &Bundle) -> String {
                 .tone(Tone::Success)
                 .icon(icon::CIRCLE_CHECK),
         )
-        .child(Badge::new(LONG));
+        .child(Badge::new(LONG))
+        .child(Badge::new(UNBROKEN));
     let avatars = Cluster::new()
         .child(Avatar::new("Ada Lovelace").size(Size::Sm))
         .child(Avatar::new("Grace Hopper"))
@@ -77,13 +81,27 @@ pub fn page(bundle: &Bundle) -> String {
                 .label("Customer location")
                 .link("Customers", "#customers")
                 .current(LONG),
+        )
+        .child(
+            Breadcrumbs::new()
+                .label("Unbroken location")
+                .link("Customers", "#customers")
+                .current(UNBROKEN),
         );
-    let steps = Steps::new("Checkout")
-        .step("Cart", "#cart")
-        .step_disabled("Account")
-        .step("Shipping", "#shipping")
-        .step("Payment", "#payment")
-        .current(2);
+    let steps = Stack::new()
+        .child(
+            Steps::new("Checkout")
+                .step("Cart", "#cart")
+                .step_disabled("Account")
+                .step("Shipping", "#shipping")
+                .step("Payment", "#payment")
+                .current(2),
+        )
+        .child(
+            Steps::new("Unbroken steps")
+                .step(UNBROKEN, "#unbroken")
+                .step("Finish", "#finish"),
+        );
     let progress = Stack::new()
         .child(Progress::new("Import", 42.0, 100.0).show_value())
         .child(Progress::indeterminate("Uploading"))

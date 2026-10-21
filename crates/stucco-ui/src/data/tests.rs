@@ -34,6 +34,11 @@ fn initials_rules() {
         ("ada  byron lovelace", "AL"),
         ("élodie Ünal", "ÉÜ"),
         ("🦀 Ferris", "🦀F"),
+        ("ß", "S"),
+        ("ß Smith", "SS"),
+        ("ﬃ", "F"),
+        ("ﬃ Foo", "FF"),
+        ("Ada ß", "AS"),
     ] {
         assert_eq!(avatar::initials(name), expected, "{name:?}");
     }

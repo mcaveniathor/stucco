@@ -114,13 +114,23 @@ pub struct Meter {
 
 impl Meter {
     /// `value` between `min` and `max`. A non-finite `min` becomes 0; a `max`
-    /// that isn't above `min` becomes `min + 1`; every value is clamped.
+    /// that isn't finite and above `min` becomes `min + 1` when representable,
+    /// otherwise the next finite value above `min`. When `min` is [`f64::MAX`],
+    /// the range uses the final two finite values instead. Every value is clamped.
     pub fn new(label: impl Into<String>, value: f64, min: f64, max: f64) -> Self {
-        let min = if min.is_finite() { min } else { 0.0 };
+        let mut min = if min.is_finite() { min } else { 0.0 };
         let max = if max.is_finite() && max > min {
             max
-        } else {
+        } else if (min + 1.0).is_finite() && min + 1.0 > min {
             min + 1.0
+        } else if min == f64::MAX {
+            min = f64::from_bits(f64::MAX.to_bits() - 1);
+            f64::MAX
+        } else {
+            // Here min is finite, nonzero and too large for +1 to change it.
+            // Moving one bit toward positive infinity works on Rust 1.85.
+            let bits = min.to_bits();
+            f64::from_bits(if min > 0.0 { bits + 1 } else { bits - 1 })
         };
         Meter {
             attrs: Attrs::default(),
@@ -135,13 +145,15 @@ impl Meter {
         }
     }
 
-    /// Values at or below this are low.
+    /// Values at or below this are low. Clamped into the range; if `high` is
+    /// lower, it is raised to `low` when rendered, regardless of setter order.
     pub fn low(mut self, low: f64) -> Self {
         self.low = Some(clamp_finite(low, self.min, self.max));
         self
     }
 
-    /// Values at or above this are high.
+    /// Values at or above this are high. Clamped into the range and raised to
+    /// `low` when rendered if lower, regardless of setter order.
     pub fn high(mut self, high: f64) -> Self {
         self.high = Some(clamp_finite(high, self.min, self.max));
         self
@@ -166,16 +178,13 @@ impl Render for Meter {
     fn render(&self, cx: &mut Cx) {
         cx.require(&FEEDBACK);
         let id = cx.id("meter");
+        let high = self.high.map(|high| high.max(self.low.unwrap_or(self.min)));
         let mut meter = el::meter()
             .id(id.clone())
             .attr("value", num(self.value))
             .attr("min", num(self.min))
             .attr("max", num(self.max));
-        for (name, v) in [
-            ("low", self.low),
-            ("high", self.high),
-            ("optimum", self.optimum),
-        ] {
+        for (name, v) in [("low", self.low), ("high", high), ("optimum", self.optimum)] {
             if let Some(v) = v {
                 meter = meter.attr(name, num(v));
             }

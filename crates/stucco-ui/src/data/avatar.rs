@@ -27,7 +27,8 @@ impl Avatar {
     pub const RESERVED: &'static [&'static str] =
         &["role", "aria-label", "aria-hidden", "data-size"];
 
-    /// Initials for `name`, labelled with it.
+    /// Initials for `name`, labelled with it. Uses the first uppercase scalar
+    /// of the first and last words (one scalar for a single word).
     pub fn new(name: impl Into<String>) -> Self {
         Avatar {
             attrs: Attrs::default(),
@@ -63,7 +64,7 @@ impl Avatar {
 
 passthrough!(Avatar);
 
-/// The first character of the first and last words, uppercased.
+/// One uppercase scalar from each of the first and last words, at most two.
 pub(crate) fn initials(name: &str) -> String {
     let mut words = name.split_whitespace();
     let first = words.next().and_then(|w| w.chars().next());
@@ -71,7 +72,7 @@ pub(crate) fn initials(name: &str) -> String {
     first
         .into_iter()
         .chain(last)
-        .flat_map(char::to_uppercase)
+        .filter_map(|initial| initial.to_uppercase().next())
         .collect()
 }
 

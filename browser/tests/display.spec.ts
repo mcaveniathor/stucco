@@ -6,6 +6,11 @@ test.beforeEach(async ({ page }) => {
 
 test("display page fits 320px", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
+  const unbroken = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234567";
+  expect(unbroken).toHaveLength(60);
+  for (const selector of [".st-badge", ".st-breadcrumbs", ".st-steps"]) {
+    await expect(page.locator(selector).getByText(unbroken, { exact: true })).toBeVisible();
+  }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
