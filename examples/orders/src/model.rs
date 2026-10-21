@@ -20,13 +20,16 @@ fn dollars(order: &Order) -> f64 {
     order.total_cents as f64 / 100.0
 }
 
-fn money(order: &Order) -> String {
+pub(crate) fn money(order: &Order) -> String {
     format!(
         "${}.{:02}",
         order.total_cents / 100,
         order.total_cents % 100
     )
 }
+/// The statuses an order can have, in workflow order.
+pub(crate) const STATUSES: [&str; 3] = ["pending", "paid", "shipped"];
+
 pub(crate) fn seed() -> Vec<Order> {
     (1..=67)
         .map(|id| Order {

@@ -37,10 +37,15 @@ fn next(html: &str, name: &str) -> String {
 #[tokio::test]
 async fn storage_navigation_and_native_get_controls() {
     let dir = tempfile::tempdir().unwrap();
-    let app = orders::app(&dir.path().join("orders.redb")).unwrap();
+    let app = orders::app(
+        &dir.path().join("orders.redb"),
+        stucco::server::SecretKey::new([7; 32]),
+        "http://localhost",
+    )
+    .unwrap();
     let first = html(app.clone(), "/orders").await;
     assert_eq!(first.matches("<tbody>").count(), 1);
-    assert_eq!(first.matches("<td").count(), 25 * 5);
+    assert_eq!(first.matches("<td").count(), 25 * 6);
     let second = html(app.clone(), &next(&first, "Next")).await;
     assert!(second.contains(">26</td>"));
     let back = html(app.clone(), &next(&second, "Previous")).await;
