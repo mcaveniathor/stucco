@@ -59,7 +59,7 @@ for (const edge of ["wave", "zigzag", "torn"]) {
     await openThemeMenu(page);
     expect(await panelGaps(page)).toEqual([]);
     await page.getByRole("button", { name: "Reset" }).click();
-    await expect(page.locator('[data-site-theme="status"]')).toHaveText("Theme reset to Slate.");
+    await expect(page.locator('[data-site-theme="status"]')).toHaveText("Theme reset to Atelier.");
   });
 }
 

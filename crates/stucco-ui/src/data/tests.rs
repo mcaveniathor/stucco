@@ -165,3 +165,42 @@ fn stat_escapes_text() {
     assert!(!html.contains("<i>"), "{html}");
     assert_eq!(html.matches("&lt;i&gt;").count(), 4, "{html}");
 }
+
+#[test]
+fn sparkline_handles_degenerate_and_extreme_samples_without_invalid_svg() {
+    let empty = to_html(&Sparkline::new("Empty", [f64::NAN, f64::INFINITY]));
+    assert!(empty.contains("No data"));
+    assert!(!empty.contains("<svg"));
+    let single = to_html(&Sparkline::new("One", [3.]));
+    assert!(single.contains("<circle"));
+    assert!(single.contains("Values in order: 3"));
+    let constant = to_html(&Sparkline::new("Constant", [2., 2., 2.]));
+    assert!(constant.contains("4.00,30.00 100.00,30.00 196.00,30.00"));
+    let extreme = to_html(&Sparkline::new("<script>trend", [-f64::MAX, 0., f64::MAX]));
+    assert!(extreme.contains("4.00,56.00 100.00,30.00 196.00,4.00"));
+    assert!(extreme.contains("&lt;script&gt;trend"));
+    assert!(!extreme.contains("NaN"));
+    assert!(!extreme.contains("Infinity"));
+}
+
+#[test]
+fn timeline_preserves_supplied_order_time_and_text() {
+    let html = to_html(
+        &Timeline::new("Activity")
+            .entry(TimelineEntry::new(
+                "2026-10-21T14:30:00Z",
+                "Today",
+                "First <event>",
+            ))
+            .entry(
+                TimelineEntry::new("2026-10-20", "Yesterday", "Second event")
+                    .icon(Icon::custom("check", "<path d=\"M1 1h1\"/>")),
+            ),
+    );
+    assert!(html.contains("<ol"));
+    assert!(html.contains("datetime=\"2026-10-21T14:30:00Z\""));
+    assert!(html.contains("First &lt;event&gt;"));
+    assert!(html.find("First").unwrap() < html.find("Second").unwrap());
+    assert!(html.contains("aria-hidden=\"true\""));
+    assert!(to_html(&Timeline::new("Empty")).contains("No activity yet"));
+}

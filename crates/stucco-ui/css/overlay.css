@@ -96,3 +96,13 @@
   .st-tooltip-anchor:hover > .st-tooltip, .st-tooltip-anchor:focus-within > .st-tooltip { opacity: 1; visibility: visible; }
   .st-tooltip-anchor[data-dismissed] > .st-tooltip { opacity: 0; visibility: hidden; }
 }
+
+@layer stucco.components {
+  /* Opacity does not interfere with the runtime's placement or focus handling.
+     Native dismissal is immediate, including interrupted openings. */
+  .st-menu-popover { transition: opacity var(--st-duration-fast) var(--st-ease); }
+  @starting-style { .st-menu-popover:popover-open { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    @starting-style { .st-dialog[open], .st-toast { opacity: 1; translate: none; } }
+  }
+}

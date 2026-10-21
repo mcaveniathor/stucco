@@ -46,3 +46,5 @@
   .g-danger { background: var(--st-danger-soft); color: var(--st-danger-text); }
   .g-info { background: var(--st-info-soft); color: var(--st-info-text); }
 }
+
+@layer stucco.utilities { .gallery-showcase-nav { display: flex; flex-wrap: wrap; gap: var(--st-space-4); margin-block-end: var(--st-space-3); } }

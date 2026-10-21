@@ -1,0 +1,66 @@
+@layer stucco.utilities {
+  .showcase-app .st-app-header { padding-block: var(--st-space-4); }
+  .showcase-app .st-app-main { inline-size: 100%; padding-block-start: var(--st-space-8); }
+  .showcase-app .st-empty-state { display: flex; flex-direction: column; align-items: center; gap: var(--st-space-3); }
+  .showcase-masthead { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--st-space-4); }
+  .showcase-brand { font-family: var(--st-font-heading); font-size: 1.75rem; letter-spacing: -.045em; }
+  .showcase-page-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--st-space-5); margin-block-end: var(--st-space-8); }
+  .showcase-page-heading > div:first-child { min-inline-size: 0; flex: 1 1 24rem; }
+  .showcase-app .showcase-page-heading, .showcase-app .showcase-metrics { margin-block-end: var(--st-space-2); }
+  .showcase-page-heading .st-heading { margin-block: var(--st-space-2) var(--st-space-3); }
+  .showcase-eyebrow { font-size: var(--st-text-xs); letter-spacing: .14em; font-weight: 650; color: var(--st-text-muted); }
+  .showcase-primary-action { flex: 0 1 auto; }
+  .showcase-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-block: 1px solid var(--st-border); margin-block-end: var(--st-space-7); }
+  .showcase-metrics .st-stat { padding: var(--st-space-5) var(--st-space-4); min-inline-size: 0; }
+  .showcase-metrics .st-stat + .st-stat { border-inline-start: 1px solid var(--st-border); }
+  .showcase-metrics .st-stat-value { font-size: clamp(1.4rem, 2.5vw, 2.25rem); font-weight: 450; letter-spacing: -.025em; overflow-wrap: anywhere; }
+  .showcase-identity { display: flex; align-items: center; gap: var(--st-space-3); min-inline-size: 0; }
+  .showcase-identity > div { min-inline-size: 0; }
+  .showcase-identity-name { font-weight: 550; overflow-wrap: anywhere; }
+  .showcase-identity .st-avatar { flex: none; background: var(--st-accent-soft); color: var(--st-accent-text); }
+  .showcase-table .st-table caption { font-family: var(--st-font-sans); }
+  .showcase-table { background: var(--st-surface); border: var(--st-line, 1px) solid var(--st-border); border-radius: var(--st-radius-lg); }
+  .showcase-table caption { padding: var(--st-space-4); }
+  .showcase-workspace { padding: clamp(1rem, 3vw, 2.5rem); container-type: inline-size; }
+  .showcase-workspace > .showcase-masthead { padding-block-end: var(--st-space-4); margin-block-end: var(--st-space-6); border-block-end: 1px solid var(--st-border); }
+  .showcase-workspace .showcase-page-heading { margin-block-end: var(--st-space-6); }
+  .showcase-workspace .showcase-page-heading .st-heading { font-size: clamp(2.5rem, 4vw, 3.75rem); }
+  .showcase-caption { margin-block-start: var(--st-space-4); }
+  .showcase-form { max-inline-size: 42rem; }
+  .showcase-form .st-form { padding: var(--st-space-6); background: var(--st-surface); border: var(--st-line, 1px) solid var(--st-border); border-radius: var(--st-radius-lg); }
+  @media (max-width: 40rem) {
+    .showcase-metrics { grid-template-columns: minmax(0, 1fr); }
+    .showcase-metrics .st-stat { display: flex; justify-content: space-between; align-items: baseline; gap: var(--st-space-3); padding: var(--st-space-3) 0; }
+    .showcase-metrics .st-stat + .st-stat { border-inline-start: 0; border-block-start: 1px solid var(--st-border); }
+    .showcase-metrics .st-stat-value { flex: 0 1 auto; min-inline-size: 0; font-size: 1.5rem; text-align: end; }
+    .showcase-primary-action, .showcase-primary-action > .st-button { inline-size: 100%; }
+    .showcase-form .st-form { padding: var(--st-space-4); }
+  }
+}
+
+@layer stucco.utilities {
+  .showcase-editorial > * + * { margin-block-start: var(--st-space-5); }
+  .showcase-editorial > .st-heading { max-inline-size: 15ch; }
+  .showcase-editorial > .st-text:not(.showcase-eyebrow) { max-inline-size: 55ch; }
+  .showcase-reading { max-inline-size: 65ch; margin-inline: auto; padding-block: var(--st-space-6); }
+  .showcase-reading > * + * { margin-block-start: var(--st-space-5); }
+  .showcase-reading .st-heading { margin-block-start: var(--st-space-8); }
+  .showcase-reading blockquote { border-inline-start: 3px solid var(--st-accent); padding-inline-start: var(--st-space-5); font-family: var(--st-font-heading); font-size: var(--st-text-xl); }
+  .showcase-reading ol { padding-inline-start: 1.5em; }
+  .showcase-reading li + li { margin-block-start: var(--st-space-2); }
+  .showcase-reading pre { overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; padding: var(--st-space-4); background: var(--st-surface); border: 1px solid var(--st-border); font-size: var(--st-text-sm); }
+  .showcase-project-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--st-space-6); }
+  .showcase-project-focus > * + *, .showcase-project-stats > * + * { margin-block-start: var(--st-space-5); }
+  .showcase-project-stats { padding: var(--st-space-5); border-block: 1px solid var(--st-border); }
+  .showcase-activity { margin-block-start: var(--st-space-8); max-inline-size: 65ch; }
+  .showcase-activity > .st-heading { margin-block-end: var(--st-space-5); }
+  @container (max-width: 40rem) {
+    .showcase-project-grid { grid-template-columns: minmax(0, 1fr); }
+    .showcase-metrics { grid-template-columns: minmax(0, 1fr); }
+    .showcase-metrics .st-stat + .st-stat { border-inline-start: 0; border-block-start: 1px solid var(--st-border); }
+  }
+}
+
+@layer stucco.utilities {
+  .showcase-reading > .st-link, .showcase-project-focus > .st-link { display: inline-block; }
+}

@@ -19,6 +19,7 @@ pub mod layout_page;
 pub mod overlays_page;
 pub mod palette;
 mod shell;
+pub mod showcase_page;
 pub mod tabs_page;
 pub mod themes_page;
 pub mod typography_page;
@@ -36,15 +37,25 @@ register_asset!(GALLERY);
 /// The gallery bundle: Slate at the root, every preset and the seeded themes
 /// as named themes.
 pub fn bundle() -> Bundle {
-    let presets = Preset::ALL.iter().fold(Bundle::new(Preset::Slate), |b, p| {
-        b.with_theme(p.name(), *p)
-    });
-    themes_page::SEEDS
+    bundle_with_root(Preset::Slate)
+}
+
+/// The same named themes, with a caller-selected root theme.
+pub fn bundle_with_root(root: impl Into<stucco::theme::BuiltTheme>) -> Bundle {
+    let presets = Preset::ALL
+        .iter()
+        .fold(Bundle::new(root), |b, p| b.with_theme(p.name(), *p));
+    let bundle = themes_page::SEEDS
         .iter()
         .fold(presets, |b, (seed, name)| {
             b.with_theme(name, themes_page::seeded(*seed))
         })
         .with_theme(themes_page::MIXED, themes_page::mixed())
+        .with_theme("atelier", stucco_showcase::atelier());
+    stucco::theme::Direction::ALL
+        .into_iter()
+        .filter(|d| *d != stucco::theme::Direction::Atelier)
+        .fold(bundle, |b, d| b.with_theme(d.name(), d.theme()))
 }
 
 /// Every gallery page as `(file name, HTML)`, rendered with `bundle` (which
@@ -57,6 +68,7 @@ pub fn pages(bundle: &Bundle) -> Vec<(String, String)> {
 /// Workflow examples use this prefix in validated return destinations.
 pub fn pages_at(bundle: &Bundle, base: &str) -> Vec<(String, String)> {
     let mut pages = vec![
+        ("showcase.html".to_owned(), showcase_page::page(bundle)),
         ("index.html".to_owned(), index::index_page(bundle)),
         ("palette.html".to_owned(), palette::palette_page(bundle)),
         ("themes.html".to_owned(), themes_page::page(bundle)),
@@ -80,6 +92,19 @@ pub fn pages_at(bundle: &Bundle, base: &str) -> Vec<(String, String)> {
             workflows_page::page(bundle, true, base),
         ),
     ];
+    for direction in stucco::theme::Direction::ALL {
+        for screen in ["orders", "editorial", "project"] {
+            pages.push((
+                format!("showcase-{}-{screen}.html", direction.name()),
+                showcase_page::screen_page(bundle, direction, screen),
+            ));
+        }
+    }
+    #[cfg(feature = "atelier-fonts")]
+    pages.push((
+        "showcase-fonts.html".into(),
+        showcase_page::fonts_page(bundle),
+    ));
     pages.extend(tabs_page::pages(bundle));
     pages.extend(fixtures::fixtures(bundle));
     pages

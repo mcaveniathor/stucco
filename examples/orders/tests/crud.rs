@@ -138,7 +138,14 @@ async fn statuses_render_as_badges() {
     }
     let filtered = c.get("/orders?f.status=paid").await;
     assert_eq!(filtered.status, StatusCode::OK);
-    let rows = filtered.body.split("<tbody>").nth(1).unwrap();
+    let rows = filtered
+        .body
+        .split_once("<tbody")
+        .unwrap()
+        .1
+        .split_once('>')
+        .unwrap()
+        .1;
     assert!(rows.contains("data-value=\"paid\""));
     assert!(!rows.contains("data-value=\"pending\""));
     assert!(!rows.contains("data-value=\"shipped\""));
@@ -242,10 +249,10 @@ async fn total_parsing() {
         assert_eq!(reply.status, StatusCode::SEE_OTHER, "{total}");
         let id = c.get("/orders").await.body;
         let id = id
-            .split("Order ")
-            .nth(1)
+            .split(" created.")
+            .next()
             .unwrap()
-            .split(' ')
+            .rsplit("Order ")
             .next()
             .unwrap()
             .to_owned();

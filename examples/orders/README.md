@@ -36,3 +36,16 @@ Opaque cursors are locators, not authorization tokens.
 
 Core/components/Tower retain Rust 1.85. This example and stucco-redb require
 Rust 1.90 because they use redb 4.3.
+
+## Atelier presentation
+
+The example uses the shared recipe in `examples/showcase`: a masthead, a display
+title, customer initials, semantic status badges and a responsive collection.
+The three summary values describe only the current page, including when filters
+are active. The sum widens integer cents before adding them.
+
+Search and status stay visible; “More filters & sorting” contains ranges,
+sorting and page size. This native disclosure reopens for active secondary
+choices and works without JavaScript. Table cards keep record links and actions
+available on phones. Presentation changes do not alter stored records or the
+existing query/mutation behavior.

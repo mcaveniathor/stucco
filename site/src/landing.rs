@@ -2,7 +2,7 @@
 
 use stucco::actions::ButtonLink;
 use stucco::data::Card;
-use stucco::layout::{Cluster, Grid, Stack};
+use stucco::layout::{Cluster, Grid, Stack, ThemeScope};
 use stucco::typography::{Heading, Text};
 use stucco::{Measure, Size, Space, Tone, Variant, el};
 
@@ -65,11 +65,11 @@ pub fn page(site: &Site) -> String {
         .child(
             Stack::new()
                 .space(Space::S6)
-                .child(Heading::new(1, "Server-rendered UI for Rust").id("hero-title").size(Size::Xl3))
+                .child(Text::new("STUCCO / SERVER-RENDERED UI").class("showcase-eyebrow"))
+                .child(Heading::new(1, "Beautiful interfaces. Built in Rust.").id("hero-title").display())
                 .child(
                     Text::new(
-                        "stucco builds accessible, themeable interfaces from semantic HTML. Compose \
-                         layouts, forms, tables and application shells with ordinary Rust builders.",
+                        "From a quiet workspace to a bold new idea. Compose accessible, server-rendered interfaces with ordinary Rust builders.",
                     )
                     .size(Size::Lg)
                     .tone(Tone::Muted),
@@ -82,16 +82,58 @@ pub fn page(site: &Site) -> String {
                                 .variant(Variant::Primary),
                         )
                         .child(ButtonLink::new("Try the theme playground", site.url("playground.html")))
-                        .child(
-                            ButtonLink::new("Browse components", site.url("gallery/"))
-                                .variant(Variant::Ghost),
-                        ),
+                        ,
                 )
                 .child(
                     el::pre()
                         .class("site-install")
                         .child(el::code().text("cargo add stucco")),
                 ),
+        );
+    let preview = el::section()
+        .class("site-application-preview")
+        .aria("label", "Application preview")
+        .child(
+            el::div()
+                .class("site-preview-caption")
+                .child(
+                    Text::new("ATELIER")
+                        .class("showcase-eyebrow")
+                        .id("landing-preview-label"),
+                )
+                .child(
+                    stucco::typography::Link::new(
+                        "Explore the complete workspace →",
+                        site.url("gallery/showcase.html"),
+                    )
+                    .id("landing-showcase-link"),
+                ),
+        )
+        .child(
+            el::nav()
+                .class("site-direction-switch")
+                .aria("label", "Preview art direction")
+                .children(stucco::theme::Direction::ALL.map(|d| {
+                    let link = el::a()
+                        .href(site.url(&format!("gallery/showcase-{}-orders.html", d.name())))
+                        .data("preview-direction", d.name())
+                        .text(crate::shell::title_case(d.name()));
+                    if d == stucco::theme::Direction::Atelier {
+                        link.aria("current", "true")
+                    } else {
+                        link
+                    }
+                })),
+        )
+        .child(
+            ThemeScope::new()
+                .id("landing-preview")
+                .named("atelier")
+                .class("site-preview-frame")
+                .child(stucco_showcase::orders_preview(
+                    &site.url("guide/visual-design.html"),
+                    "Illustrative orders",
+                )),
         );
     let features = el::section()
         .class("site-band")
@@ -180,6 +222,7 @@ pub fn page(site: &Site) -> String {
         el::div()
             .class("site-landing")
             .child(hero)
+            .child(preview)
             .child(features)
             .child(example)
             .child(themes),

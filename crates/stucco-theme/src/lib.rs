@@ -6,6 +6,7 @@
 
 mod color;
 mod css;
+mod direction;
 mod ornament;
 mod personality;
 mod presets;
@@ -16,6 +17,7 @@ pub mod spec;
 mod theme;
 
 pub use color::{Color, contrast};
+pub use direction::Direction;
 pub use ornament::{HeaderEdge, Pattern, Relief};
 pub use personality::{
     Backdrop, ButtonDepth, ButtonShape, ControlStyle, CornerStyle, Elevation, Finish, FocusStyle,

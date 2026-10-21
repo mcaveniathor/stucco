@@ -137,6 +137,7 @@ pub struct FilterBar<'a> {
     attrs: Attrs,
     view: &'a CollectionView<'a>,
     labels: Vec<(String, String)>,
+    compact: bool,
 }
 impl<'a> FilterBar<'a> {
     /// Creates a filter form.
@@ -145,8 +146,17 @@ impl<'a> FilterBar<'a> {
             attrs: Attrs::default(),
             view,
             labels: Vec::new(),
+            compact: false,
         }
     }
+    /// Keeps search and categorical filters visible, placing ranges, sorting
+    /// and page size in a native disclosure. Active secondary choices open it
+    /// on the next response. All controls still submit in the same GET form.
+    pub fn compact(mut self) -> Self {
+        self.compact = true;
+        self
+    }
+
     /// Labels the filter and sort option for column `key`. Without one, the
     /// label is derived from the key (`created_at` → "Created at").
     pub fn column_label(mut self, key: impl Into<String>, label: impl Into<String>) -> Self {
@@ -169,6 +179,10 @@ impl Render for FilterBar<'_> {
         if view.capabilities.searchable {
             form = form.child(search(view, cx));
         }
+        let mut secondary = el::div().class("st-filter-secondary-controls");
+        let mut secondary_active = view.query.sort.is_some()
+            || view.query.direction != stucco_core::Direction::Asc
+            || view.query.per_page != CollectionQuery::default().per_page;
         for col in view
             .columns
             .iter()
@@ -254,11 +268,29 @@ impl Render for FilterBar<'_> {
                 }
                 ColumnKind::Custom => continue,
             };
-            form = form.child(control);
+            if self.compact && matches!(col.kind, ColumnKind::Number | ColumnKind::Date) {
+                secondary = secondary.child(control);
+                secondary_active |= current.is_some();
+            } else {
+                form = form.child(control);
+            }
         }
         let mut sort = SortControl::new(view);
         sort.labels.clone_from(&self.labels);
-        form = form.child(sort).child(PageSizeSelect::new(view)).child(
+        let disclosure = if self.compact {
+            secondary = secondary.child(sort).child(PageSizeSelect::new(view));
+            Some(
+                el::details()
+                    .class("st-filter-secondary")
+                    .bool_attr("open", secondary_active)
+                    .child(el::summary().text("More filters & sorting"))
+                    .child(secondary),
+            )
+        } else {
+            form = form.child(sort).child(PageSizeSelect::new(view));
+            None
+        };
+        form = form.child(
             el::div()
                 .class("st-collection-actions")
                 .child(
@@ -271,6 +303,7 @@ impl Render for FilterBar<'_> {
                         .variant(Variant::Primary),
                 ),
         );
+        form = form.child(disclosure);
         apply(form, &self.attrs, &["method", "action"]).render(cx);
     }
 }

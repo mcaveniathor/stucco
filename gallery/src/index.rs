@@ -5,7 +5,12 @@ use stucco::layout::{Container, Grid, SkipLink, Stack};
 use stucco::typography::{Heading, Link, Text};
 use stucco::{Bundle, Measure, Page, Size, Space, Tone, el};
 
-const PAGES: [(&str, &str, &str); 12] = [
+const PAGES: [(&str, &str, &str); 13] = [
+    (
+        "showcase.html",
+        "Atelier orders",
+        "A complete workspace in light and dark, with a copyable recipe.",
+    ),
     (
         "workflows.html",
         "Workflows",

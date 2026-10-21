@@ -50,11 +50,11 @@ pub mod theme {
     pub use stucco_theme::spec;
     pub use stucco_theme::{
         Backdrop, BuiltTheme, ButtonDepth, ButtonShape, Color, ContrastFailure, ContrastReport,
-        ControlStyle, CornerStyle, Density, Elevation, Finish, FocusStyle, Fonts, HeaderEdge,
-        HeaderStyle, HeadingFont, HeadingWeight, IconWeight, LabelStyle, Leading, LineWeight,
-        LinkStyle, Material, Motion, NavStyle, Palette, PanelStyle, Pattern, Preset, Radius,
-        Random, Relief, RuleStyle, Scale, Scheme, Scope, SeedRng, Seeded, ShadowStyle, ShellLayout,
-        TableStyle, TagStyle, Theme, TypeScale, contrast, random_seed,
+        ControlStyle, CornerStyle, Density, Direction, Elevation, Finish, FocusStyle, Fonts,
+        HeaderEdge, HeaderStyle, HeadingFont, HeadingWeight, IconWeight, LabelStyle, Leading,
+        LineWeight, LinkStyle, Material, Motion, NavStyle, Palette, PanelStyle, Pattern, Preset,
+        Radius, Random, Relief, RuleStyle, Scale, Scheme, Scope, SeedRng, Seeded, ShadowStyle,
+        ShellLayout, TableStyle, TagStyle, Theme, TypeScale, contrast, random_seed,
     };
 }
 
@@ -110,7 +110,10 @@ pub mod prelude {
     #[cfg(feature = "collections")]
     pub use crate::collections::{Col, Columns, DataTable};
     #[cfg(feature = "data")]
-    pub use crate::data::{Avatar, Badge, Card, DescriptionList, Panel, Row, Stat, Table};
+    pub use crate::data::{
+        Avatar, Badge, Card, DescriptionList, Panel, Row, Sparkline, Stat, Table, Timeline,
+        TimelineEntry,
+    };
     #[cfg(feature = "feedback")]
     pub use crate::feedback::{
         Callout, EmptyState, FlashMessages, LiveRegion, Meter, Progress, ReadinessPanel,

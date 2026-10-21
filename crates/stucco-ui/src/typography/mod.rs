@@ -30,6 +30,7 @@ pub struct Heading<'a> {
     attrs: Attrs,
     level: u8,
     size: Option<Size>,
+    display: bool,
     content: Slot<'a>,
 }
 
@@ -48,8 +49,16 @@ impl<'a> Heading<'a> {
             attrs: Attrs::default(),
             level: level.clamp(1, 6),
             size: None,
+            display: false,
             content: Slot::new(content),
         }
+    }
+
+    /// Uses responsive display sizing for a page or hero title, independently
+    /// of the semantic heading level. Ordinary text and controls are unchanged.
+    pub fn display(mut self) -> Self {
+        self.display = true;
+        self
     }
 
     /// Visual size (default: 1→3xl, 2→2xl, 3→xl, 4→lg, 5→md, 6→sm).
@@ -77,6 +86,11 @@ impl Render for Heading<'_> {
         .class("st-heading")
         .data("size", size.as_str())
         .child(&self.content);
+        let el = if self.display {
+            el.class("st-heading-display")
+        } else {
+            el
+        };
         apply(el, &self.attrs, Self::RESERVED).render(cx);
     }
 }

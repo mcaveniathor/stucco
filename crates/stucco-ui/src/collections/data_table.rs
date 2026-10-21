@@ -21,6 +21,7 @@ pub struct DataTable<'a, T> {
     caps: Option<&'a Capabilities>,
     action: Href,
     responsive: bool,
+    compact_filters: bool,
 }
 impl<'a, T: 'a> DataTable<'a, T> {
     /// Creates a table over already-loaded rows.
@@ -35,6 +36,7 @@ impl<'a, T: 'a> DataTable<'a, T> {
             caps: None,
             action: Href::new(""),
             responsive: false,
+            compact_filters: false,
         }
     }
     /// Uses a page's rows and metadata without duplicated state.
@@ -53,6 +55,12 @@ impl<'a, T: 'a> DataTable<'a, T> {
     /// Sort links, filters and pagination remain available without JavaScript.
     pub fn responsive(mut self) -> Self {
         self.responsive = true;
+        self
+    }
+    /// Places range filters, sorting and page size in a native disclosure.
+    /// See [`FilterBar::compact`]. Search and categorical filters stay visible.
+    pub fn compact_filters(mut self) -> Self {
+        self.compact_filters = true;
         self
     }
     /// Adds a column.
@@ -128,7 +136,13 @@ impl<T> Render for DataTable<'_, T> {
         // Rows handed over without a source's capabilities have nothing to
         // search, filter or page, so they get no filter bar.
         let filters = self.caps.map(|_| {
-            self.columns.iter().fold(FilterBar::new(&view), |bar, c| {
+            let bar = FilterBar::new(&view);
+            let bar = if self.compact_filters {
+                bar.compact()
+            } else {
+                bar
+            };
+            self.columns.iter().fold(bar, |bar, c| {
                 bar.column_label(c.spec.key.clone(), c.label.clone())
             })
         });

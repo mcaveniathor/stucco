@@ -7,6 +7,9 @@
     box-shadow: var(--st-surface-edge, 0 0 transparent), var(--st-surface-shadow);
     border: var(--st-line, 1px) solid var(--st-border); border-radius: var(--st-surface-radius); corner-shape: var(--st-corner-shape);
   }
+  .st-filter-secondary { flex: 1 1 100%; min-inline-size: 0; }
+  .st-filter-secondary > summary { cursor: pointer; color: var(--st-accent-text); font-weight: 550; padding-block: var(--st-space-2); }
+  .st-filter-secondary-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--st-space-4); padding-block: var(--st-space-3); }
   .st-collection-control { display: flex; flex-direction: column; gap: var(--st-space-1); flex: 1 1 10rem; min-inline-size: 0; }
   .st-collection-control[data-control="search"] { flex: 3 1 16rem; }
   .st-collection-control[data-control="per-page"] { flex: 0 1 8rem; }

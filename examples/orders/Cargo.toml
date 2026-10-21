@@ -6,6 +6,7 @@ rust-version = "1.90"
 publish = false
 
 [dependencies]
+stucco-showcase = { path = "../showcase" }
 stucco = { workspace = true, features = ["derive", "axum"] }
 stucco-redb = { path = "../../crates/stucco-redb" }
 axum = { workspace = true, features = ["http1", "tokio", "query"] }
