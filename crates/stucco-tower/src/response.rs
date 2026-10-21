@@ -85,6 +85,8 @@ impl FragmentResponse {
 #[derive(Clone, Debug)]
 pub struct SeeOther {
     location: Href,
+    #[cfg(feature = "csrf")]
+    flash: Option<crate::Flash>,
 }
 
 impl SeeOther {
@@ -94,7 +96,17 @@ impl SeeOther {
     pub fn new(location: impl Into<Href>) -> Self {
         SeeOther {
             location: location.into(),
+            #[cfg(feature = "csrf")]
+            flash: None,
         }
+    }
+
+    /// Sends feedback on the next request through an installed [`crate::FlashLayer`].
+    /// The message must be at most 1024 UTF-8 bytes and must not contain secrets.
+    #[cfg(feature = "csrf")]
+    pub fn flash(mut self, flash: crate::Flash) -> Self {
+        self.flash = Some(flash);
+        self
     }
 
     /// The HTTP response.
@@ -105,12 +117,21 @@ impl SeeOther {
         } else {
             "/"
         };
-        Response::builder()
+        let response = Response::builder()
             .status(StatusCode::SEE_OTHER)
             .header(LOCATION, header_safe(location))
             .header(X_CONTENT_TYPE_OPTIONS, "nosniff")
             .body(Full::new(Bytes::new()))
-            .expect("valid response")
+            .expect("valid response");
+        #[cfg(feature = "csrf")]
+        let response = {
+            let mut response = response;
+            if let Some(flash) = self.flash {
+                response.extensions_mut().insert(flash);
+            }
+            response
+        };
+        response
     }
 }
 

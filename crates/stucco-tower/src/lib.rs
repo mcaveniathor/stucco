@@ -4,6 +4,8 @@
 //! The component crates stay free of HTTP; this crate is where stucco meets
 //! a server. The `axum` and `tower-http` features (on by default) add axum
 //! integration and the standard layer stack.
+//! The default `csrf` feature provides opt-in `CsrfLayer` and `FlashLayer`
+//! middleware, backed by `SecretKey`. These layers also work without axum.
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![forbid(unsafe_code)]
@@ -15,10 +17,18 @@ mod assets;
 #[cfg(feature = "axum")]
 mod axum_support;
 mod collection;
+#[cfg(feature = "csrf")]
+mod cookie;
+#[cfg(feature = "csrf")]
+mod csrf;
+#[cfg(feature = "csrf")]
+mod flash;
 #[cfg(all(feature = "axum", feature = "tower-http"))]
 mod layers;
 mod negotiate;
 mod response;
+#[cfg(feature = "csrf")]
+mod secret;
 #[cfg(feature = "axum")]
 mod submission;
 
@@ -30,9 +40,15 @@ pub use assets::{AssetService, FallbackFuture, WithFallback};
 #[cfg(feature = "axum")]
 pub use axum_support::assets_router;
 pub use collection::{CollectionSource, RequestContext, SourceError};
+#[cfg(feature = "csrf")]
+pub use csrf::{CsrfLayer, CsrfService, CsrfToken, InvalidOrigin};
+#[cfg(feature = "csrf")]
+pub use flash::{Flash, FlashLayer, FlashLevel, FlashService};
 #[cfg(all(feature = "axum", feature = "tower-http"))]
 pub use layers::{LayerConfig, with_standard_layers};
 pub use negotiate::{RequestKind, respond};
 pub use response::{FragmentResponse, PageResponse, SeeOther};
+#[cfg(feature = "csrf")]
+pub use secret::{SecretKey, SecretKeyError};
 #[cfg(feature = "axum")]
 pub use submission::{Submission, SubmissionRejection};

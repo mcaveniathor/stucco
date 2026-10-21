@@ -13,6 +13,7 @@ mod bundle;
 mod collection;
 pub mod el;
 pub mod escape;
+mod flash;
 mod form_state;
 mod fragment;
 mod hash;
@@ -31,6 +32,7 @@ pub use collection::{
     Capabilities, Collection, CollectionPage, CollectionQuery, ColumnKind, ColumnSpec, Cursor,
     Direction, Filter, Window,
 };
+pub use flash::{Flash, FlashLevel};
 pub use form_state::{FormState, RevisionConflict};
 pub use fragment::{RenderedFragment, render_fragment};
 pub use href::Href;

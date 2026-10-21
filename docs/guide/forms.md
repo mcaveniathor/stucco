@@ -102,7 +102,102 @@ match result {
 
 ## CSRF
 
-`Form::csrf` adds the token field to a POST form. Issuing and verifying tokens is up to your application today; a signed double-submit layer for `stucco-tower` is planned.
+`CsrfLayer` issues and verifies signed double-submit tokens. The `csrf` feature
+is enabled by default in `stucco-tower`, but installing the layer is explicit.
+Configure the public origin the browser sees, including its port when needed;
+proxy `Host` and forwarded headers are not used to decide which origin is trusted.
+
+```rust
+use axum::{Router, routing::get};
+use stucco::prelude::*;
+use stucco::server::{CsrfLayer, CsrfToken, FlashLayer, RequestContext, SecretKey};
+
+async fn new_order(page: PageCx, cx: RequestContext) -> Document {
+    let token = cx.get::<CsrfToken>().expect("CsrfLayer installed");
+    page.title("New order").main(
+        Form::post("/orders")
+            .csrf(token.as_str())
+            .child(Field::new("Customer", Input::text("customer")))
+            .child(Button::new("Create order").submit()),
+    )
+}
+
+// Run once at startup; keep the same key across restarts and replicas.
+let key = SecretKey::from_env()?;
+let app = Router::new()
+    .route("/orders/new", get(new_order))
+    // Add the application's POST routes here, before installing the layers.
+    .layer(FlashLayer::new(key.clone()))
+    .layer(CsrfLayer::new(key, "https://example.com")?)
+    // Call stucco last so static assets do not issue or consume these cookies.
+    .stucco(Preset::Slate);
+```
+
+Set `STUCCO_SECRET_KEY` to 64 hexadecimal digits from a cryptographic random
+source. Missing keys generate a development-only key with a tracing warning in
+debug builds; release builds return a startup error. Invalid keys always fail.
+You can supply managed key bytes directly through `SecretKey::new` instead.
+
+The cookie is host-only with `Path=/`, `HttpOnly`, `SameSite=Lax`, `Secure` and a
+`__Host-` prefix. Local HTTP development can explicitly set `.secure(false)` on
+both layers, which also changes their cookie names. Keep the secure defaults in
+production. Clear the CSRF cookie when rotating an authentication session;
+`CsrfLayer::cookie_name()` exposes its name. Authentication and session management
+remain the application's responsibility.
+
+Every method except GET, HEAD and OPTIONS requires the cookie and either an
+`_csrf` field or a `Stucco-Csrf` header. A present header takes precedence, and an
+invalid header does not fall back to the form. Missing, duplicate or invalid
+tokens return 403. Cross-origin `Origin` and cross-site or sibling-site
+`Sec-Fetch-Site` values also return 403. Clients without these headers still need
+a valid token. GET, HEAD and OPTIONS must not change application state.
+
+Form bodies are buffered and replayed byte-for-byte for `Submission`. The
+layer's buffer limit defaults to 1 MiB and can be set with `.body_limit(bytes)`;
+configure it alongside `LayerConfig::body_limit`. Oversized forms return 413.
+Header-authenticated bodies pass through and use the server's usual body limits.
+Multipart parsing is not provided: those requests need the header token and an
+application-specific body extractor. Always include the issued token when
+re-rendering a form after validation errors.
+
+## Redirect feedback
+
+With `FlashLayer` installed, attach a message to a successful redirect:
+
+```rust
+use stucco::server::{Flash, FlashLevel, SeeOther};
+
+let response = SeeOther::new("/orders")
+    .flash(Flash::new(FlashLevel::Success, "Order created."));
+```
+
+On the next request, render the message from the request context:
+
+```rust
+use stucco::prelude::*;
+use stucco::server::RequestContext;
+
+async fn orders(page: PageCx, cx: RequestContext) -> Document {
+    page.title("Orders").main(
+        FlashMessages::new(cx.get::<Flash>().cloned()),
+    )
+}
+```
+
+The signed cookie expires after five minutes and is cleared on the next request.
+Invalid or expired messages are discarded. A new outgoing message replaces the
+one consumed on that request. Apply the layer only to routes intended to consume
+feedback; an asset request or another tab can otherwise consume it first.
+Messages are limited to 1024 UTF-8 bytes; exceeding that limit produces a 500
+response. Cookies are signed, not encrypted, so messages must not contain secrets.
+Cookie deletion is browser-side; deliberate replay is possible until expiry and
+messages must never authorize an action.
+
+`FlashMessages` renders escaped plain text with visible severity labels. Info,
+success and warning messages use `role="status"`; errors use `role="alert"`.
+Initial messages are readable without JavaScript; announcements of initial
+content depend on the browser and assistive technology. Both layers mark their
+responses `private, no-store` to prevent shared caches leaking tokens or feedback.
 
 ## Revision conflicts
 

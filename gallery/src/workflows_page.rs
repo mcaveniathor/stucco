@@ -82,6 +82,16 @@ pub fn page(bundle: &Bundle, latest: bool, base: &str) -> String {
             section("Responsive collection", table),
             section("Saved record editing", el::div().id("edit").child(form)),
             section(
+                "Redirect feedback",
+                FlashMessages::new([
+                    Flash::new(FlashLevel::Success, "Order saved."),
+                    Flash::new(
+                        FlashLevel::Error,
+                        "The order could not be deleted. Try again.",
+                    ),
+                ]),
+            ),
+            section(
                 "Action prerequisites",
                 ReadinessPanel::new("Ready to publish")
                     .requirement(Requirement::ready("Customer details"))

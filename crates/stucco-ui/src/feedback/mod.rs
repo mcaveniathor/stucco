@@ -8,7 +8,9 @@
 //! assert!(to_html(&empty).contains("No orders"));
 //! assert!(to_html(&LiveRegion::new().child("Showing 25 orders")).contains("aria-live"));
 //! ```
+mod flash;
 mod readiness;
+pub use flash::FlashMessages;
 pub use readiness::{ReadinessPanel, Requirement};
 
 use crate::{passthrough::apply, typography::Heading};
@@ -71,6 +73,7 @@ impl Render for EmptyState<'_> {
 pub struct LiveRegion<'a> {
     attrs: Attrs,
     children: Vec<Slot<'a>>,
+    assertive: bool,
 }
 impl<'a> LiveRegion<'a> {
     /// An empty status region.
@@ -82,6 +85,13 @@ impl<'a> LiveRegion<'a> {
         self.children.push(Slot::new(r));
         self
     }
+    /// Announces urgent errors with `role="alert"` and `aria-live="assertive"`.
+    /// Initial server text remains readable without JavaScript; announcement of
+    /// initial content depends on the browser and assistive technology.
+    pub fn assertive(mut self) -> Self {
+        self.assertive = true;
+        self
+    }
 }
 passthrough!(LiveRegion<'_>);
 impl Render for LiveRegion<'_> {
@@ -89,8 +99,15 @@ impl Render for LiveRegion<'_> {
         cx.require(&FEEDBACK);
         apply(
             el::div()
-                .attr("role", "status")
-                .aria("live", "polite")
+                .attr("role", if self.assertive { "alert" } else { "status" })
+                .aria(
+                    "live",
+                    if self.assertive {
+                        "assertive"
+                    } else {
+                        "polite"
+                    },
+                )
                 .aria("atomic", "true")
                 .children(self.children.iter()),
             &self.attrs,

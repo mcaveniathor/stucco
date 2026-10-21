@@ -225,7 +225,9 @@ The manifest also contains reserved feature names for planned families
 (`marketing`, `diagram`, `markdown`, `askama`, and `maud`). They do not yet
 provide those integrations or component families.
 
-`stucco-tower` enables `axum` and `tower-http` by default.
+`stucco-tower` enables `axum`, `tower-http` and `csrf` by default. The `csrf`
+feature provides opt-in CSRF and signed flash-cookie layers; see the
+[forms guide](docs/guide/forms.md) for setup and key configuration.
 `stucco-redb` enables its `tokio` collection adapter by default; disable defaults
 for synchronous storage alone.
 

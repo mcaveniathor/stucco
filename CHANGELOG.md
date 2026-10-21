@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Opt-in `CsrfLayer` verifies signed double-submit tokens on unsafe methods,
+  checks the public origin and Fetch Metadata, and replays bounded form bodies
+  for `Submission`. `CsrfToken` is available through `RequestContext`.
+- `FlashLayer` and `SeeOther::flash` carry signed five-minute redirect feedback;
+  `FlashMessages` renders escaped, labelled status/error messages without JavaScript.
+- `SecretKey::from_env` loads a stable application key, warns when generating a
+  debug-only development key, and rejects missing release keys. These Tower
+  APIs use the new default `csrf` feature and do not require axum. Layers are
+  installed explicitly; existing router setup and POST routes retain their behavior.
+
 - Responsive `DataTable` cards and `Table::card_labels` adapt to container width with one copy of each cell/control and retained table semantics.
 - `ReturnContext` validates local return destinations and carries collection state through links, forms and redirects.
 - `FormState::with_conflict`, `RevisionConflict` and `ConflictNotice` support recoverable stale-edit feedback without changing submitted values or revision tokens. `ErrorSummary` also reports conflicts.
