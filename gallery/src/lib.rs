@@ -11,6 +11,7 @@ use stucco::{Asset, Bundle, register_asset};
 
 pub mod actions_page;
 pub mod collections_page;
+pub mod display_page;
 pub mod fixtures;
 pub mod forms_page;
 pub mod index;
@@ -64,6 +65,7 @@ pub fn pages_at(bundle: &Bundle, base: &str) -> Vec<(String, String)> {
         ("actions.html".to_owned(), actions_page::page(bundle)),
         ("forms.html".to_owned(), forms_page::page(bundle)),
         ("overlays.html".to_owned(), overlays_page::page(bundle)),
+        ("display.html".to_owned(), display_page::page(bundle)),
         (
             "collections.html".to_owned(),
             collections_page::page(bundle),
@@ -83,11 +85,19 @@ pub fn pages_at(bundle: &Bundle, base: &str) -> Vec<(String, String)> {
     pages
 }
 
-/// Writes every page and bundle file under `dir`.
+/// Files the pages use that are not pages, such as images, by path.
+pub fn static_files() -> Vec<(&'static str, &'static [u8])> {
+    vec![("avatar.svg", include_bytes!("../assets/avatar.svg"))]
+}
+
+/// Writes every page, static file and bundle file under `dir`.
 pub fn write_site(dir: &Path) -> io::Result<()> {
     let bundle = bundle();
     for (name, html) in pages(&bundle) {
         write(&dir.join(name), html.as_bytes())?;
+    }
+    for (name, bytes) in static_files() {
+        write(&dir.join(name), bytes)?;
     }
     for path in bundle.paths() {
         let file = bundle.get(&path).expect("listed paths are served");

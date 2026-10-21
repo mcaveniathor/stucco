@@ -10,6 +10,7 @@ const paths = [
   "/actions.html",
   "/forms.html",
   "/overlays.html",
+  "/display.html",
   "/tabs.html",
   "/tabs-items.html",
   "/collections.html",

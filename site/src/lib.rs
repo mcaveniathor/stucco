@@ -68,6 +68,9 @@ pub fn build(out: &Path, options: &Options) -> io::Result<Vec<String>> {
             site.with_chrome(&html).into_bytes(),
         ));
     }
+    for (name, bytes) in gallery::static_files() {
+        files.push((format!("gallery/{name}"), bytes.to_vec()));
+    }
     for path in site.bundle().paths() {
         let file = site.bundle().get(&path).expect("listed paths are served");
         let relative = path
