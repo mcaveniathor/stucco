@@ -530,16 +530,17 @@ impl http_body::Body for Chunks {
     }
 }
 
+// A named fn fixes the output type to `()`: an `async { panic!() }` closure's
+// output is `!` under edition 2024, which is not a response.
+async fn unreachable_handler() {
+    panic!("a rejected body must not reach the handler");
+}
+
 #[tokio::test]
 async fn chunked_forms_obey_limits_and_body_errors_do_not_reach_handlers() {
     let app = Router::new()
         .route("/token", get(token))
-        .route(
-            "/write",
-            post(|| async {
-                panic!("a rejected body must not reach the handler");
-            }),
-        )
+        .route("/write", post(unreachable_handler))
         .layer(csrf().body_limit(64));
     let (cookie, token) = issue(&app).await;
     let chunks = Chunks(
