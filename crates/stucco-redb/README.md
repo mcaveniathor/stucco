@@ -19,16 +19,45 @@ Write through the indexed handle after creating an index; a previously cloned
 unindexed Table does not maintain secondary indexes. Codec/schema changes
 require application-managed migration.
 
-The default `tokio` feature adds `RedbCollection` and `CollectionMapping`,
-moving synchronous scans onto a bounded blocking pool. Share source clones or
-`with_mapping` views across requests so they share the concurrency limit.
-Disable default features for synchronous storage alone.
+The default `tokio` feature adds `AsyncTable`, `RedbCollection` and
+`CollectionMapping`. `AsyncTable` runs reads and writes on Tokio's blocking
+pool, at most four at a time (`concurrency` changes it); a `RedbCollection`
+built on it shares that limit for its scans. Share clones or `with_mapping`
+views across requests. Disable default features for synchronous storage alone.
+
+## Writing
+
+Edits that might race use revisions: a hash of the record's stored bytes.
+Read the record with its revision, put the revision in the edit form as a
+hidden input, and pass it back with the change:
+
+```rust,no_run
+# async fn edit(orders: stucco_redb::AsyncTable<u64, String>) -> Result<(), stucco_redb::StoreError> {
+let (_name, revision) = orders.get_with_revision(1).await?.expect("exists");
+// …render a form carrying `revision.to_string()`, then on submit:
+let submitted: stucco_redb::Revision = revision.to_string().parse().expect("valid");
+match orders.update_if(1, submitted, |_| "Grace".into()).await {
+    Ok(_new_revision) => {}                    // saved
+    Err(e) if e.is_conflict() => {}            // changed meanwhile: show a conflict
+    Err(e) => return Err(e),
+}
+# Ok(()) }
+```
+
+`conflict_revision()` gives the current revision, or `Some(None)` when the
+record was deleted meanwhile. `remove_if` checks the same way. For rows from a
+scan, `revision_of(&row)` computes the revision without reading again.
+
+`create(|id| value)` on a `u64` table allocates one more than the highest id
+in the same transaction, so concurrent creates never collide. Deleting the
+highest record frees its id for the next create; a form still holding the
+deleted record's revision gets a conflict, not the new record.
 
 Cursor scans return an owned page with an unknown total. Predicates may still
 visit many records. Numbered mode deliberately materializes all matching records,
 so use it for small collections. Cursors are locators, not authorization tokens.
 
-Minimum Rust: **1.90**. The 0.2 API is experimental.
+Minimum Rust: **1.90**. The API is experimental.
 See [the orders example](https://github.com/mcaveniathor/stucco/tree/main/examples/orders)
 for persistence, query mapping, and server-rendered controls.
 

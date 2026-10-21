@@ -12,7 +12,9 @@ use source::OrdersMapping;
 use std::path::Path;
 use stucco::prelude::*;
 use stucco::server::RequestContext;
-use stucco_redb::{IndexTable, PostcardCodec, RedbCollection, Store, StoreError, U64Key};
+use stucco_redb::{
+    AsyncTable, IndexTable, PostcardCodec, RedbCollection, Store, StoreError, U64Key,
+};
 
 type OrdersTable = IndexTable<u64, Order>;
 type OrdersSource = RedbCollection<u64, Order, U64Key, PostcardCodec<Order>, OrdersMapping>;
@@ -40,7 +42,10 @@ fn open(path: &Path) -> Result<OrdersTable, StoreError> {
 }
 /// Opens persistent storage and constructs the read-only router.
 pub fn app(db_path: &Path) -> Result<Router, StoreError> {
-    let cursor = RedbCollection::new(open(db_path)?, OrdersMapping { pages: false });
+    let cursor = RedbCollection::new(
+        AsyncTable::new(open(db_path)?),
+        OrdersMapping { pages: false },
+    );
     let pages = cursor.with_mapping(OrdersMapping { pages: true });
     let state = AppState { cursor, pages };
     Ok(Router::new()
