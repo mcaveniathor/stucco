@@ -26,7 +26,10 @@ impl<K, V, KC: KeyCodec<K>, VC: Codec<V>> IndexTable<K, V, KC, VC> {
     }
 
     /// The revision `value` has once stored. No I/O: use it for rows that
-    /// came from a scan.
+    /// came from a scan. It matches the stored revision whenever the stored
+    /// bytes are what the codec encodes today, which holds for every write
+    /// and, after a codec or schema change, once [`rebuild`](Self::rebuild)
+    /// has run.
     pub fn revision_of(&self, value: &V) -> Result<Revision, StoreError> {
         Ok(Revision::of(&self.table.values.encode(value)?))
     }
@@ -109,7 +112,9 @@ impl<V, VC: Codec<V>> IndexTable<u64, V, U64Key, VC> {
     /// Stores `build(id)` under the next id (one more than the highest key,
     /// or 1 when empty), allocated in the same transaction, so concurrent
     /// creates never share an id. Deleting the highest record frees its id
-    /// for reuse; a stale revision for the old record still conflicts.
+    /// for reuse; a stale revision for the old record conflicts with the new
+    /// one unless the two have byte-identical values, in which case the edit
+    /// was based on exactly the data stored and goes ahead.
     pub fn create(&self, build: impl FnOnce(u64) -> V) -> Result<(u64, Revision), StoreError> {
         let tx = self.table.store.db.begin_write().map_err(StoreError::new)?;
         let created = {

@@ -46,12 +46,17 @@ match orders.update_if(1, submitted, |_| "Grace".into()).await {
 
 `conflict_revision()` gives the current revision, or `Some(None)` when the
 record was deleted meanwhile. `remove_if` checks the same way. For rows from a
-scan, `revision_of(&row)` computes the revision without reading again.
+scan, `revision_of(&row)` computes the revision without reading again. It
+re-encodes the row, so after changing a codec or schema run `rebuild()` once
+at startup: it rewrites old records in the new encoding, and their revisions
+then match.
 
 `create(|id| value)` on a `u64` table allocates one more than the highest id
 in the same transaction, so concurrent creates never collide. Deleting the
 highest record frees its id for the next create; a form still holding the
-deleted record's revision gets a conflict, not the new record.
+deleted record's revision gets a conflict, not the new record, unless the new
+record's value is byte-for-byte the same (then the edit was based on exactly
+the data stored, and it goes ahead).
 
 Cursor scans return an owned page with an unknown total. Predicates may still
 visit many records. Numbered mode deliberately materializes all matching records,

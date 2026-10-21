@@ -154,3 +154,46 @@ fn concurrent_creates_get_distinct_ids() {
     ids.dedup();
     assert_eq!(ids, (1..=200).collect::<Vec<_>>());
 }
+
+/// Decoding trims, so stored "  Ada" re-encodes as "Ada": like a record
+/// written before a field gained a serde default.
+struct Trimming;
+impl stucco_redb::Codec<String> for Trimming {
+    fn encode(&self, value: &String) -> Result<Vec<u8>, StoreError> {
+        Ok(value.as_bytes().to_vec())
+    }
+    fn decode(&self, bytes: &[u8]) -> Result<String, StoreError> {
+        let text = std::str::from_utf8(bytes).map_err(StoreError::new)?;
+        Ok(text.trim().to_owned())
+    }
+}
+
+#[test]
+fn rebuild_rewrites_stored_bytes_so_revision_of_matches() -> Result<(), StoreError> {
+    let dir = tempfile::tempdir().unwrap();
+    let store = Store::open(dir.path().join("canonical.redb"))?;
+    let table = store.table::<u64, String, _, _>("rows", U64Key, Trimming)?;
+    table.put(&1, &"  Ada".into())?;
+    let index = table.index("name", |v: &String| v.as_bytes().to_vec())?;
+    let (_, before) = index.get_with_revision(&1)?.unwrap();
+    assert_ne!(before, index.revision_of(&"Ada".into())?);
+    index.rebuild()?;
+    let (value, after) = index.get_with_revision(&1)?.unwrap();
+    assert_eq!(value, "Ada");
+    assert_eq!(after, index.revision_of(&value)?);
+    Ok(())
+}
+
+#[test]
+fn a_reused_id_with_identical_bytes_accepts_the_old_revision() -> Result<(), StoreError> {
+    let dir = tempfile::tempdir().unwrap();
+    let table = names(&dir);
+    let (id, old) = table.create(|_| "same".into())?;
+    table.remove(&id)?;
+    let (again, _) = table.create(|_| "same".into())?;
+    assert_eq!(again, id);
+    // Byte-identical content has the same revision: the edit was based on
+    // exactly the data now stored, so it is not a conflict.
+    table.update_if(&id, &old, |_| "edited".into())?;
+    Ok(())
+}
