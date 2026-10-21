@@ -36,11 +36,13 @@ impl AppState {
 }
 
 fn open(path: &Path) -> Result<OrdersTable, StoreError> {
+    // Seed a new database only: one emptied by deleting every order stays empty.
+    let fresh = !path.exists();
     let store = Store::open(path)?;
     let table = store
         .table("orders", U64Key, PostcardCodec::<Order>::default())?
         .index("customer", |row| row.customer.as_bytes().to_vec())?;
-    if table.all(false)?.is_empty() {
+    if fresh {
         table.put_many(
             &model::seed()
                 .into_iter()
@@ -73,6 +75,7 @@ pub fn app(db_path: &Path, key: SecretKey, origin: &str) -> Result<Router, Box<d
             "/orders/{id}/delete",
             get(handlers::confirm_delete).post(handlers::delete),
         )
+        .fallback(handlers::fallback)
         .with_state(state)
         .layer(FlashLayer::new(key.clone()).secure(secure))
         .layer(CsrfLayer::new(key, origin)?.secure(secure))

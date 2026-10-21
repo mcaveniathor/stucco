@@ -2,6 +2,7 @@
 use crate::form::{order_form, state_of, validate};
 use crate::model::{Order, money};
 use crate::{AppState, shell};
+use axum::extract::rejection::PathRejection;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
@@ -20,21 +21,33 @@ pub(crate) fn csrf(cx: &PageCx) -> String {
         .unwrap_or_default()
 }
 
-/// A positive numeric id, or `None` for anything else in the path.
-fn parse_id(raw: &str) -> Option<u64> {
-    raw.parse().ok().filter(|&id| id > 0)
+/// The id segment, if it decodes to a positive number. Anything else (text,
+/// zero, invalid UTF-8) is answered with the not-found page, not a 400.
+type IdPath = Result<Path<String>, PathRejection>;
+
+fn parse_id(path: IdPath) -> Option<u64> {
+    path.ok()?.0.parse().ok().filter(|&id| id > 0)
 }
 
 fn not_found(cx: &PageCx) -> Response {
-    cx.title("Order not found — stucco")
+    missing(cx, "Order not found", "It may have been deleted.")
+}
+
+fn missing(cx: &PageCx, title: &str, detail: &str) -> Response {
+    cx.title(format!("{title} — stucco"))
         .app(shell(
             Stack::new()
-                .child(PageHeader::new("Order not found"))
-                .child(Text::new("It may have been deleted."))
+                .child(PageHeader::new(title.to_owned()))
+                .child(Text::new(detail.to_owned()))
                 .child(Link::new("Back to orders", "/orders")),
         ))
         .status(StatusCode::NOT_FOUND)
         .into_response()
+}
+
+/// Every path no route matches.
+pub(crate) async fn fallback(cx: PageCx) -> Response {
+    missing(&cx, "Page not found", "There is nothing at this address.")
 }
 
 fn failure(cx: &PageCx, error: StoreError) -> Response {
@@ -130,12 +143,8 @@ pub(crate) async fn create(
     }
 }
 
-pub(crate) async fn show(
-    State(state): State<AppState>,
-    cx: PageCx,
-    Path(raw): Path<String>,
-) -> Response {
-    let Some(id) = parse_id(&raw) else {
+pub(crate) async fn show(State(state): State<AppState>, cx: PageCx, path: IdPath) -> Response {
+    let Some(id) = parse_id(path) else {
         return not_found(&cx);
     };
     let (order, revision) = match state.orders().get_with_revision(id).await {
@@ -170,12 +179,8 @@ pub(crate) async fn show(
         .into_response()
 }
 
-pub(crate) async fn edit(
-    State(state): State<AppState>,
-    cx: PageCx,
-    Path(raw): Path<String>,
-) -> Response {
-    let Some(id) = parse_id(&raw) else {
+pub(crate) async fn edit(State(state): State<AppState>, cx: PageCx, path: IdPath) -> Response {
+    let Some(id) = parse_id(path) else {
         return not_found(&cx);
     };
     match state.orders().get_with_revision(id).await {
@@ -221,10 +226,10 @@ fn submitted_revision(form: &FormState) -> (String, Option<Revision>) {
 pub(crate) async fn update(
     State(state): State<AppState>,
     cx: PageCx,
-    Path(raw): Path<String>,
+    path: IdPath,
     Submission(form): Submission,
 ) -> Response {
-    let Some(id) = parse_id(&raw) else {
+    let Some(id) = parse_id(path) else {
         return not_found(&cx);
     };
     let (submitted, revision) = submitted_revision(&form);
@@ -268,9 +273,9 @@ pub(crate) async fn update(
 pub(crate) async fn confirm_delete(
     State(state): State<AppState>,
     cx: PageCx,
-    Path(raw): Path<String>,
+    path: IdPath,
 ) -> Response {
-    let Some(id) = parse_id(&raw) else {
+    let Some(id) = parse_id(path) else {
         return not_found(&cx);
     };
     match state.orders().get_with_revision(id).await {
@@ -314,10 +319,10 @@ fn confirm_page(cx: &PageCx, order: &Order, state: &FormState, revision: &str) -
 pub(crate) async fn delete(
     State(state): State<AppState>,
     cx: PageCx,
-    Path(raw): Path<String>,
+    path: IdPath,
     Submission(form): Submission,
 ) -> Response {
-    let Some(id) = parse_id(&raw) else {
+    let Some(id) = parse_id(path) else {
         return not_found(&cx);
     };
     let (submitted, revision) = submitted_revision(&form);

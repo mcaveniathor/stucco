@@ -10,7 +10,7 @@ use tower::ServiceExt;
 struct Client {
     app: Router,
     cookies: BTreeMap<String, String>,
-    _dir: tempfile::TempDir,
+    _dir: Option<tempfile::TempDir>,
 }
 
 struct Reply {
@@ -26,16 +26,18 @@ impl Client {
     }
 
     fn at(dir: tempfile::TempDir) -> Client {
-        let app = orders::app(
-            &dir.path().join("orders.redb"),
-            SecretKey::new([7; 32]),
-            "http://localhost",
-        )
-        .unwrap();
+        let mut client = Client::at_path(&dir.path().join("orders.redb"));
+        client._dir = Some(dir);
+        client
+    }
+
+    /// A client over the database at `path`, which the caller keeps alive.
+    fn at_path(path: &std::path::Path) -> Client {
+        let app = orders::app(path, SecretKey::new([7; 32]), "http://localhost").unwrap();
         Client {
             app,
             cookies: BTreeMap::new(),
-            _dir: dir,
+            _dir: None,
         }
     }
 
@@ -356,4 +358,39 @@ async fn conflict_pages_focus_one_element() {
     let reply = c.post("/orders/4/delete", &fields).await;
     assert_eq!(reply.status, StatusCode::CONFLICT);
     assert_eq!(reply.body.matches("autofocus").count(), 1);
+}
+
+#[tokio::test]
+async fn unknown_and_undecodable_paths_are_html_404s() {
+    let mut c = Client::new();
+    for uri in ["/orders/1/x", "/nowhere", "/orders/%FF", "/orders/%FF/edit"] {
+        let reply = c.get(uri).await;
+        assert_eq!(reply.status, StatusCode::NOT_FOUND, "{uri}");
+        assert!(
+            reply.body.contains("Order not found") || reply.body.contains("Page not found"),
+            "{uri}"
+        );
+    }
+}
+
+#[tokio::test]
+async fn deleting_every_order_survives_a_restart() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("orders.redb");
+    let mut c = Client::at_path(&path);
+    for id in 1..=67 {
+        let confirm = c.get(&format!("/orders/{id}/delete")).await;
+        let csrf = input(&confirm.body, "_csrf");
+        let revision = input(&confirm.body, "revision");
+        let fields = [("_csrf", csrf.as_str()), ("revision", revision.as_str())];
+        assert_eq!(
+            c.post(&format!("/orders/{id}/delete"), &fields)
+                .await
+                .status,
+            StatusCode::SEE_OTHER
+        );
+    }
+    drop(c);
+    let mut restarted = Client::at_path(&path);
+    assert!(restarted.get("/orders").await.body.contains("No results"));
 }
