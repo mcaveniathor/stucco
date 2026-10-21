@@ -96,7 +96,7 @@ match result {
 
 - `bind` puts the submitted value back in the control and shows the field's errors under it. Passwords are never redisplayed.
 - The summary lists form-wide errors first, then each field error as a link to its control, and takes focus when the page loads so keyboard and screen reader users hear what went wrong.
-- After a successful submission, `SeeOther` answers `303 See Other`, so reloading the next page doesn't submit the form twice.
+- After a successful submission, `SeeOther` answers `303 See Other`, so reloading the next page doesn't submit the form twice. In axum handlers, `.into_response()` converts it (and `PageResponse` or `FragmentResponse`); outside axum, `.into_http()` gives a plain `http` response.
 
 ## CSRF
 

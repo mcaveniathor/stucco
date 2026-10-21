@@ -181,6 +181,7 @@ refused and the user keeps what they typed. This is the edit half of the
 which also creates, lists and deletes:
 
 ```rust
+use axum::extract::rejection::PathRejection;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
@@ -189,6 +190,15 @@ use stucco::prelude::*;
 use stucco::server::{CsrfToken, SeeOther, Submission};
 use stucco::{FormState, Validator};
 use stucco_redb::{AsyncTable, Revision};
+
+// Bad ids (`/customers/abc`) get the same page as missing ones, rather than
+// axum's plain-text 400.
+fn not_found(page: PageCx) -> Response {
+    page.title("Not found")
+        .main(Heading::new(1, "Customer not found"))
+        .status(StatusCode::NOT_FOUND)
+        .into_response()
+}
 
 fn edit_page(page: PageCx, id: u64, state: &FormState, revision: &str) -> Response {
     let token = page.context().get::<CsrfToken>().map(|t| t.as_str().to_owned());
@@ -209,13 +219,18 @@ fn edit_page(page: PageCx, id: u64, state: &FormState, revision: &str) -> Respon
         .into_response()
 }
 
-async fn edit(State(db): State<AsyncTable<u64, String>>, page: PageCx, Path(id): Path<u64>) -> Response {
+async fn edit(
+    State(db): State<AsyncTable<u64, String>>,
+    page: PageCx,
+    path: Result<Path<u64>, PathRejection>,
+) -> Response {
+    let Ok(Path(id)) = path else { return not_found(page) };
     match db.get_with_revision(id).await {
         Ok(Some((name, revision))) => {
             let state = FormState::new().with_value("name", name);
             edit_page(page, id, &state, &revision.to_string())
         }
-        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+        Ok(None) => not_found(page),
         Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     }
 }
@@ -223,9 +238,10 @@ async fn edit(State(db): State<AsyncTable<u64, String>>, page: PageCx, Path(id):
 async fn update(
     State(db): State<AsyncTable<u64, String>>,
     page: PageCx,
-    Path(id): Path<u64>,
+    path: Result<Path<u64>, PathRejection>,
     Submission(form): Submission,
 ) -> Response {
+    let Ok(Path(id)) = path else { return not_found(page) };
     let submitted = form.value("revision").unwrap_or_default().to_owned();
     let mut v = Validator::new(form.clone());
     let name = v.text("name").required("Enter a name").get();
@@ -249,7 +265,7 @@ async fn update(
                 let state = form.with_conflict(submitted.clone(), current.to_string());
                 edit_page(page, id, &state, &submitted)
             }
-            Some(None) => StatusCode::NOT_FOUND.into_response(),
+            Some(None) => not_found(page),
             None => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
         },
     }

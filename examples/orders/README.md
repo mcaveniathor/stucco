@@ -6,10 +6,13 @@ Set `STUCCO_SECRET_KEY` (64 hex digits) for the CSRF and flash cookies; debug
 builds generate one with a warning. `ORDERS_ORIGIN` is the public origin
 (default `http://localhost:$PORT`); cookies are `Secure` when it is HTTPS.
 
-The app seeds 67 deterministic records only when the orders table is empty.
+The app seeds 67 deterministic records when it creates a new database; one
+emptied by deleting every order stays empty.
 Customer names have duplicate values; the index uses the primary key as a tie
 breaker. Startup rebuilds the customer index, preserving persisted records.
-All controls work through ordinary GET requests without JavaScript.
+Every page works without JavaScript: lists, filters and pagination are
+ordinary GET requests, and writes are ordinary POST forms. Unknown or
+malformed order addresses get an HTML not-found page.
 Both pagination modes and every write share one `AsyncTable` budget of four
 blocking calls.
 

@@ -54,7 +54,7 @@ are signed, not encrypted, limited to 1024 bytes, and are not authorization.
 See [the forms guide](https://github.com/mcaveniathor/stucco/blob/main/docs/guide/forms.md)
 for setup, layer ordering, limits and session lifecycle notes.
 
-Minimum Rust: **1.85**. The 0.2 API is experimental.
+Minimum Rust: **1.85**. The API is experimental.
 See [the hello example](https://github.com/mcaveniathor/stucco/tree/main/examples/hello)
 for a runnable application.
 
