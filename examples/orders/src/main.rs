@@ -12,7 +12,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::env::var("ORDERS_ORIGIN").unwrap_or_else(|_| format!("http://localhost:{port}"));
     let app = orders::app(&path, stucco::server::SecretKey::from_env()?, &origin)?;
     let listener = tokio::net::TcpListener::bind(format!("127.0.0.1:{port}")).await?;
-    println!("orders listening on http://{}", listener.local_addr()?);
+    // Print the trusted origin: forms posted from any other address get 403.
+    println!("orders listening on {origin}/orders");
     axum::serve(listener, app).await?;
     Ok(())
 }
