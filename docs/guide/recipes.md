@@ -33,6 +33,41 @@ async fn customers(page: PageCx) -> Document {
 }
 ```
 
+## Show status and details
+
+Compose an order detail page from a breadcrumb trail, a status badge, labelled fields and a static callout. This handler uses the default component features and the `axum` feature:
+
+```rust
+use stucco::prelude::*;
+
+async fn order_detail(page: PageCx) -> Document {
+    let header = PageHeader::new("Order 1042").breadcrumbs(
+        Breadcrumbs::new()
+            .link("Orders", "/orders")
+            .current("Order 1042"),
+    );
+    let details = DescriptionList::new()
+        .item("Customer", "Ada Lovelace")
+        .item("Status", Badge::new("Paid").tone(Tone::Success))
+        .item("Total", "$128.00")
+        .item("Placed", "21 October 2026");
+    let shipping = Callout::new(Tone::Info)
+        .title("Preparing for dispatch")
+        .child(Text::new("Your order will ship within two working days."))
+        .actions(Link::new("Delivery information", "/delivery"));
+
+    page.title("Order 1042").main(
+        Stack::new()
+            .space(Space::S6)
+            .child(header)
+            .child(details)
+            .child(shipping),
+    )
+}
+```
+
+Load the order in your handler and use its values in place of these examples. The badge's text carries the status independently of colour. The callout is part of the page; it doesn't interrupt screen readers with a live announcement.
+
 ## Handle a form with errors
 
 Read the submission, validate it, and either redirect or show the form again with its values and errors, answering 422:

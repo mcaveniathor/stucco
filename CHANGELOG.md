@@ -18,6 +18,21 @@ listed under Breaking with its replacement.
 
 ### Added
 
+- `Badge` (`data`) renders a status label with a tone and an optional icon.
+- `Avatar` (`data`) shows a person's image or initials, with a decorative option
+  when the name is already visible.
+- `DescriptionList` (`data`) presents record fields as responsive term/detail pairs.
+- `Stat` (`data`) displays a metric with an optional trend, change tone and comparison.
+- `Breadcrumbs` (`navigation`) provides ancestor links and a current page label,
+  including placement through `PageHeader::breadcrumbs`.
+- `Steps` (`navigation`) marks the current step of a flow and links completed steps.
+- `Progress` (`feedback`) renders labelled determinate or indeterminate task progress.
+- `Meter` (`feedback`) renders a labelled measurement with range bands and value text.
+- `Disclosure` (`layout`) shows and hides content with native details and summary elements.
+- `Accordion` (`layout`) groups disclosures, optionally keeping only one open at a time.
+- `Callout` (`feedback`) presents a static note with a tone, title, body and actions.
+- Component guide sections cover the additions, with a "Show status and details"
+  order-page recipe.
 - `stucco_redb::Revision`: a hash of a record's stored bytes, for hidden form
   inputs. `get_with_revision`, `update_if` and `remove_if` check it inside one
   write transaction and return a conflict (`StoreError::is_conflict`,

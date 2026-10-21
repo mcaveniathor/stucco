@@ -8,14 +8,14 @@ Components are grouped into families, each behind a cargo feature. The facade en
 
 | Feature | Components |
 | --- | --- |
-| `layout` | `Stack`, `Cluster`, `Grid`, `Center`, `Container`, `Sidebar`, `Switcher`, `Surface`, `ThemeScope`, `SkipLink` |
+| `layout` | `Stack`, `Cluster`, `Grid`, `Center`, `Container`, `Sidebar`, `Switcher`, `Surface`, `ThemeScope`, `SkipLink`, `Disclosure`, `Accordion` |
 | `typography` | `Heading`, `Text`, `Link`, `Code`, `Kbd` |
 | `actions` | `Button`, `ButtonLink`, `IconButton` |
 | `forms` | `Form`, `Field`, `Input`, `Select`, `Textarea`, `Checkbox`, `RadioGroup`, `Fieldset`, `ErrorSummary`, `ConflictNotice` |
-| `feedback` | `EmptyState`, `LiveRegion`, `ReadinessPanel`, `Requirement` |
-| `navigation` | `Pagination`, `NavLink`, `Tabs` |
+| `feedback` | `EmptyState`, `LiveRegion`, `ReadinessPanel`, `Requirement`, `Progress`, `Meter`, `Callout` |
+| `navigation` | `Pagination`, `NavLink`, `Tabs`, `Breadcrumbs`, `Steps` |
 | `overlay` | `Dialog`, `Menu`, `Toast`, `Tooltip` |
-| `data` | `Card`, `Panel`, `Table`, `ResultCount` |
+| `data` | `Card`, `Panel`, `Table`, `ResultCount`, `Badge`, `Avatar`, `DescriptionList`, `Stat` |
 | `app` | `AppShell`, `PageHeader`, `SectionHeader`, `Footer` |
 | `collections` | `DataTable`, `Col`, `FilterBar`, `SearchForm`, `SortControl` |
 | `icons` | The Lucide icon catalog |
@@ -102,6 +102,104 @@ let shell = AppShell::new()
 ```
 
 The theme's shell layout decides where the primary links go: at the top of the side column, or in a row under the header. The sidebar is always a column beside the content, and narrow screens stack everything.
+
+## Status and details
+
+The `data` family presents a record's status, people, fields and metrics:
+
+```rust
+use stucco::prelude::*;
+
+let status = Badge::new("Paid").tone(Tone::Success);
+let customer = Cluster::of((
+    Avatar::new("Ada Lovelace").image("/people/ada.jpg").decorative(),
+    Text::new("Ada Lovelace"),
+));
+let details = DescriptionList::new()
+    .item("Customer", customer)
+    .item("Status", status)
+    .item("Total", "$128.00");
+let orders = Stat::new("Orders", "128")
+    .change("12%", Trend::Up)
+    .change_tone(Tone::Success)
+    .context("vs last week");
+```
+
+- **`Badge`** is a short text label with an optional decorative `icon`. Choose a label that says what the status means; `tone` reinforces it with colour.
+- **`Avatar`** shows initials, with an optional image over them, and accepts `size`. The name labels the avatar; use `decorative` when the same name is written beside it. Initials remain underneath if the image fails to load.
+- **`DescriptionList`** renders term/detail pairs as a `<dl>`. Details accept any `Render` value, including badges and links. Terms stack above details in narrow containers and sit beside them from 32rem of container width.
+- **`Stat`** shows a label and a formatted value. `change` takes text and `Trend::Up`, `Down` or `Flat`, with hidden text conveying the direction. Changes stay neutral until you set `change_tone`: a rising number can be good or bad. `context` explains the comparison.
+
+See [Show status and details](recipes.html#show-status-and-details) for a complete order page.
+
+## Where you are
+
+The `navigation` family offers a trail through the site and a position within a flow:
+
+```rust
+use stucco::prelude::*;
+
+let header = PageHeader::new("Order 1042").breadcrumbs(
+    Breadcrumbs::new()
+        .link("Orders", "/orders")
+        .current("Order 1042"),
+);
+let checkout = Steps::new("Checkout")
+    .step("Cart", "/checkout/cart")
+    .step("Delivery", "/checkout/delivery")
+    .step_disabled("Payment")
+    .current(1);
+```
+
+`Breadcrumbs` is a navigation landmark labelled "Breadcrumb" by default; `label` changes that name. Ancestors are links and the current page is text marked `aria-current="page"`. CSS draws the separators, so assistive technology doesn't read them.
+
+`Steps::current` takes a zero-based index and clamps past the end to the last step. Completed steps link back, the current step is text marked `aria-current="step"`, and later steps are text. `step_disabled` never links, even when completed. Completed and future states also have hidden text. Applications own the flow's eligibility checks and routes.
+
+## Progress
+
+Use `Progress` for work advancing toward completion and `Meter` for a measurement within a known range. Both belong to `feedback` and render native HTML controls with visible labels:
+
+```rust
+use stucco::feedback::{Meter, Progress};
+
+let import = Progress::new("Importing orders", 42.0, 100.0).show_value();
+let waiting = Progress::indeterminate("Preparing import");
+let storage = Meter::new("Storage used", 7.2, 0.0, 10.0)
+    .low(2.0)
+    .high(8.0)
+    .optimum(0.0)
+    .value_text("7.2 of 10 GB");
+```
+
+`Progress::show_value` displays the percentage beside a determinate bar. Use `indeterminate` while the total amount of work is unknown. `Meter` uses `low`, `high` and `optimum` to describe its bands; `value_text` adds visible text linked with `aria-describedby`. Keep updates and any live announcements under application control.
+
+Values clamp to the range, and non-finite values become its minimum. An invalid progress maximum becomes 1; a non-finite meter minimum becomes 0, and a meter maximum that isn't finite and above its minimum falls back to `min + 1`.
+
+## Disclosure and callouts
+
+`Disclosure` and `Accordion`, in `layout`, use native `<details>` and `<summary>`, so opening and closing works without JavaScript:
+
+```rust
+use stucco::prelude::*;
+
+let shipping = Disclosure::new("Shipping details")
+    .heading(2)
+    .open(true)
+    .child(Text::new("Arrives by Friday."));
+let help = Accordion::new()
+    .heading(2)
+    .item_open("Shipping", Text::new("Tracked delivery is included."))
+    .item("Returns", Text::new("Return within 30 days."))
+    .exclusive();
+let note = Callout::new(Tone::Warning)
+    .title("Payment overdue")
+    .child(Text::new("Pay the invoice before we can ship your order."))
+    .actions(Link::new("View invoice", "/orders/1042/invoice"));
+```
+
+`Disclosure::open(true)` and `Accordion::item_open` choose the initial open state. `heading` puts each summary in a heading, clamped to levels 2–6. `Accordion::exclusive` gives the details a shared name so supporting browsers keep at most one open; other browsers still offer independent disclosures.
+
+`Callout`, in `feedback`, is a static note with a tone, an optional title, body children and actions. Its built-in icon is decorative, and hidden text names non-neutral tones. It has no live role: use `FlashMessages` after a redirect or `LiveRegion` for changes that need announcing.
 
 ## Overlays
 
