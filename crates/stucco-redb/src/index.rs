@@ -133,22 +133,35 @@ impl<K, V, KC: KeyCodec<K>, VC: Codec<V>> IndexTable<K, V, KC, VC> {
         Ok(existed)
     }
     /// Rebuilds the entire index in one transaction. This is an O(n) operation.
+    ///
+    /// It also rewrites any record whose stored bytes differ from what the
+    /// codec now encodes (say, after a field gained a serde default), so
+    /// [`revision_of`](Self::revision_of) matches every stored revision.
     pub fn rebuild(&self) -> Result<(), StoreError> {
         let tx = self.table.store.db.begin_write().map_err(StoreError::new)?;
         {
-            let data = tx
+            let mut data = tx
                 .open_table(redb::TableDefinition::<&[u8], &[u8]>::new(&self.table.name))
                 .map_err(StoreError::new)?;
             let mut index = tx
                 .open_table(redb::TableDefinition::<&[u8], &[u8]>::new(&self.name))
                 .map_err(StoreError::new)?;
             index.retain(|_, _| false).map_err(StoreError::new)?;
+            let mut rewrites = Vec::new();
             for row in data.iter().map_err(StoreError::new)? {
-                let (key, value) = row.map_err(StoreError::new)?;
-                let value = self.table.values.decode(value.value())?;
+                let (key, stored) = row.map_err(StoreError::new)?;
+                let value = self.table.values.decode(stored.value())?;
                 let order = compound(&(self.projection)(&value), key.value());
                 index
                     .insert(order.as_slice(), key.value())
+                    .map_err(StoreError::new)?;
+                let canonical = self.table.values.encode(&value)?;
+                if canonical != stored.value() {
+                    rewrites.push((key.value().to_vec(), canonical));
+                }
+            }
+            for (key, canonical) in rewrites {
+                data.insert(key.as_slice(), canonical.as_slice())
                     .map_err(StoreError::new)?;
             }
         }

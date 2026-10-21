@@ -1,6 +1,58 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 — unreleased
+
+Writes: conflict-checked storage, CSRF and flash, and an orders example that
+creates, edits and deletes. This release breaks a few 0.2 APIs; each change is
+listed under Breaking with its replacement.
+
+### Breaking
+
+- `RedbCollection::new(index_table, mapping)` → `RedbCollection::new(AsyncTable::new(index_table), mapping)`.
+- `RedbCollection::concurrency(n)` → `AsyncTable::concurrency(n)`; reads and writes share the limit.
+- The inherent `into_response()` on `PageResponse`, `FragmentResponse` and
+  `SeeOther` is now `into_http()`. In axum handlers, `.into_response()` now
+  resolves to axum's `IntoResponse` without spelling out the trait.
+- The empty, reserved features `marketing`, `diagram`, `markdown`, `askama`
+  and `maud` are removed from `stucco`.
+
+### Added
+
+- `stucco_redb::Revision`: a hash of a record's stored bytes, for hidden form
+  inputs. `get_with_revision`, `update_if` and `remove_if` check it inside one
+  write transaction and return a conflict (`StoreError::is_conflict`,
+  `conflict_revision`) when the record changed or was deleted.
+  `revision_of` computes one for rows from a scan.
+- `create(|id| value)` on `u64` tables allocates the next id in the write
+  transaction.
+- `AsyncTable` runs reads and writes on Tokio's blocking pool behind a
+  concurrency limit; `RedbCollection::table` returns it.
+- `IndexTable::rebuild` also rewrites records whose stored bytes differ from
+  the codec's current encoding, so `revision_of` matches after a codec or
+  schema change.
+- The orders example creates, edits and deletes orders, with CSRF, flash
+  messages, stale-edit conflicts, a row Actions menu and a delete dialog that
+  falls back to a confirmation page. Unknown or malformed addresses get an
+  HTML not-found page, and only a new database is seeded. HTTP and browser
+  tests cover each status path.
+- A "Build a create/edit/delete flow" recipe replaces "Confirm before deleting".
+
+### Fixed
+
+- Visually hidden text in a table cell no longer widens narrow pages: the
+  table scroller is now its containing block.
+
+### Also in this release
+
+- Opt-in `CsrfLayer` verifies signed double-submit tokens on unsafe methods,
+  checks the public origin and Fetch Metadata, and replays bounded form bodies
+  for `Submission`. `CsrfToken` is available through `RequestContext`.
+- `FlashLayer` and `SeeOther::flash` carry signed five-minute redirect feedback;
+  `FlashMessages` renders escaped, labelled status/error messages without JavaScript.
+- `SecretKey::from_env` loads a stable application key, warns when generating a
+  debug-only development key, and rejects missing release keys. These Tower
+  APIs use the new default `csrf` feature and do not require axum. Layers are
+  installed explicitly; existing router setup and POST routes retain their behavior.
 
 - Responsive `DataTable` cards and `Table::card_labels` adapt to container width with one copy of each cell/control and retained table semantics.
 - `ReturnContext` validates local return destinations and carries collection state through links, forms and redirects.

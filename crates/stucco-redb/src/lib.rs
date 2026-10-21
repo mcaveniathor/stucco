@@ -23,27 +23,39 @@
 //! Cursor scans hold one read snapshot, decode owned values and materialize a
 //! page plus one matching record. Predicates can still visit every record.
 //! Offset mode explicitly materializes all matching rows. With the optional
-//! tokio feature, CollectionMapping defines predicates/order and RedbCollection
-//! moves scans onto a bounded blocking pool. Share clones or with_mapping views
-//! across requests; creating a fresh source per request creates a fresh budget.
+//! tokio feature, AsyncTable runs reads and writes on a bounded blocking pool,
+//! CollectionMapping defines predicates/order, and RedbCollection scans through
+//! the AsyncTable's budget. Share clones or with_mapping views across requests;
+//! creating a fresh AsyncTable per request creates a fresh budget.
+//!
+//! Revisions (hashes of stored bytes) make edits conditional:
+//! get_with_revision, update_if and remove_if return a conflict when the
+//! record changed in between.
 //! Cursors are query-scoped locators, not authorization tokens. The table and
 //! indexes are not automatically migrated when changing codecs/schema.
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
+#[cfg(feature = "tokio")]
+mod async_table;
 mod codec;
 #[cfg(feature = "tokio")]
 mod collection;
 mod error;
 mod index;
+mod revision;
 mod scan;
 mod store;
 mod table;
+mod write;
+#[cfg(feature = "tokio")]
+pub use async_table::AsyncTable;
 pub use codec::{Codec, KeyCodec, PostcardCodec, U64Key, Utf8Key};
 #[cfg(feature = "tokio")]
 pub use collection::{CollectionMapping, RedbCollection};
 pub use error::StoreError;
 pub use index::IndexTable;
+pub use revision::{InvalidRevision, Revision};
 pub use scan::ScanRequest;
 pub use store::Store;
 pub use table::Table;

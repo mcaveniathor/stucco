@@ -26,9 +26,15 @@ axum = { workspace = true, optional = true }
 tower-http = { workspace = true, optional = true, features = ["trace", "request-id", "limit", "timeout", "set-header"] }
 tracing = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true, features = ["time"] }
+hmac = { version = "0.12", optional = true }
+sha2 = { version = "0.10", optional = true }
+getrandom = { version = "0.3", optional = true }
+base64 = { version = "0.22", optional = true }
+form_urlencoded = { workspace = true, optional = true }
 
 [features]
-default = ["axum", "tower-http"]
+default = ["axum", "tower-http", "csrf"]
+csrf = ["dep:hmac", "dep:sha2", "dep:getrandom", "dep:base64", "dep:form_urlencoded", "dep:tracing"]
 axum = ["dep:axum"]
 tower-http = ["dep:tower-http", "dep:tokio", "dep:tracing", "tower/util"]
 

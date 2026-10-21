@@ -60,8 +60,8 @@ pub fn respond(
     fragment: impl FnOnce(&str) -> FragmentResponse,
 ) -> Response<Full<Bytes>> {
     match kind {
-        RequestKind::Full => full().into_response(),
-        RequestKind::Fragment { target } => fragment(target).into_response(),
+        RequestKind::Full => full().into_http(),
+        RequestKind::Fragment { target } => fragment(target).into_http(),
     }
 }
 

@@ -1,11 +1,15 @@
 # stucco 0.2 plan: writes and overlays
 
-Status: proposal. 0.1 renders and queries data. 0.2 should let an
+Status: complete. The work is released as 0.3.0 rather than 0.2.x, because
+the planned breaking changes came after 0.2.1 was published. The original
+scope follows.
+
+0.1 renders and queries data. 0.2 should let an
 application change it: a server-rendered create/edit/delete flow that works
 without JavaScript, plus native dialogs for confirmations. The orders example
 becomes a full CRUD admin and serves as the acceptance test.
 
-## What already exists
+## Baseline when proposed
 
 - `FormState` (stucco-core) holds submitted values, field errors and form
   errors. `Field::bind`, `Checkbox::bind` and `RadioGroup::bind` render
@@ -18,7 +22,7 @@ becomes a full CRUD admin and serves as the acceptance test.
 - `stucco-redb`: `Table::get/put/remove`, transactional secondary indexes.
 - The `--st-z-overlay` token and `Level::Overlay` surface.
 
-The missing pieces are parsing a submission, validation, CSRF issuing and
+The missing pieces at proposal time were parsing a submission, validation, CSRF issuing and
 verifying, post-redirect-get with flash messages, storage writes from async
 handlers, and overlay components.
 
@@ -49,7 +53,16 @@ below are the original plan; the code is the reference now.
    the state has errors, re-render the page with `422 Unprocessable Content`
    and the bound `FormState`.
 
-## Milestone 2: CSRF and flash messages (stucco-tower)
+## Milestone 2: CSRF and flash messages (stucco-tower) — done
+
+Implemented behind the default `csrf` feature: opt-in `CsrfLayer` and
+`FlashLayer`, `SecretKey`, request-context `CsrfToken`/`Flash`, and
+`SeeOther::flash`. HTTP-independent `Flash`/`FlashLevel` live in core and
+`FlashMessages` lives in UI feedback. Layers preserve other cookies, prevent
+shared caching, and work without axum. Tests cover body replay and limits,
+unsafe methods, source headers, duplicate and invalid tokens, cookie expiry,
+tampering, redirect consumption and feature isolation. See the forms guide for
+setup and the cookie/session lifecycle. The original requirements follow.
 
 1. **CSRF.** Use a signed double-submit cookie. `CsrfLayer` sets an
    `HttpOnly; SameSite=Lax; Secure` cookie holding a random token. It puts the

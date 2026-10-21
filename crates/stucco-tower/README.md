@@ -4,7 +4,9 @@ Tower integration for stucco: asset services, page and fragment responses,
 request negotiation, request context, and backend collection source traits.
 
 The default `axum` and `tower-http` features add Axum asset routing and the
-standard middleware stack. Disable defaults for the base Tower/HTTP interfaces.
+standard middleware stack. The default `csrf` feature adds explicit CSRF and
+flash layers and their signing primitives; it works without Axum. Disable
+defaults for the base Tower/HTTP interfaces.
 
 Most applications use it through the `stucco` crate's `axum` feature, which
 puts the setup in `stucco::prelude` and the rest under `stucco::server`.
@@ -32,7 +34,27 @@ pieces `stucco` puts together.
 provide their own authentication and authorization context. The default stack
 does not implement an application's authorization policy.
 
-Minimum Rust: **1.85**. The 0.2 API is experimental.
+For browser writes, install `CsrfLayer::new(key, "https://example.com")?`
+on your routes before calling `.stucco(...)`. Read `CsrfToken` through
+`RequestContext::get` and pass `as_str()` to `Form::csrf`. The layer verifies
+unsafe methods, checks source headers against your public origin, and replays
+bounded form bodies for `Submission`. It is not installed automatically.
+
+`FlashLayer::new(key)` transports `SeeOther::new("/done").flash(Flash::new(
+FlashLevel::Success, "Saved"))` through a signed five-minute cookie. Read the
+next request's `Flash` from its context and render it with `FlashMessages`.
+Both layers use Secure, HttpOnly, host-only cookies and private, non-cacheable
+responses. Install them before mounting assets so assets do not consume messages.
+
+`SecretKey::from_env()` reads 64 hex digits from `STUCCO_SECRET_KEY`; missing
+keys are errors in release builds, or generate an ephemeral development key
+with a tracing warning in debug builds. Share one stable key across replicas.
+Use `.secure(false)` on both layers only for local HTTP development. Messages
+are signed, not encrypted, limited to 1024 bytes, and are not authorization.
+See [the forms guide](https://github.com/mcaveniathor/stucco/blob/main/docs/guide/forms.md)
+for setup, layer ordering, limits and session lifecycle notes.
+
+Minimum Rust: **1.85**. The API is experimental.
 See [the hello example](https://github.com/mcaveniathor/stucco/tree/main/examples/hello)
 for a runnable application.
 

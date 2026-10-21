@@ -56,7 +56,7 @@ async fn create(page: PageCx, Submission(form): Submission) -> Response {
     let mut v = Validator::new(form);
     let customer = v.text("customer").required("Enter a customer name").get();
     match v.finish(|| customer) {
-        Ok(_customer) => IntoResponse::into_response(SeeOther::new("/orders")),
+        Ok(_customer) => SeeOther::new("/orders").into_response(),
         Err(state) => page
             .title("New order")
             .main(order_form(&state))
@@ -172,27 +172,128 @@ let config = LayerConfig { body_limit: 10 * 1024 * 1024, timeout: Duration::from
 let app = axum::Router::new().stucco_with(Preset::Slate, &config);
 ```
 
-## Confirm before deleting
+## Build a create/edit/delete flow
 
-Put the delete form in a dialog, and open it from the row's button. The form posts as usual; Cancel, Escape or a click outside closes it:
+Store records in an `AsyncTable`, and carry each record's revision through its
+edit form. If someone else saved the record in the meantime, the update is
+refused and the user keeps what they typed. This is the edit half of the
+[orders example](https://github.com/mcaveniathor/stucco/tree/main/examples/orders),
+which also creates, lists and deletes:
+
+```rust
+use axum::extract::rejection::PathRejection;
+use axum::extract::{Path, State};
+use axum::http::StatusCode;
+use axum::response::{IntoResponse, Response};
+use stucco::forms::HiddenInput;
+use stucco::prelude::*;
+use stucco::server::{CsrfToken, SeeOther, Submission};
+use stucco::{FormState, Validator};
+use stucco_redb::{AsyncTable, Revision};
+
+// Bad ids (`/customers/abc`) get the same page as missing ones, rather than
+// axum's plain-text 400.
+fn not_found(page: PageCx) -> Response {
+    page.title("Not found")
+        .main(Heading::new(1, "Customer not found"))
+        .status(StatusCode::NOT_FOUND)
+        .into_response()
+}
+
+fn edit_page(page: PageCx, id: u64, state: &FormState, revision: &str) -> Response {
+    let token = page.context().get::<CsrfToken>().map(|t| t.as_str().to_owned());
+    let status = if state.conflict().is_some() { StatusCode::CONFLICT }
+        else if state.has_errors() { StatusCode::UNPROCESSABLE_ENTITY }
+        else { StatusCode::OK };
+    page.title("Edit customer")
+        .main(
+            Form::post(format!("/customers/{id}"))
+                .csrf(token.as_deref().unwrap_or_default())
+                .child(HiddenInput::new("revision", revision))
+                .child(ErrorSummary::new(state).field("name", "customer-name"))
+                .child(ConflictNotice::new(state, format!("/customers/{id}/edit")).focus(false))
+                .child(Field::new("Name", Input::text("name").id("customer-name")).bind(state))
+                .child(Button::new("Save").submit().variant(Variant::Primary)),
+        )
+        .status(status)
+        .into_response()
+}
+
+async fn edit(
+    State(db): State<AsyncTable<u64, String>>,
+    page: PageCx,
+    path: Result<Path<u64>, PathRejection>,
+) -> Response {
+    let Ok(Path(id)) = path else { return not_found(page) };
+    match db.get_with_revision(id).await {
+        Ok(Some((name, revision))) => {
+            let state = FormState::new().with_value("name", name);
+            edit_page(page, id, &state, &revision.to_string())
+        }
+        Ok(None) => not_found(page),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
+async fn update(
+    State(db): State<AsyncTable<u64, String>>,
+    page: PageCx,
+    path: Result<Path<u64>, PathRejection>,
+    Submission(form): Submission,
+) -> Response {
+    let Ok(Path(id)) = path else { return not_found(page) };
+    let submitted = form.value("revision").unwrap_or_default().to_owned();
+    let mut v = Validator::new(form.clone());
+    let name = v.text("name").required("Enter a name").get();
+    let name = match v.finish(|| name) {
+        Ok(name) => name,
+        Err(state) => return edit_page(page, id, &state, &submitted),
+    };
+    // A malformed revision can't match anything: treat it as a conflict.
+    let Ok(revision) = submitted.parse::<Revision>() else {
+        let state = form.with_conflict(submitted.clone(), String::new());
+        return edit_page(page, id, &state, &submitted);
+    };
+    match db.update_if(id, revision, move |_| name).await {
+        Ok(_) => SeeOther::new("/customers")
+            .flash(Flash::new(FlashLevel::Success, "Customer saved."))
+            .into_response(),
+        // Changed meanwhile: show the conflict, keeping the user's entries
+        // and the revision they started from.
+        Err(e) => match e.conflict_revision() {
+            Some(Some(current)) => {
+                let state = form.with_conflict(submitted.clone(), current.to_string());
+                edit_page(page, id, &state, &submitted)
+            }
+            Some(None) => not_found(page),
+            None => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        },
+    }
+}
+```
+
+The router needs `CsrfLayer` and `FlashLayer` (see [Forms](forms.html)).
+Delete the same way: put the revision in the delete form and call
+`remove_if`. To confirm first, put that form in a `Dialog` and open it with
+`link_opener`, which links to a confirmation page where script doesn't run:
 
 ```rust
 use stucco::prelude::*;
 
-fn delete_order(id: u64) -> impl Render {
+fn delete_order(id: u64, revision: &str, token: &str) -> impl Render {
     let dialog_id = format!("delete-order-{id}");
     let confirm = Dialog::new(&dialog_id, format!("Delete order {id}?"))
         .child(Text::new("The order and its history are removed."))
         .actions(Dialog::close_button(&dialog_id, "Cancel"))
         .actions(
             Form::post(format!("/orders/{id}/delete"))
+                .csrf(token)
+                .child(stucco::forms::HiddenInput::new("revision", revision))
                 .child(Button::new("Delete order").submit().variant(Variant::Danger)),
         );
-    (confirm.opener("Delete").variant(Variant::Ghost), confirm)
+    (confirm.link_opener("Delete…", format!("/orders/{id}/delete")), confirm)
 }
 ```
-
-After the redirect, show a `Toast::new("Order deleted").tone(Tone::Success)` on the page it lands on.
 
 ## Use a server-side theme preference without JavaScript
 

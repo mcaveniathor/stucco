@@ -77,3 +77,22 @@ test("cards respond to container width, not just the viewport", async ({ page })
   await page.locator(".st-data-table").evaluate(el => (el as HTMLElement).style.width = "360px");
   await expect(page.locator(".st-table tbody > tr").first()).toHaveCSS("display", "block");
 });
+
+for (const javaScriptEnabled of [false, true]) {
+  test.describe(`redirect feedback with JavaScript ${javaScriptEnabled ? "enabled" : "disabled"}`, () => {
+    test.use({ javaScriptEnabled });
+    test("shows labelled feedback with appropriate live regions", async ({ page }) => {
+      await page.goto("/workflows.html");
+      const success = page.locator('.st-flash[data-level="success"]');
+      const error = page.locator('.st-flash[data-level="error"]');
+      await expect(success).toBeVisible();
+      await expect(success).toHaveAttribute("role", "status");
+      await expect(success).toHaveAttribute("aria-live", "polite");
+      await expect(success).toHaveText("Success: Order saved.");
+      await expect(error).toBeVisible();
+      await expect(error).toHaveAttribute("role", "alert");
+      await expect(error).toHaveAttribute("aria-live", "assertive");
+      await expect(error).toContainText("Error: The order could not be deleted.");
+    });
+  });
+}

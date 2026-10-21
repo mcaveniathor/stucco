@@ -12,8 +12,14 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: "cargo run -q -p orders",
-      env: { PORT: "4181", ORDERS_DB: "../target/orders-browser.redb" },
+      // A fresh database each run, so created and deleted orders don't pile up.
+      command: "rm -f ../target/orders-browser.redb && cargo run -q -p orders",
+      env: {
+        PORT: "4181",
+        ORDERS_DB: "../target/orders-browser.redb",
+        ORDERS_ORIGIN: "http://localhost:4181",
+        STUCCO_SECRET_KEY: "0".repeat(63) + "1",
+      },
       url: "http://localhost:4181/orders",
       reuseExistingServer: !process.env.CI,
       timeout: 300_000,
