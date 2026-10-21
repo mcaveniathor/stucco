@@ -8,9 +8,11 @@
 //! assert!(to_html(&empty).contains("No orders"));
 //! assert!(to_html(&LiveRegion::new().child("Showing 25 orders")).contains("aria-live"));
 //! ```
+mod callout;
 mod flash;
 mod progress;
 mod readiness;
+pub use callout::Callout;
 pub use flash::FlashMessages;
 pub use progress::{Meter, Progress};
 pub use readiness::{ReadinessPanel, Requirement};

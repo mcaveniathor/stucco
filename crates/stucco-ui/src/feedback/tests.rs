@@ -93,3 +93,54 @@ fn meter_fixes_an_empty_range() {
 fn meter_without_text_has_no_description() {
     assert!(!to_html(&Meter::new("x", 1.0, 0.0, 2.0)).contains("aria-describedby"));
 }
+
+#[test]
+fn callout_prefixes_title_by_tone() {
+    use crate::Tone;
+    for (tone, prefix) in [
+        (Tone::Warning, Some("Warning: ")),
+        (Tone::Info, Some("Note: ")),
+        (Tone::Success, Some("Success: ")),
+        (Tone::Danger, Some("Important: ")),
+        (Tone::Accent, Some("Note: ")),
+        (Tone::Default, None),
+    ] {
+        let html = to_html(&Callout::new(tone).title("Payment overdue"));
+        assert!(
+            html.contains(&format!(r#"data-tone="{}""#, tone.as_str())),
+            "{html}"
+        );
+        let title = match prefix {
+            Some(p) => format!(
+                r#"<p class="st-callout-title"><span class="st-sr-only">{p}</span>Payment overdue</p>"#
+            ),
+            None => r#"<p class="st-callout-title">Payment overdue</p>"#.to_owned(),
+        };
+        assert!(html.contains(&title), "{html}");
+    }
+}
+
+#[test]
+fn callout_without_title_prefixes_the_body() {
+    let html = to_html(&Callout::new(crate::Tone::Warning).child("Check <this>"));
+    let prefix = html
+        .find(r#"<span class="st-sr-only">Warning: </span>"#)
+        .expect("prefix");
+    assert!(prefix < html.find("Check &lt;this&gt;").unwrap(), "{html}");
+    assert!(!html.contains("st-callout-title"), "{html}");
+}
+
+#[test]
+fn callout_has_no_role() {
+    assert!(!to_html(&Callout::new(crate::Tone::Danger).title("x")).contains("role="));
+}
+
+#[test]
+fn callout_actions_wrap() {
+    let html = to_html(&Callout::new(crate::Tone::Info).title("x").actions("Do it"));
+    assert!(
+        html.contains(r#"<div class="st-callout-actions">Do it</div>"#),
+        "{html}"
+    );
+    assert!(html.contains(r#"aria-hidden="true""#), "{html}");
+}

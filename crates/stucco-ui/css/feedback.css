@@ -38,3 +38,24 @@
   .st-meter > meter:-moz-meter-sub-optimum::-moz-meter-bar { background: var(--st-warning); }
   .st-meter > meter:-moz-meter-sub-sub-optimum::-moz-meter-bar { background: var(--st-danger); }
 }
+
+@layer stucco.components {
+  /* Callout: an inline note. Text uses the tone's checked text colour, and
+     links inherit it, since accent links aren't checked on every soft fill. */
+  .st-callout {
+    display: flex; gap: var(--st-space-3); padding: var(--st-space-4);
+    border: var(--st-line, 1px) solid var(--st-tag-border, var(--st-border)); border-radius: var(--st-surface-radius);
+    background: var(--st-tag-bg, var(--st-surface-raised)); color: var(--st-text);
+  }
+  .st-callout > svg { flex: none; inline-size: 1.25rem; block-size: 1.25rem; margin-block-start: 0.125rem; }
+  .st-callout-body { display: grid; gap: var(--st-space-2); min-inline-size: 0; overflow-wrap: anywhere; }
+  .st-callout-body > * { margin: 0; }
+  .st-callout-title { font-weight: 600; }
+  .st-callout a:not(.st-button) { color: inherit; text-decoration: underline; }
+  .st-callout-actions { display: flex; flex-wrap: wrap; gap: var(--st-space-2); }
+  .st-callout[data-tone="accent"] { background: var(--st-accent-soft); color: var(--st-accent-text); border-color: transparent; }
+  .st-callout[data-tone="info"] { background: var(--st-info-soft); color: var(--st-info-text); border-color: transparent; }
+  .st-callout[data-tone="success"] { background: var(--st-success-soft); color: var(--st-success-text); border-color: transparent; }
+  .st-callout[data-tone="warning"] { background: var(--st-warning-soft); color: var(--st-warning-text); border-color: transparent; }
+  .st-callout[data-tone="danger"] { background: var(--st-danger-soft); color: var(--st-danger-text); border-color: transparent; }
+}
