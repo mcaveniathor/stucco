@@ -1,6 +1,10 @@
 # Changelog
 
-## 0.4.0 — Unreleased
+## 0.4.0 — 2026-10-21
+
+Four signature visual directions, reproducible guided theme discovery, and
+complete responsive showcase screens. The new public theme-specification enum
+variants make this a breaking release from 0.3; see the compatibility note below.
 
 - `Heading::display()` adds responsive display sizing without changing body,
   form or table typography.
@@ -21,6 +25,8 @@
   switches directions, with ordinary showcase links as its no-script fallback.
 - `Sparkline` and `Timeline` add semantic trend and activity presentations. Shared
   screen recipes and an opt-in, licensed local font pairing live in the showcase.
+- Browser accessibility audits wait for fonts, layout and finite transitions,
+  preserve all Axe rules, and retain failure diagnostics in CI.
 - Ghost actions stay flat when pressed. Disabled/busy buttons do not react to
   hover or press; reduced-motion preferences remove press and opening movement.
 

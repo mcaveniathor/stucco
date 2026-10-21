@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import AxeBuilder from "@axe-core/playwright";
+import { audit } from "../audit";
 
 test.use({ baseURL: "http://localhost:4180" });
 
@@ -39,5 +39,5 @@ test("fragment requests get only the target, uncached, varying on the request ki
 
 test("the page has no axe violations", async ({ page }) => {
   await page.goto("/?q=Ada");
-  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  expect((await audit(page)).violations).toEqual([]);
 });

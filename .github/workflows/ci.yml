@@ -113,6 +113,13 @@ jobs:
       - if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium firefox webkit
       - run: npx playwright test
+      - name: Browser failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-test-results
+          path: browser/test-results/
+          retention-days: 7
       - name: Runtime size budget (6 KB gzip)
         run: test "$(gzip -c ../target/gallery/_stucco/stucco-runtime.*.js | wc -c)" -le 6144
   release:

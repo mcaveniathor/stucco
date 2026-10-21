@@ -14,6 +14,13 @@ Playwright starts the repository's orders, gallery, site (including WASM) and
 hello workflows. Install the Playwright host dependencies when a browser reports
 missing shared libraries. Local HTTP server ports must be available.
 
+Accessibility audits wait for loaded fonts, layout frames and finite transitions
+before running Axe; scheme tests also wait for the requested media preference.
+Indefinite busy animations keep running. All rules remain enabled. On a violation,
+the test attaches Axe's findings, computed page colors and a viewport screenshot;
+failed CI runs retain `browser/test-results/` as the `browser-test-results`
+artifact for seven days.
+
 ## Repeatable visual captures
 
 ```sh

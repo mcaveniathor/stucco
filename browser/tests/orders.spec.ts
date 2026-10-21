@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import AxeBuilder from "@axe-core/playwright";
+import { audit } from "../audit";
 test.use({ baseURL: "http://localhost:4181" });
 
 test("GET filters work without JavaScript", async ({ browser }) => {
@@ -42,7 +42,7 @@ for (const scheme of ["light", "dark"] as const) {
 
     test("is accessible at narrow width", async ({ page }) => {
       await page.goto("/orders");
-      expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+      expect((await audit(page)).violations).toEqual([]);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
       const skip = page.getByRole("link", { name: "Skip to main content" });
       // Some WebKit builds skip links according to the platform preference.
@@ -121,7 +121,7 @@ for (const js of [true, false]) {
 test("order pages are accessible", async ({ page }) => {
   for (const path of ["/orders/new", "/orders/1", "/orders/1/edit", "/orders/1/delete"]) {
     await page.goto(path);
-    expect((await new AxeBuilder({ page }).analyze()).violations, path).toEqual([]);
+    expect((await audit(page)).violations, path).toEqual([]);
   }
 });
 
@@ -151,7 +151,7 @@ test("a stale edit shows an accessible conflict and keeps the entries", async ({
     await expect(mine.getByRole("heading", { name: "This record has changed" })).toBeVisible();
     await expect(mine.getByRole("group", { name: "There is a problem" })).toBeFocused();
     await expect(mine.getByLabel("Customer")).toHaveValue(`${name} mine`);
-    expect((await new AxeBuilder({ page: mine }).analyze()).violations).toEqual([]);
+    expect((await audit(mine)).violations).toEqual([]);
   } finally {
     await context.close();
   }
@@ -162,7 +162,7 @@ test("not-found pages are accessible HTML", async ({ page }) => {
     const response = await page.goto(path);
     expect(response!.status(), path).toBe(404);
     await expect(page.getByRole("link", { name: "Back to orders" })).toBeVisible();
-    expect((await new AxeBuilder({ page }).analyze()).violations, path).toEqual([]);
+    expect((await audit(page)).violations, path).toEqual([]);
   }
 });
 
