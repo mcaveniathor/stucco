@@ -27,9 +27,14 @@ listed under Breaking with its replacement.
   transaction.
 - `AsyncTable` runs reads and writes on Tokio's blocking pool behind a
   concurrency limit; `RedbCollection::table` returns it.
+- `IndexTable::rebuild` also rewrites records whose stored bytes differ from
+  the codec's current encoding, so `revision_of` matches after a codec or
+  schema change.
 - The orders example creates, edits and deletes orders, with CSRF, flash
   messages, stale-edit conflicts, a row Actions menu and a delete dialog that
-  falls back to a confirmation page. HTTP tests cover each status path.
+  falls back to a confirmation page. Unknown or malformed addresses get an
+  HTML not-found page, and only a new database is seeded. HTTP and browser
+  tests cover each status path.
 - A "Build a create/edit/delete flow" recipe replaces "Confirm before deleting".
 
 ### Fixed
