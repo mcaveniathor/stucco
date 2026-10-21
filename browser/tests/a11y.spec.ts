@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import AxeBuilder from "@axe-core/playwright";
+import { audit } from "../audit";
 
 const paths = [
   "/index.html",
@@ -27,7 +27,10 @@ for (const colorScheme of ["light", "dark"] as const) {
     for (const path of paths) {
       test(`${path} has no axe violations (${colorScheme})`, async ({ page }) => {
         await page.goto(path);
-        const results = await new AxeBuilder({ page }).analyze();
+        await expect.poll(() => page.evaluate(() =>
+          matchMedia("(prefers-color-scheme: dark)").matches,
+        )).toBe(colorScheme === "dark");
+        const results = await audit(page);
         expect(results.violations).toEqual([]);
       });
     }

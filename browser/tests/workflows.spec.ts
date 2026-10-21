@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import AxeBuilder from "@axe-core/playwright";
+import { audit } from "../audit";
 
 for (const width of [320, 390, 1280]) {
   test.describe(`workflows at ${width}px`, () => {
@@ -64,7 +64,7 @@ for (const width of [320, 390, 1280]) {
 
       test("has no axe violations", async ({ page }, testInfo) => {
         await page.goto("/workflows.html");
-        expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+        expect((await audit(page)).violations).toEqual([]);
         await page.screenshot({ path: testInfo.outputPath("workflow.png"), fullPage: true });
       });
     });

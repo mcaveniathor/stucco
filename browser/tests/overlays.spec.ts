@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import AxeBuilder from "@axe-core/playwright";
+import { audit } from "../audit";
 
 const dialog = (page: Page) => page.locator("dialog#delete-order");
 
@@ -191,11 +191,11 @@ test("open dialogs and menus have no axe violations", async ({ page }) => {
   await expect(dialog(page)).toBeVisible();
   // Contrast during the opening fade is not the dialog's settled contrast.
   await expect(dialog(page)).toHaveCSS("opacity", "1");
-  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  expect((await audit(page)).violations).toEqual([]);
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Actions" }).click();
   await expect(page.locator("#order-actions")).toBeVisible();
-  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  expect((await audit(page)).violations).toEqual([]);
 });
 
 test.describe("without JavaScript", () => {

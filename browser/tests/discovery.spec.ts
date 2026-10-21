@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import AxeBuilder from "@axe-core/playwright";
+import { audit } from "../audit";
 const SITE = "http://localhost:4182/";
 const ready = async (page: Page) => expect(page.locator("#pg-corners option").first()).toHaveText(/^Base \(.+\)$/);
 
@@ -87,7 +87,7 @@ for (const direction of ["atelier", "precision", "prism", "play"]) {
     for (const screen of ["orders", "editorial", "project"]) {
       await page.goto(`/showcase-${direction}-${screen}.html`);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
-      const result = await new AxeBuilder({ page }).analyze();
+      const result = await audit(page);
       expect(result.violations.map((v) => `${v.id}: ${v.nodes[0]?.target}`)).toEqual([]);
     }
   });
@@ -117,7 +117,7 @@ for (const direction of ["atelier", "precision", "prism", "play"]) {
       await page.evaluate(({ direction, scheme }) => { document.documentElement.dataset.stTheme = direction; document.documentElement.dataset.theme = scheme; }, { direction, scheme });
       await expect(page.getByLabel("Email", { exact: true })).toHaveAttribute("aria-invalid", "true");
       await expect(page.getByLabel("I agree to the terms")).toBeChecked();
-      const result = await new AxeBuilder({ page }).analyze();
+      const result = await audit(page);
       expect(result.violations.map((v) => v.id)).toEqual([]);
     }
     await page.goto("/actions.html");

@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import AxeBuilder from "@axe-core/playwright";
+import { audit } from "../audit";
 
 // The documentation site, served by the "site" web server in the config.
 const SITE = "http://localhost:4182/";
@@ -173,7 +173,7 @@ for (const width of [1280, 360]) {
     test(`/${path} passes axe at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 800 });
       await page.goto(SITE + path);
-      const results = await new AxeBuilder({ page }).analyze();
+      const results = await audit(page);
       expect(results.violations.map((v) => `${v.id}: ${v.nodes[0]?.target}`)).toEqual([]);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     });
