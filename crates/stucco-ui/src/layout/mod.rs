@@ -43,6 +43,7 @@ macro_rules! container_methods {
 mod center;
 mod cluster;
 mod container;
+mod disclosure;
 mod grid;
 mod sidebar;
 mod simple;
@@ -54,6 +55,7 @@ mod theme_scope;
 pub use center::Center;
 pub use cluster::{Align, Cluster, Justify};
 pub use container::Container;
+pub use disclosure::{Accordion, Disclosure};
 pub use grid::Grid;
 pub use sidebar::Sidebar;
 pub use simple::{Separator, SkipLink, VisuallyHidden};
