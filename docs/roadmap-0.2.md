@@ -1,8 +1,7 @@
 # stucco 0.2 plan: writes and overlays
 
-Status: in progress (continued after 0.2.1). Milestones 1 and 2 are complete;
-the overlay family has partly shipped. The remaining work is async writes,
-confirmation flows and the CRUD example. The original scope follows.
+Status: complete; shipped as 0.3.0, because the planned breaking changes
+followed the 0.2.1 release. The original scope follows.
 
 0.1 renders and queries data. 0.2 should let an
 application change it: a server-rendered create/edit/delete flow that works

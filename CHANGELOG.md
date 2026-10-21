@@ -1,7 +1,36 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 — unreleased
 
+Writes: conflict-checked storage, CSRF and flash, and an orders example that
+creates, edits and deletes. This release breaks a few 0.2 APIs; each change is
+listed under Breaking with its replacement.
+
+### Breaking
+
+- `RedbCollection::new(index_table, mapping)` → `RedbCollection::new(AsyncTable::new(index_table), mapping)`.
+- `RedbCollection::concurrency(n)` → `AsyncTable::concurrency(n)`; reads and writes share the limit.
+- The inherent `into_response()` on `PageResponse`, `FragmentResponse` and
+  `SeeOther` is now `into_http()`. In axum handlers, `.into_response()` now
+  resolves to axum's `IntoResponse` without spelling out the trait.
+- The empty, reserved features `marketing`, `diagram`, `markdown`, `askama`
+  and `maud` are removed from `stucco`.
+
+### Added
+
+- `stucco_redb::Revision`: a hash of a record's stored bytes, for hidden form
+  inputs. `get_with_revision`, `update_if` and `remove_if` check it inside one
+  write transaction and return a conflict (`StoreError::is_conflict`,
+  `conflict_revision`) when the record changed or was deleted.
+  `revision_of` computes one for rows from a scan.
+- `create(|id| value)` on `u64` tables allocates the next id in the write
+  transaction.
+- `AsyncTable` runs reads and writes on Tokio's blocking pool behind a
+  concurrency limit; `RedbCollection::table` returns it.
+- The orders example creates, edits and deletes orders, with CSRF, flash
+  messages, stale-edit conflicts, a row Actions menu and a delete dialog that
+  falls back to a confirmation page. HTTP tests cover each status path.
+- A "Build a create/edit/delete flow" recipe replaces "Confirm before deleting".
 - Opt-in `CsrfLayer` verifies signed double-submit tokens on unsafe methods,
   checks the public origin and Fetch Metadata, and replays bounded form bodies
   for `Submission`. `CsrfToken` is available through `RequestContext`.
