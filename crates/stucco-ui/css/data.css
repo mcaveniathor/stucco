@@ -77,4 +77,31 @@
   .st-avatar[data-size="sm"] { inline-size: 1.75rem; block-size: 1.75rem; font-size: var(--st-text-xs); }
   .st-avatar[data-size="lg"] { inline-size: 3.5rem; block-size: 3.5rem; font-size: var(--st-text-lg); }
   .st-avatar > img { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; object-fit: cover; }
+
+  /* Description list: stacked when narrow, term beside detail from 32rem. */
+  .st-dl { container-type: inline-size; margin: 0; }
+  .st-dl-item { padding-block: var(--st-space-2); }
+  .st-dl-item + .st-dl-item { border-block-start: var(--st-line, 1px) solid var(--st-border); }
+  .st-dl dt { color: var(--st-text-muted); font-size: var(--st-text-sm); font-weight: 600; }
+  .st-dl dd { margin: 0; overflow-wrap: anywhere; }
+  @container (min-width: 32rem) {
+    .st-dl-item { display: grid; grid-template-columns: minmax(8rem, 12rem) 1fr; gap: var(--st-space-4); align-items: baseline; }
+  }
+
+  /* Stat: a metric tile. */
+  .st-stat { display: grid; gap: var(--st-space-1); min-inline-size: 0; }
+  .st-stat > p { margin: 0; }
+  .st-stat-label { color: var(--st-text-muted); font-size: var(--st-text-sm); font-weight: 600; }
+  .st-stat-value { font-size: var(--st-text-2xl); font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+  .st-stat-change { color: var(--st-text-muted); font-size: var(--st-text-sm); }
+  .st-stat-delta {
+    display: inline-flex; align-items: center; gap: 0.25em; padding: 0.0625em 0.5em;
+    border-radius: var(--st-radius-full); background: var(--st-tag-bg, var(--st-surface-raised)); color: var(--st-text); font-weight: 600;
+  }
+  .st-stat-delta > svg { inline-size: 1em; block-size: 1em; }
+  .st-stat-delta[data-tone="accent"] { background: var(--st-accent-soft); color: var(--st-accent-text); }
+  .st-stat-delta[data-tone="success"] { background: var(--st-success-soft); color: var(--st-success-text); }
+  .st-stat-delta[data-tone="warning"] { background: var(--st-warning-soft); color: var(--st-warning-text); }
+  .st-stat-delta[data-tone="danger"] { background: var(--st-danger-soft); color: var(--st-danger-text); }
+  .st-stat-delta[data-tone="info"] { background: var(--st-info-soft); color: var(--st-info-text); }
 }

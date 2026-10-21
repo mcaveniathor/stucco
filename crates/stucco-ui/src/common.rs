@@ -119,6 +119,18 @@ data_enum! {
 }
 
 data_enum! {
+    /// Which way a [`Stat`](crate::data::Stat)'s value moved.
+    Trend {
+        /// It went up.
+        Up => "up",
+        /// It went down.
+        Down => "down",
+        /// It stayed the same.
+        Flat => "flat",
+    }
+}
+
+data_enum! {
     /// A forced colour scheme.
     ColorScheme {
         /// Light.
