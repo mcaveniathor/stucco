@@ -338,3 +338,22 @@ async fn stored_hostile_customer_is_escaped() {
         assert!(!body.contains(hostile), "{uri}");
     }
 }
+
+#[tokio::test]
+async fn conflict_pages_focus_one_element() {
+    let mut c = Client::new();
+    let edit = c.get("/orders/4/edit").await;
+    let csrf = input(&edit.body, "_csrf");
+    let mut fields = order(&csrf, "Ada", "1");
+    fields.push(("revision", "AAAAAAAAAAAAAAAAAAAAAA"));
+    let reply = c.post("/orders/4", &fields).await;
+    assert_eq!(reply.status, StatusCode::CONFLICT);
+    assert_eq!(reply.body.matches("autofocus").count(), 1);
+    let fields = [
+        ("_csrf", csrf.as_str()),
+        ("revision", "AAAAAAAAAAAAAAAAAAAAAA"),
+    ];
+    let reply = c.post("/orders/4/delete", &fields).await;
+    assert_eq!(reply.status, StatusCode::CONFLICT);
+    assert_eq!(reply.body.matches("autofocus").count(), 1);
+}

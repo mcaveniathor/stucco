@@ -197,7 +197,8 @@ fn edit_page(cx: &PageCx, id: u64, state: &FormState, revision: &str) -> Respons
         .app(shell(
             Stack::new()
                 .child(PageHeader::new(format!("Edit order {id}")))
-                .child(ConflictNotice::new(state, format!("/orders/{id}/edit")))
+                // The form's error summary already takes focus on a conflict.
+                .child(ConflictNotice::new(state, format!("/orders/{id}/edit")).focus(false))
                 .child(order_form(
                     format!("/orders/{id}"),
                     state,
