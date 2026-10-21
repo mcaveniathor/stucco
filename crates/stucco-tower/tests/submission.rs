@@ -19,19 +19,16 @@ async fn create(Submission(form): Submission) -> Response {
         .parse::<u32>("Enter a whole number")
         .get();
     match v.finish(|| Some((name?, qty?))) {
-        Ok((name, qty)) => {
-            IntoResponse::into_response(SeeOther::new(format!("/items/{name}?qty={qty}")))
-        }
+        Ok((name, qty)) => SeeOther::new(format!("/items/{name}?qty={qty}")).into_response(),
         Err(state) => {
             let errors: Vec<String> = state
                 .field_errors()
                 .map(|(field, messages)| format!("{field}: {}", messages.join(", ")))
                 .collect();
             let kept = state.value("name").unwrap_or_default().to_owned();
-            IntoResponse::into_response(
-                PageResponse::new(format!("{} | kept={kept}", errors.join("; ")))
-                    .status(StatusCode::UNPROCESSABLE_ENTITY),
-            )
+            PageResponse::new(format!("{} | kept={kept}", errors.join("; ")))
+                .status(StatusCode::UNPROCESSABLE_ENTITY)
+                .into_response()
         }
     }
 }

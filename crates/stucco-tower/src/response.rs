@@ -10,7 +10,7 @@ use stucco_core::{Bundle, Href, RenderedFragment};
 ///
 /// ```
 /// use stucco_tower::PageResponse;
-/// let res = PageResponse::new("<!doctype html>…".into()).into_response();
+/// let res = PageResponse::new("<!doctype html>…".into()).into_http();
 /// assert_eq!(res.headers()["vary"], "Stucco-Request, Stucco-Target");
 /// ```
 #[derive(Clone, Debug)]
@@ -35,7 +35,7 @@ impl PageResponse {
     }
 
     /// The HTTP response.
-    pub fn into_response(self) -> Response<Full<Bytes>> {
+    pub fn into_http(self) -> Response<Full<Bytes>> {
         html_response(self.status, self.html, false)
     }
 }
@@ -64,7 +64,7 @@ impl FragmentResponse {
     }
 
     /// The HTTP response.
-    pub fn into_response(self) -> Response<Full<Bytes>> {
+    pub fn into_http(self) -> Response<Full<Bytes>> {
         html_response(self.status, self.html, true)
     }
 }
@@ -78,7 +78,7 @@ impl FragmentResponse {
 ///
 /// ```
 /// use stucco_tower::SeeOther;
-/// let res = SeeOther::new("/orders/42?saved=1").into_response();
+/// let res = SeeOther::new("/orders/42?saved=1").into_http();
 /// assert_eq!(res.status(), 303);
 /// assert_eq!(res.headers()["location"], "/orders/42?saved=1");
 /// ```
@@ -110,7 +110,7 @@ impl SeeOther {
     }
 
     /// The HTTP response.
-    pub fn into_response(self) -> Response<Full<Bytes>> {
+    pub fn into_http(self) -> Response<Full<Bytes>> {
         debug_assert!(self.location.is_valid(), "SeeOther: unsafe redirect target");
         let location = if self.location.is_valid() {
             self.location.as_str()
@@ -171,21 +171,21 @@ fn html_response(status: StatusCode, html: String, fragment: bool) -> Response<F
 #[cfg(feature = "axum")]
 impl axum::response::IntoResponse for PageResponse {
     fn into_response(self) -> axum::response::Response {
-        PageResponse::into_response(self).map(axum::body::Body::new)
+        PageResponse::into_http(self).map(axum::body::Body::new)
     }
 }
 
 #[cfg(feature = "axum")]
 impl axum::response::IntoResponse for SeeOther {
     fn into_response(self) -> axum::response::Response {
-        SeeOther::into_response(self).map(axum::body::Body::new)
+        SeeOther::into_http(self).map(axum::body::Body::new)
     }
 }
 
 #[cfg(feature = "axum")]
 impl axum::response::IntoResponse for FragmentResponse {
     fn into_response(self) -> axum::response::Response {
-        FragmentResponse::into_response(self).map(axum::body::Body::new)
+        FragmentResponse::into_http(self).map(axum::body::Body::new)
     }
 }
 
@@ -197,7 +197,7 @@ mod tests {
 
     #[test]
     fn page_responses_are_html_and_vary_on_the_request_kind() {
-        let res = PageResponse::new("<p>x</p>".into()).into_response();
+        let res = PageResponse::new("<p>x</p>".into()).into_http();
         assert_eq!(res.status(), 200);
         assert_eq!(res.headers()["content-type"], "text/html; charset=utf-8");
         assert_eq!(res.headers()["vary"], "Stucco-Request, Stucco-Target");
@@ -215,13 +215,13 @@ mod tests {
     fn statuses_survive_conversion() {
         let page = PageResponse::new(String::new())
             .status(StatusCode::UNPROCESSABLE_ENTITY)
-            .into_response();
+            .into_http();
         assert_eq!(page.status(), 422);
         let bundle = Bundle::new(Preset::Slate);
         let frag = stucco_core::render_fragment("x", &"hi");
         let res = FragmentResponse::new(&frag, &bundle)
             .status(StatusCode::CONFLICT)
-            .into_response();
+            .into_http();
         assert_eq!(res.status(), 409);
         assert_eq!(res.headers()["cache-control"], "no-store");
         assert_eq!(res.headers()["vary"], "Stucco-Request, Stucco-Target");
@@ -230,7 +230,7 @@ mod tests {
 
     #[test]
     fn redirects_encode_unsafe_header_bytes() {
-        let res = SeeOther::new("/orders?q=caf\u{e9} au lait").into_response();
+        let res = SeeOther::new("/orders?q=caf\u{e9} au lait").into_http();
         assert_eq!(res.status(), 303);
         assert_eq!(res.headers()["location"], "/orders?q=caf%C3%A9%20au%20lait");
         assert_eq!(res.headers()["x-content-type-options"], "nosniff");
@@ -240,7 +240,7 @@ mod tests {
     #[cfg(debug_assertions)]
     #[should_panic(expected = "unsafe redirect target")]
     fn unsafe_redirects_panic_in_debug() {
-        let _ = SeeOther::new("javascript:alert(1)").into_response();
+        let _ = SeeOther::new("javascript:alert(1)").into_http();
     }
 
     #[cfg(feature = "axum")]

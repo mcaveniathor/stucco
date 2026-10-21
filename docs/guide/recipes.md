@@ -56,7 +56,7 @@ async fn create(page: PageCx, Submission(form): Submission) -> Response {
     let mut v = Validator::new(form);
     let customer = v.text("customer").required("Enter a customer name").get();
     match v.finish(|| customer) {
-        Ok(_customer) => IntoResponse::into_response(SeeOther::new("/orders")),
+        Ok(_customer) => SeeOther::new("/orders").into_response(),
         Err(state) => page
             .title("New order")
             .main(order_form(&state))

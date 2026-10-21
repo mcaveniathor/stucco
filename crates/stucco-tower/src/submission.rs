@@ -17,13 +17,14 @@ use stucco_core::FormState;
 ///
 /// ```
 /// use stucco_core::Validator;
+/// use axum::response::IntoResponse;
 /// use stucco_tower::{SeeOther, Submission};
 ///
 /// async fn create(Submission(form): Submission) -> axum::response::Response {
 ///     let mut v = Validator::new(form);
 ///     let name = v.text("name").required("Enter a name").get();
 ///     match v.finish(|| name) {
-///         Ok(_name) => axum::response::IntoResponse::into_response(SeeOther::new("/done")),
+///         Ok(_name) => SeeOther::new("/done").into_response(),
 ///         Err(_state) => todo!("re-render the form with status 422"),
 ///     }
 /// }

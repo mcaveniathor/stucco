@@ -221,10 +221,6 @@ to select only the families you need.
 | `collections` | Typed DataTable and GET controls; enables data/forms/navigation/feedback |
 | `icons` | Vendored Lucide icon catalog |
 
-The manifest also contains reserved feature names for planned families
-(`marketing`, `diagram`, `markdown`, `askama`, and `maud`). They do not yet
-provide those integrations or component families.
-
 `stucco-tower` enables `axum`, `tower-http` and `csrf` by default. The `csrf`
 feature provides opt-in CSRF and signed flash-cookie layers; see the
 [forms guide](docs/guide/forms.md) for setup and key configuration.

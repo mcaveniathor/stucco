@@ -366,7 +366,7 @@ impl From<Document> for PageResponse {
 impl IntoResponse for Document {
     fn into_response(self) -> Response {
         PageResponse::from(self)
-            .into_response()
+            .into_http()
             .map(axum::body::Body::new)
     }
 }

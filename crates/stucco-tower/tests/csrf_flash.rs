@@ -467,7 +467,7 @@ async fn issuing_both_cookies_appends_to_existing_set_cookie_headers() {
             get(|| async {
                 let mut response = SeeOther::new("/done")
                     .flash(Flash::new(FlashLevel::Info, "Hello"))
-                    .into_response();
+                    .into_http();
                 response
                     .headers_mut()
                     .append(SET_COOKIE, "app=existing".parse().unwrap());

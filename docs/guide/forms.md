@@ -63,7 +63,7 @@ let quantity = v.text("quantity")
 let result = v.finish(|| Some(Order { customer: customer?, quantity: quantity? }));
 ```
 
-Values are trimmed, and an empty value counts as missing: it fails `required` and passes every other check, so optional fields need no special handling. `one_of` checks a select's value against the options you offered, since a client can send anything. `error` and `form_error` record problems found elsewhere, such as a duplicate in your database.
+Values are trimmed, and an empty value counts as missing: it fails `required` and passes every other check, so optional fields need no special handling. `one_of` checks a select's value against the options you offered, since a client can send anything. `error` and `form_error` record problems found elsewhere, such as a duplicate in your database. (`FormState`'s `with_*` methods build a state you hand to a page; `Validator`'s `error` and `form_error` add to one you are still checking.)
 
 Write messages that say how to fix the problem: "Enter a quantity from 1 to 99", not "Invalid quantity".
 
@@ -80,7 +80,7 @@ use stucco::server::SeeOther;
 match result {
     Ok(order) => {
         save(order).await;
-        IntoResponse::into_response(SeeOther::new("/orders"))
+        SeeOther::new("/orders").into_response()
     }
     Err(state) => {
         let form = Form::post("/orders")
@@ -93,8 +93,6 @@ match result {
     }
 }
 ```
-
-`FragmentResponse` and `SeeOther` also have an inherent `into_response` that returns a plain `http` response, which is why the axum conversion is spelled out for `SeeOther` here.
 
 - `bind` puts the submitted value back in the control and shows the field's errors under it. Passwords are never redisplayed.
 - The summary lists form-wide errors first, then each field error as a link to its control, and takes focus when the page loads so keyboard and screen reader users hear what went wrong.

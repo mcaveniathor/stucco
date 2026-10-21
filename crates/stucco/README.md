@@ -24,8 +24,7 @@ extractor. Without it, write the assets to a static directory.
 Enable `collections` for typed columns and native GET collection controls;
 enable `icons` for the Lucide catalog. Use `default-features = false` to select
 individual families. Overlays (dialogs,
-menus, toasts and tooltips) are on by default. Reserved feature names for
-marketing, diagrams, Markdown, Askama, and Maud are not implemented yet.
+menus, toasts and tooltips) are on by default.
 
 Minimum Rust: **1.85**. Storage is a separate crate.
 See the [repository README](https://github.com/mcaveniathor/stucco) for installation,
