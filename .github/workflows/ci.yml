@@ -60,8 +60,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: obi1kenobi/cargo-semver-checks-action@v2
         with:
-          # stucco-cli and stucco-macros have no published release to compare against yet.
-          exclude: gallery,hello,orders,site,site-wasm,stucco-cli,stucco-macros
+          exclude: gallery,hello,orders,site,site-wasm
   msrv:
     runs-on: ubuntu-latest
     steps:
