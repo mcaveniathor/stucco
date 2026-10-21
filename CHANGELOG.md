@@ -1,10 +1,10 @@
 # Changelog
 
-## 0.3.0 — unreleased
+## 0.3.0 — 2026-10-21
 
-Writes: conflict-checked storage, CSRF and flash, and an orders example that
-creates, edits and deletes. This release breaks a few 0.2 APIs; each change is
-listed under Breaking with its replacement.
+Conflict-checked storage, CSRF and flash, eleven new display and status
+components, and an orders example that creates, edits and deletes. This release
+breaks a few 0.2 APIs; each change is listed under Breaking with its replacement.
 
 ### Breaking
 
