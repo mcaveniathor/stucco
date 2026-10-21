@@ -44,12 +44,12 @@ async fn storage_navigation_and_native_get_controls() {
     )
     .unwrap();
     let first = html(app.clone(), "/orders").await;
-    assert_eq!(first.matches("<tbody>").count(), 1);
+    assert_eq!(first.matches("<tbody").count(), 1);
     assert_eq!(first.matches("<td").count(), 25 * 6);
     let second = html(app.clone(), &next(&first, "Next")).await;
-    assert!(second.contains(">26</td>"));
+    assert!(second.contains("href=\"/orders/26\">"));
     let back = html(app.clone(), &next(&second, "Previous")).await;
-    assert!(back.contains(">1</td>"));
+    assert!(back.contains("href=\"/orders/1\">"));
     let filtered = html(
         app.clone(),
         "/orders?q=Ada&f.status=paid&sort=customer&dir=desc",
@@ -71,5 +71,5 @@ async fn storage_navigation_and_native_get_controls() {
     assert!(!malformed.contains("500"));
     let empty = html(app, "/orders?q=NoSuchCustomer").await;
     assert!(empty.contains("No results"));
-    assert!(!empty.contains("<tbody>"));
+    assert!(!empty.contains("<tbody"));
 }

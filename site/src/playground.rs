@@ -4,9 +4,10 @@
 use stucco::actions::Button;
 use stucco::forms::{Field, Fieldset, Form, Input, Select};
 use stucco::layout::{Cluster, Stack};
-use stucco::theme::spec::{OPTIONS, ThemeSpec, tokens_json};
-use stucco::theme::{Preset, Scope, Theme};
+use stucco::theme::spec::{Base, OPTIONS, ThemeSpec};
+use stucco::theme::{Direction, Preset, Scope};
 use stucco::typography::{Heading, Text};
+use stucco::{ColorScheme, layout::ThemeScope};
 use stucco::{Size, Space, Tone, Variant, el};
 
 use crate::shell::{Section, Site, title_case};
@@ -14,14 +15,19 @@ use crate::shell::{Section, Site, title_case};
 /// The playground page. It renders the default theme's exports so the page
 /// is complete without JavaScript; the site script then drives the controls.
 pub fn page(site: &Site) -> String {
-    let spec = ThemeSpec::default();
-    let built = Theme::preset(Preset::Slate)
+    let spec = ThemeSpec::new(Base::GuidedV1(Direction::Atelier, 0));
+    let built = spec
+        .theme()
         .build()
-        .expect("Slate passes its contrast checks");
+        .expect("Atelier passes contrast checks");
     let initial_css = built.css(Scope::Named("playground"));
     let presets = Preset::ALL.map(|p| (p.name().to_owned(), title_case(p.name())));
 
     let base = Fieldset::new("Start from")
+        .child(Field::new("Generation", Select::new("mode").id("pg-mode")
+            .option("guided", "Guided direction").option("unrestricted", "Presets & unrestricted seeds")))
+        .child(Field::new("Art direction", Select::new("direction").id("pg-direction")
+            .options(Direction::ALL.map(|d| (d.name(), title_case(d.name()))))))
         .child(Field::new(
             "Preset",
             Select::new("preset")
@@ -37,7 +43,7 @@ pub fn page(site: &Site) -> String {
                     .autocomplete("off")
                     .attr("spellcheck", "false"),
             )
-            .hint("A whole number, or any text such as your product's name. Leave it empty to start from the preset."),
+            .hint("Guided mode uses a whole number; zero is the signature. Unrestricted mode also accepts a product name, or an empty seed to use a preset."),
         )
         .child(
             Cluster::new()
@@ -49,6 +55,10 @@ pub fn page(site: &Site) -> String {
                         .data("pg-action", "clear"),
                 ),
         );
+    let locks = Fieldset::new("Keep when generating").id("pg-locks")
+        .children([("palette", "Lock palette"), ("type", "Lock typography"), ("structure", "Lock surfaces & motion")].map(|(group, label)|
+            el::label().class("site-pg-lock").child(el::input().attr("type", "checkbox").data("pg-lock", group)).text(label)))
+        .child(Text::new("Locks retain the current values on the next random seed. Explicit option edits are always allowed.").size(Size::Sm));
     // "Base" shows the base's choice once the script runs: "Base (Soft)".
     let options = Fieldset::new("Options").child(el::div().class("site-pg-options").children(
         OPTIONS.iter().map(|option| {
@@ -71,7 +81,8 @@ pub fn page(site: &Site) -> String {
                         .variant(Variant::Primary)
                         .data("pg-action", "apply"),
                 )
-                .child(Button::new("Copy link").data("pg-action", "link")),
+                .child(Button::new("Copy link").data("pg-action", "link"))
+                .child(Button::new("Save favorite").data("pg-action", "favorite")),
         )
         .child(
             el::p()
@@ -87,6 +98,7 @@ pub fn page(site: &Site) -> String {
                 .space(Space::S5)
                 .child(base)
                 .child(actions)
+                .child(locks)
                 .child(options),
         );
     let preview = el::section()
@@ -100,13 +112,73 @@ pub fn page(site: &Site) -> String {
                         .id("pg-preview-title")
                         .size(Size::Lg),
                 )
-                .child(Text::new("Slate").tone(Tone::Muted).attr("id", "pg-label"))
-                .child(gallery::themes_page::panels("playground")),
+                .child(
+                    Text::new("Atelier")
+                        .tone(Tone::Muted)
+                        .attr("id", "pg-label"),
+                )
+                .child(
+                    el::div()
+                        .class("site-pg-view-controls")
+                        .child(Field::new(
+                            "Preview screen",
+                            Select::new("screen")
+                                .id("pg-screen")
+                                .option("orders", "Orders")
+                                .option("editorial", "Editorial")
+                                .option("project", "Project"),
+                        ))
+                        .child(Field::new(
+                            "Preview scheme",
+                            Select::new("scheme")
+                                .id("pg-scheme")
+                                .option("both", "Both schemes")
+                                .option("light", "Light")
+                                .option("dark", "Dark"),
+                        ))
+                        .child(
+                            el::label()
+                                .child(el::input().attr("type", "checkbox").id("pg-narrow"))
+                                .text(" Narrow preview"),
+                        ),
+                )
+                .child(previews(
+                    "playground",
+                    &site.url("guide/visual-design.html"),
+                ))
+                .child(
+                    el::div()
+                        .class("site-pg-favorites")
+                        .child(Field::new(
+                            "Compare favorite",
+                            Select::new("favorite")
+                                .id("pg-favorite")
+                                .option("", "Choose a saved theme"),
+                        ))
+                        .child(Button::new("Load favorite").id("pg-load-favorite"))
+                        .child(Button::new("Remove favorite").id("pg-remove-favorite")),
+                )
+                .child(
+                    el::section()
+                        .id("pg-comparison")
+                        .attr("hidden", "")
+                        .child(Heading::new(3, "Saved theme"))
+                        .child(Text::new("").id("pg-comparison-label"))
+                        .child(previews(
+                            "comparison",
+                            &site.url("guide/visual-design.html"),
+                        )),
+                ),
         );
     let exports = [
         ("pg-rust", "Rust", "theme.rs", spec.rust()),
         ("pg-css", "CSS", "theme.css", built.css(Scope::Root)),
-        ("pg-json", "JSON tokens", "tokens.json", tokens_json(&built)),
+        (
+            "pg-json",
+            "JSON tokens",
+            "tokens.json",
+            spec.export_json(&built),
+        ),
     ];
     let export = el::section()
         .class("site-pg-export")
@@ -122,8 +194,7 @@ pub fn page(site: &Site) -> String {
                             Text::new(
                                 "Rust builds the theme in your app. The CSS works anywhere: \
                                  load it after the stucco stylesheet, or use the tokens in \
-                                 your own styles. The JSON lists every colour role in both \
-                                 schemes.",
+                                 your own styles. The JSON includes both colour schemes and the canonical recipe for every choice.",
                             )
                             .tone(Tone::Muted),
                         ),
@@ -165,15 +236,14 @@ pub fn page(site: &Site) -> String {
                 .child(Heading::new(1, "Theme playground"))
                 .child(
                     Text::new(
-                        "Start from a preset or a seed, override any option, and export the \
-                         result. Every theme here comes from the same Rust code your app runs, \
+                        "Explore a coordinated direction, lock what you like, and compare saved variations. Or start from any preset or unrestricted seed. Every theme here comes from the same Rust code your app runs, \
                          compiled to WebAssembly, so it passes the same contrast checks.",
                     )
                     .tone(Tone::Muted)
                     .size(Size::Lg),
                 )
                 .child(el::noscript().child(el::p().class("site-notice").text(
-                    "The playground needs JavaScript. The exports below show the default Slate theme.",
+                    "Discovery controls need JavaScript. The complete Atelier previews and exports below work without it.",
                 ))),
         )
         .child(
@@ -189,7 +259,33 @@ pub fn page(site: &Site) -> String {
         "Build a stucco theme from a preset or seed, preview it, and export Rust, CSS or JSON.",
         Section::Playground,
         None,
-        format!(r#"<style id="pg-theme">{initial_css}</style>"#),
+        format!(
+            r#"<style id="pg-theme">{initial_css}</style><style id="pg-comparison-theme"></style>"#
+        ),
         main,
     )
+}
+
+/// Fully rendered recipes; enhancement only changes visibility and theme tokens.
+fn previews(scope: &'static str, recipe: &str) -> impl stucco::Render + use<> {
+    el::div()
+        .class("site-pg-screens")
+        .children(["orders", "editorial", "project"].map(|screen| {
+            el::div().data("pg-screen", screen).children(
+                [(ColorScheme::Light, "light"), (ColorScheme::Dark, "dark")].map(
+                    |(scheme, name)| {
+                        el::div()
+                            .data("pg-scheme", name)
+                            .child(el::p().class("showcase-eyebrow").text(name))
+                            .child(ThemeScope::new().named(scope).scheme(scheme).child(
+                                stucco_showcase::screen(
+                                    screen,
+                                    recipe,
+                                    &format!("{scope} orders in {name}"),
+                                ),
+                            ))
+                    },
+                ),
+            )
+        }))
 }

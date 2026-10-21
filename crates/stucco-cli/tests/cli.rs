@@ -114,7 +114,7 @@ fn mistakes_fail_with_a_message() {
     bad(
         &["theme", "seed=1&preset=sol"],
         1,
-        "only one of preset, seed and name",
+        "only one of preset, seed, name, direction and guided",
     );
     bad(&["theme", "--preset", "nope"], 2, "possible values");
     bad(
@@ -184,4 +184,38 @@ fn new_writes_a_starter_app() {
         "cannot be used with",
     );
     std::fs::remove_dir_all(&root).unwrap();
+}
+
+#[test]
+fn signature_and_guided_exports_share_the_recipe() {
+    assert_eq!(
+        stdout(&["theme", "--direction", "play", "-f", "query"]),
+        "direction=play\n"
+    );
+    let query = "guided=prism:1:42&palette=iris";
+    assert_eq!(
+        stdout(&[
+            "theme",
+            "--guided",
+            "prism:1:42",
+            "--palette",
+            "iris",
+            "-f",
+            "query"
+        ]),
+        format!("{query}\n")
+    );
+    let json = stdout(&["theme", query, "-f", "json"]);
+    assert!(json.contains(&format!("\"query\": \"{query}\"")));
+    assert!(stdout(&["theme", query, "-f", "rust"]).contains("Direction::Prism.guided_v1(42)"));
+    bad(
+        &["theme", "--guided", "prism:99:42"],
+        1,
+        "invalid direction",
+    );
+}
+
+#[test]
+fn unrestricted_summary_reports_a_custom_palette() {
+    assert!(stdout(&["theme", "--seed", "42", "-f", "summary"]).contains("Custom"));
 }

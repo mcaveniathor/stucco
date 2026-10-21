@@ -42,7 +42,8 @@ impl Site {
         } else {
             format!("/{trimmed}/")
         };
-        let bundle = gallery::bundle().prefix(&format!("{base}_stucco"));
+        let bundle =
+            gallery::bundle_with_root(stucco_showcase::atelier()).prefix(&format!("{base}_stucco"));
         Site { base, bundle }
     }
 
@@ -245,6 +246,7 @@ pub fn theme_menu(site: &Site) -> impl Render + 'static {
                     "Theme",
                     Select::new("site-theme")
                         .id("site-theme-preset")
+                        .option("", "Atelier (site default)")
                         .options(presets)
                         .option("custom", "Custom"),
                 ))
@@ -275,7 +277,8 @@ pub fn theme_menu(site: &Site) -> impl Render + 'static {
                 .child(
                     ButtonLink::new("Edit in the playground", site.url("playground.html"))
                         .variant(Variant::Ghost)
-                        .data("site-action", "edit"),
+                        .data("site-action", "edit")
+                        .data("default-recipe", site.url("guide/atelier.html")),
                 ),
         )
 }

@@ -5,7 +5,7 @@
 
 use std::fmt::Write;
 
-use stucco_theme::spec::{ThemeSpec, tokens_json};
+use stucco_theme::spec::ThemeSpec;
 use stucco_theme::{Preset, Scope, Theme};
 
 #[cfg(target_arch = "wasm32")]
@@ -42,7 +42,7 @@ pub fn generate_json(query: &str, scope: &str) -> String {
         json_string(&spec.rust()),
         json_string(&built.css(Scope::Root)),
         json_string(&built.css(Scope::Named(scope))),
-        json_string(&tokens_json(&built)),
+        json_string(&spec.export_json(&built)),
         summary.join(",")
     )
 }
@@ -77,7 +77,7 @@ mod tests {
         let json = generate_json("seed=3", "x\"y");
         assert!(json.starts_with("{\"query\":\"seed=3\",\"label\":\"Seed 3\""));
         assert!(json.contains("[data-st-theme=\\\"playground\\\"]"));
-        assert!(json.contains("\"summary\":{\"radius\":\""));
+        assert!(json.contains("\"summary\":{\"palette\":\""));
         assert!(!json.contains('\n'));
         assert_eq!(json_string("a\"b\\c\n\u{1}"), "\"a\\\"b\\\\c\\n\\u0001\"");
     }

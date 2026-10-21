@@ -1,0 +1,13 @@
+[package]
+name = "stucco-showcase"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+stucco = { path = "../../crates/stucco", default-features = false, features = ["typography", "layout", "data", "actions", "feedback"] }
+
+[features]
+atelier-fonts = []

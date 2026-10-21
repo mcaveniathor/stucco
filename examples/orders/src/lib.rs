@@ -79,24 +79,17 @@ pub fn app(db_path: &Path, key: SecretKey, origin: &str) -> Result<Router, Box<d
         .with_state(state)
         .layer(FlashLayer::new(key.clone()).secure(secure))
         .layer(CsrfLayer::new(key, origin)?.secure(secure))
-        .stucco(Preset::Slate))
+        .stucco(stucco_showcase::atelier()))
 }
 
 /// The application shell shared by every page.
 fn shell<'a>(main: impl Render + 'a) -> AppShell<'a> {
     AppShell::new()
+        .class("showcase-app")
+        .header(stucco_showcase::masthead())
         .link(NavLink::new("Orders", "/orders"))
         .link(NavLink::new("New order", "/orders/new"))
-        .main(main)
-}
-
-fn tone_of(status: &str) -> Tone {
-    match status {
-        "pending" => Tone::Warning,
-        "paid" => Tone::Info,
-        "shipped" => Tone::Success,
-        _ => Tone::Default,
-    }
+        .main(el::div().class("showcase-form").child(main))
 }
 
 async fn list(
@@ -118,7 +111,24 @@ async fn list(
                     Err(_) => Slot::new(""),
                 }
             });
+            let shown = &orders.page.rows;
+            let pending = shown
+                .iter()
+                .filter(|order| order.status == "pending")
+                .count();
+            // Widen before summing: valid u64 amounts can overflow when added.
+            let total: u128 = shown
+                .iter()
+                .map(|order| u128::from(order.total_cents))
+                .sum();
+            let metrics = stucco_showcase::page_metrics(
+                shown.len(),
+                pending,
+                &format!("${}.{:02}", total / 100, total % 100),
+            );
             let table = DataTable::from_collection(&orders, "Orders")
+                .responsive()
+                .compact_filters()
                 .action(if pages {
                     "/orders?mode=pages"
                 } else {
@@ -126,12 +136,20 @@ async fn list(
                 })
                 .columns(Order::columns().into_iter().map(|column| {
                     if column.spec().key == "status" {
+                        column.cell(|o| Slot::new(stucco_showcase::status(&o.status)))
+                    } else if column.spec().key == "customer" {
                         column.cell(|o| {
-                            Slot::new(
-                                Badge::new(o.status.clone())
-                                    .tone(tone_of(&o.status))
-                                    .data("value", o.status.clone()),
-                            )
+                            Slot::new(stucco_showcase::identity(
+                                &o.customer,
+                                &format!("Order {:04}", o.id),
+                            ))
+                        })
+                    } else if column.spec().key == "id" {
+                        column.cell(|o| {
+                            Slot::new(Link::new(
+                                format!("{:04}", o.id),
+                                format!("/orders/{}", o.id),
+                            ))
                         })
                     } else {
                         column
@@ -140,19 +158,19 @@ async fn list(
                 .column(actions);
             cx.title("Orders — stucco").app(
                 AppShell::new()
-                    .header(
-                        PageHeader::new("Orders")
-                            .description("A persistent collection with ordinary GET navigation.")
-                            .actions(
-                                ButtonLink::new("New order", "/orders/new")
-                                    .variant(Variant::Primary),
-                            ),
-                    )
+                    .class("showcase-app")
+                    .header(stucco_showcase::masthead())
                     .link(NavLink::new("Orders", "/orders").current(!pages))
                     .link(NavLink::new("Numbered pages", "/orders?mode=pages").current(pages))
                     .main(
                         Stack::new()
+                            .child(stucco_showcase::orders_header(
+                                1,
+                                ButtonLink::new("New order", "/orders/new")
+                                    .variant(Variant::Primary),
+                            ))
                             .child(FlashMessages::new(context.get::<Flash>().cloned()))
+                            .child(metrics)
                             .child(table),
                     ),
             )

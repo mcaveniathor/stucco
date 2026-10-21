@@ -165,3 +165,71 @@ test("not-found pages are accessible HTML", async ({ page }) => {
     expect((await new AxeBuilder({ page }).analyze()).violations, path).toEqual([]);
   }
 });
+
+for (const js of [true, false]) {
+  test(`compact filters retain range and sorting state with JavaScript ${js}`, async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: js, baseURL: "http://localhost:4181" });
+    try {
+      const page = await context.newPage();
+      await page.goto("/orders?mode=pages");
+      const disclosure = page.locator(".st-filter-secondary");
+      await expect(disclosure).not.toHaveAttribute("open", "");
+      await page.getByText("More filters & sorting", { exact: true }).click();
+      await page.locator('[name="f.total.min"]').fill("20");
+      await page.getByLabel("Sort by", { exact: true }).selectOption("customer");
+      await page.getByRole("button", { name: "Apply filters" }).click();
+      await expect(page).toHaveURL(/mode=pages/);
+      await expect(page).toHaveURL(/f.total.min=20/);
+      await expect(disclosure).toHaveAttribute("open", "");
+      await expect(page.locator('[name="f.total.min"]')).toHaveValue("20");
+      await expect(page.getByLabel("Sort by", { exact: true })).toHaveValue("customer");
+      for (const cell of await page.locator('tbody td[data-kind="number"]:nth-child(4)').all()) {
+        expect(Number((await cell.innerText()).replace("$", ""))).toBeGreaterThanOrEqual(20);
+      }
+      await page.getByRole("link", { name: "Clear", exact: true }).click();
+      // Clear resets filters but deliberately retains the existing sort.
+      await expect(disclosure).toHaveAttribute("open", "");
+      await expect(page.locator('[name="f.total.min"]')).toHaveValue("");
+      await expect(page.getByLabel("Sort by", { exact: true })).toHaveValue("customer");
+      await expect(page).toHaveURL(/mode=pages/);
+    } finally { await context.close(); }
+  });
+}
+
+test("long names and maximum amounts stay readable in cards, with exact page totals", async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 320, height: 900 }, baseURL: "http://localhost:4181" });
+  const page = await context.newPage();
+  const prefix = `Visual ${test.info().project.name} ${Date.now()}`;
+  const customer = `${prefix} Alexandra Montgomery-Sutherland & Partners`.slice(0, 80);
+  const query = `/orders?q=${encodeURIComponent(prefix)}`;
+  let created = 0;
+  try {
+    for (let i = 0; i < 2; i++) {
+      await page.goto("/orders/new");
+      await page.getByLabel("Customer").fill(customer);
+      await page.getByLabel("Status").selectOption("pending");
+      await page.getByLabel("Total").fill("184467440737095516.15");
+      await page.getByLabel("Created").fill("2026-10-01");
+      await page.getByRole("button", { name: "Create order" }).click();
+      await expect(page.getByRole("status").filter({ hasText: "created" })).toBeVisible();
+      created++;
+    }
+    await page.goto(query);
+    await expect(page.locator(".st-stat").filter({ hasText: "Value on this page" }).locator(".st-stat-value")).toHaveText("$368934881474191032.30");
+    await expect(page.locator("tbody tr")).toHaveCount(2);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    for (const row of await page.locator("tbody tr").all()) {
+      await expect(row).toContainText(customer);
+      await expect(row).toContainText("$184467440737095516.15");
+    }
+  } finally {
+    for (let i = 0; i < created; i++) {
+      await page.goto(query);
+      const row = page.locator("tbody tr").first();
+      await row.getByRole("button", { name: /^Actions/ }).click();
+      await row.getByRole("link", { name: "Delete…" }).click();
+      await page.getByRole("button", { name: "Delete order", exact: true }).click();
+    }
+    await context.close();
+  }
+});

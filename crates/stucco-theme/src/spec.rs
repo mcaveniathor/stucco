@@ -19,8 +19,8 @@ use std::fmt::{self, Write};
 use std::str::FromStr;
 
 use crate::{
-    Backdrop, BuiltTheme, ButtonDepth, ButtonShape, ControlStyle, CornerStyle, Density, Elevation,
-    Finish, FocusStyle, HeaderEdge, HeaderStyle, HeadingFont, HeadingWeight, IconWeight,
+    Backdrop, BuiltTheme, ButtonDepth, ButtonShape, ControlStyle, CornerStyle, Density, Direction,
+    Elevation, Finish, FocusStyle, HeaderEdge, HeaderStyle, HeadingFont, HeadingWeight, IconWeight,
     LabelStyle, Leading, LineWeight, LinkStyle, Material, Motion, NavStyle, PanelStyle, Pattern,
     Preset, Radius, Relief, RuleStyle, Scheme, ShadowStyle, ShellLayout, TableStyle, TagStyle,
     Theme,
@@ -74,6 +74,28 @@ const fn choice(value: &'static str, label: &'static str) -> Choice {
 
 /// Every option a [`ThemeSpec`] can override, in display order.
 pub const OPTIONS: &[OptionInfo] = &[
+    OptionInfo {
+        key: "palette",
+        label: "Palette",
+        ty: "Preset",
+        method: "palette_preset",
+        choices: &[
+            choice("slate", "Slate"),
+            choice("graphite", "Graphite"),
+            choice("stone", "Stone"),
+            choice("sand", "Sand"),
+            choice("sepia", "Sepia"),
+            choice("pine", "Pine"),
+            choice("fjord", "Fjord"),
+            choice("ocean", "Ocean"),
+            choice("iris", "Iris"),
+            choice("rose", "Rose"),
+            choice("ember", "Ember"),
+            choice("sol", "Sol"),
+            choice("terminal", "Terminal"),
+            choice("contrast", "Contrast"),
+        ],
+    },
     OptionInfo {
         key: "radius",
         label: "Corners",
@@ -446,6 +468,10 @@ pub enum Base {
     Seed(u64),
     /// [`Theme::seeded_str`]: `name=acme`.
     Name(String),
+    /// A signature recipe: `direction=atelier`.
+    Direction(Direction),
+    /// Version 1 guided generation: `guided=atelier:1:42`.
+    GuidedV1(Direction, u64),
 }
 
 impl fmt::Display for Base {
@@ -455,6 +481,10 @@ impl fmt::Display for Base {
             Base::Preset(p) => f.write_str(&title_case(p.name())),
             Base::Seed(s) => write!(f, "Seed {s}"),
             Base::Name(n) => write!(f, "Name {n:?}"),
+            Base::Direction(d) => f.write_str(&title_case(d.name())),
+            Base::GuidedV1(d, seed) => {
+                write!(f, "{} · variation {seed} (v1)", title_case(d.name()))
+            }
         }
     }
 }
@@ -465,6 +495,8 @@ impl Base {
             Base::Preset(p) => Theme::preset(*p),
             Base::Seed(s) => Theme::seeded(*s),
             Base::Name(n) => Theme::seeded_str(n),
+            Base::Direction(d) => d.theme(),
+            Base::GuidedV1(d, seed) => d.guided_v1(*seed),
         }
     }
 }
@@ -472,7 +504,7 @@ impl Base {
 /// Why a query string isn't a valid [`ThemeSpec`].
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SpecError {
-    /// A key that isn't `preset`, `seed`, `name` or an option.
+    /// A key that is not a supported base or option.
     UnknownKey(String),
     /// A preset name that doesn't exist.
     UnknownPreset(String),
@@ -485,8 +517,10 @@ pub enum SpecError {
         /// The rejected value.
         value: String,
     },
-    /// More than one of `preset`, `seed` and `name`.
+    /// More than one starting base.
     ConflictingBase,
+    /// An unknown direction or unsupported guided generation version/seed.
+    InvalidDirection(String),
 }
 
 impl fmt::Display for SpecError {
@@ -496,7 +530,7 @@ impl fmt::Display for SpecError {
                 let keys: Vec<_> = OPTIONS.iter().map(|o| o.key).collect();
                 write!(
                     f,
-                    "unknown key `{key}`; expected preset, seed, name, {}",
+                    "unknown key `{key}`; expected preset, seed, name, direction, guided, {}",
                     keys.join(", ")
                 )
             }
@@ -522,7 +556,13 @@ impl fmt::Display for SpecError {
                     values.join(", ")
                 )
             }
-            SpecError::ConflictingBase => f.write_str("give only one of preset, seed and name"),
+            SpecError::ConflictingBase => {
+                f.write_str("give only one of preset, seed, name, direction and guided")
+            }
+            SpecError::InvalidDirection(value) => write!(
+                f,
+                "invalid direction `{value}`; use atelier, precision, prism or play; guided format is direction:1:seed"
+            ),
         }
     }
 }
@@ -566,6 +606,8 @@ impl FromStr for ThemeSpec {
                 ),
                 "seed" => Base::Seed(value.parse().map_err(|_| SpecError::InvalidSeed(value))?),
                 "name" => Base::Name(value),
+                "direction" => Base::Direction(parse_direction(&value)?),
+                "guided" => parse_guided(&value)?,
                 _ => {
                     spec.set(&key, &value)?;
                     continue;
@@ -592,10 +634,11 @@ impl ThemeSpec {
 
     /// Parses a query string leniently, for input from a URL: unknown keys
     /// and values are skipped, so any input gives a usable spec. A seed
-    /// wins over a name, and a name over a preset.
+    /// wins over a name, and a name over a preset. A valid direction or guided
+    /// recipe wins over all three.
     pub fn parse_lossy(query: &str) -> ThemeSpec {
         let mut spec = ThemeSpec::default();
-        let (mut seed, mut name) = (None, None);
+        let (mut seed, mut name, mut direction) = (None, None, None);
         for (key, value) in pairs(query) {
             match key.as_str() {
                 "preset" => {
@@ -605,6 +648,13 @@ impl ThemeSpec {
                 }
                 "seed" => seed = value.parse::<u64>().ok().or(seed),
                 "name" => name = Some(value),
+                "direction" => {
+                    direction = parse_direction(&value)
+                        .ok()
+                        .map(Base::Direction)
+                        .or(direction)
+                }
+                "guided" => direction = parse_guided(&value).ok().or(direction),
                 _ => {
                     let _ = spec.set(&key, &value);
                 }
@@ -615,6 +665,9 @@ impl ThemeSpec {
         }
         if let Some(seed) = seed {
             spec.base = Base::Seed(seed);
+        }
+        if let Some(direction) = direction {
+            spec.base = direction;
         }
         spec
     }
@@ -664,6 +717,8 @@ impl ThemeSpec {
             Base::Preset(p) => format!("preset={}", p.name()),
             Base::Seed(s) => format!("seed={s}"),
             Base::Name(n) => format!("name={}", encode(n)),
+            Base::Direction(d) => format!("direction={}", d.name()),
+            Base::GuidedV1(d, seed) => format!("guided={}:1:{seed}", d.name()),
         };
         for (k, v) in &self.overrides {
             let _ = write!(out, "&{k}={v}");
@@ -681,7 +736,8 @@ impl ThemeSpec {
     }
 
     /// Each option's effective choice, `(key, value)` in [`OPTIONS`] order:
-    /// the override if there is one, otherwise the base's own choice.
+    /// the override if there is one, otherwise the base's own choice. A palette
+    /// value of `""` means a custom palette that is not one of the presets.
     pub fn summary(&self) -> Vec<(&'static str, &'static str)> {
         let theme = self.theme();
         OPTIONS
@@ -690,9 +746,27 @@ impl ThemeSpec {
             .collect()
     }
 
+    /// Colour tokens plus the canonical recipe needed to reproduce every choice.
+    /// Existing `light` and `dark` token maps retain their shape.
+    pub fn export_json(&self, built: &BuiltTheme) -> String {
+        let mut json = tokens_json(built);
+        json.pop();
+        // Canonical queries contain only unreserved ASCII, percent escapes and separators.
+        let _ = write!(
+            json,
+            ",\n  \"recipe\": {{\"format\": 1, \"query\": \"{}\"}}\n}}",
+            self.to_query()
+        );
+        json
+    }
+
     /// Rust code that builds this theme and a `stucco::Bundle` from it.
     pub fn rust(&self) -> String {
-        let mut types: Vec<&str> = vec!["Theme"];
+        let mut types: Vec<&str> = if matches!(self.base, Base::Direction(_) | Base::GuidedV1(..)) {
+            Vec::new()
+        } else {
+            vec!["Theme"]
+        };
         let mut chain = match &self.base {
             Base::Preset(p) => {
                 types.push("Preset");
@@ -700,6 +774,14 @@ impl ThemeSpec {
             }
             Base::Seed(s) => format!("Theme::seeded({s})"),
             Base::Name(n) => format!("Theme::seeded_str({n:?})"),
+            Base::Direction(d) => {
+                types.push("Direction");
+                format!("Direction::{}.theme()", title_case(d.name()))
+            }
+            Base::GuidedV1(d, seed) => {
+                types.push("Direction");
+                format!("Direction::{}.guided_v1({seed})", title_case(d.name()))
+            }
         };
         for (key, value) in &self.overrides {
             let option = OptionInfo::find(key).expect("overrides use known keys");
@@ -756,6 +838,23 @@ pub fn tokens_json(built: &BuiltTheme) -> String {
     out
 }
 
+fn parse_direction(value: &str) -> Result<Direction, SpecError> {
+    Direction::ALL
+        .into_iter()
+        .find(|d| d.name() == value)
+        .ok_or_else(|| SpecError::InvalidDirection(value.to_owned()))
+}
+
+fn parse_guided(value: &str) -> Result<Base, SpecError> {
+    let parts: Vec<_> = value.split(':').collect();
+    if let [direction, "1", seed] = parts.as_slice() {
+        if let (Ok(d), Ok(s)) = (parse_direction(direction), seed.parse::<u64>()) {
+            return Ok(Base::GuidedV1(d, s));
+        }
+    }
+    Err(SpecError::InvalidDirection(value.to_owned()))
+}
+
 /// The `key=value` pairs of a query string, percent-decoded.
 fn pairs(query: &str) -> impl Iterator<Item = (String, String)> + '_ {
     query
@@ -808,6 +907,11 @@ fn encode(s: &str) -> String {
 
 /// Applies one override to `theme`.
 fn apply(theme: Theme, key: &str, value: &str) -> Theme {
+    if key == "palette" {
+        if let Some(preset) = Preset::ALL.into_iter().find(|p| p.name() == value) {
+            return theme.palette_preset(preset);
+        }
+    }
     match (key, value) {
         ("radius", "sharp") => theme.radius(Radius::Sharp),
         ("radius", "soft") => theme.radius(Radius::Soft),
@@ -914,6 +1018,10 @@ fn apply(theme: Theme, key: &str, value: &str) -> Theme {
 fn current(theme: &Theme, key: &str) -> &'static str {
     let p = &theme.personality;
     match key {
+        "palette" => Preset::ALL
+            .into_iter()
+            .find(|p| theme.clone().palette_preset(*p) == *theme)
+            .map_or("", Preset::name),
         "radius" => match theme.radius {
             Radius::Sharp => "sharp",
             Radius::Soft => "soft",

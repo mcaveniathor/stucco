@@ -8,6 +8,7 @@ license.workspace = true
 publish = false
 
 [dependencies]
+stucco-showcase = { path = "../examples/showcase" }
 stucco = { workspace = true, features = ["icons", "collections"] }
 gallery = { path = "../gallery" }
 pulldown-cmark = { version = "0.13", default-features = false, features = ["html"] }

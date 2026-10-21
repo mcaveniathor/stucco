@@ -3,6 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 
 const paths = [
   "/index.html",
+  "/showcase.html",
   "/palette.html",
   "/themes.html",
   "/layout.html",

@@ -44,8 +44,34 @@
   /* Landing page. */
   .site-landing { max-inline-size: 72rem; margin-inline: auto; }
   .site-landing > * + * { margin-block-start: var(--st-space-10); }
-  .site-hero { padding-block: var(--st-space-8) var(--st-space-4); max-inline-size: 48rem; }
-  .site-hero h1 { letter-spacing: -0.03em; }
+  .site-hero { padding-block: var(--st-space-8) var(--st-space-4); max-inline-size: 58rem; }
+  .site-hero h1 { letter-spacing: -0.035em; max-inline-size: 14ch; }
+  .site-hero .st-text:not(.showcase-eyebrow) { max-inline-size: 48ch; }
+  .site-preview-caption { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--st-space-3); margin-block-end: var(--st-space-4); }
+  .site-preview-frame { border: 1px solid var(--st-border-strong); border-radius: var(--st-radius-lg); box-shadow: var(--st-shadow-2); }
+  .site-preview-frame .showcase-page-heading .showcase-eyebrow { display: none; }
+  .site-preview-frame .showcase-page-heading .st-heading { font-size: clamp(2.25rem, 3vw, 3rem); margin-block-start: 0; }
+  .site-preview-frame .showcase-page-heading { margin-block-end: var(--st-space-4); }
+  .site-preview-frame .showcase-metrics { margin-block-end: var(--st-space-4); }
+  .site-preview-frame .showcase-metrics .st-stat { padding-block: var(--st-space-3); }
+  .site-application-preview { margin-block-start: var(--st-space-7); }
+  @media (max-width: 40rem) {
+    .site-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+    .site-header > .site-brand { grid-column: 1; grid-row: 1; }
+    .site-theme { grid-column: 2; grid-row: 1; }
+    .site-nav { grid-column: 1 / -1; grid-row: 2; margin-inline-start: 0; gap: 0; }
+    .site-nav a { padding-inline: var(--st-space-2); font-size: var(--st-text-sm); }
+    .site-hero { padding-block-start: var(--st-space-4); }
+    .site-hero > .st-stack { gap: var(--st-space-4); }
+  }
+  @media (min-width: 64rem) {
+    .site-hero { max-inline-size: none; }
+    .site-hero > .st-stack { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: var(--st-space-4) var(--st-space-8); }
+    .site-hero .showcase-eyebrow { grid-column: 1 / -1; }
+    .site-hero h1 { grid-column: 1; grid-row: 2 / 5; font-size: clamp(3.5rem, 4.5vw, 4.5rem); max-inline-size: 18ch; }
+    .site-hero > .st-stack > :nth-child(n+3) { grid-column: 2; }
+    .site-install { justify-self: start; }
+  }
   .site-install {
     align-self: flex-start; max-inline-size: 100%; padding: var(--st-space-2) var(--st-space-4);
     background: var(--st-surface-raised); border: 1px solid var(--st-border); border-radius: var(--st-radius-md);
@@ -126,4 +152,21 @@
   .site-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--st-space-3); }
   .site-footer nav { display: flex; flex-wrap: wrap; gap: var(--st-space-4); }
   .site-footer a { color: var(--st-text-muted); }
+}
+
+@layer stucco.utilities {
+  .site-direction-switch { display: flex; flex-wrap: wrap; gap: var(--st-space-2); padding-block: var(--st-space-4); }
+  .site-direction-switch a { padding: var(--st-space-2) var(--st-space-4); border: 1px solid var(--st-border); border-radius: var(--st-radius-full); text-decoration: none; }
+  .site-direction-switch a:hover, .site-direction-switch a[aria-current] { background: var(--st-accent-soft); color: var(--st-accent-text); border-color: var(--st-accent-text); }
+  .site-pg-options > :first-child { grid-column: 1 / -1; }
+  .site-pg-lock { display: flex; gap: var(--st-space-2); align-items: baseline; margin-block: var(--st-space-2); }
+  .site-pg-view-controls { display: flex; flex-wrap: wrap; align-items: end; gap: var(--st-space-3); }
+  .site-pg-screens { min-inline-size: 0; }
+  .site-pg-screens .st-theme-scope { border: 1px solid var(--st-border); }
+  .site-pg-screens [data-pg-scheme] > p { padding-block: var(--st-space-3); }
+  .site-pg-narrow { max-inline-size: 360px; margin-inline: auto; }
+  .site-pg-favorites { display: flex; flex-wrap: wrap; align-items: end; gap: var(--st-space-2); }
+  .site-pg-favorites .st-field { inline-size: 100%; }
+  #pg-comparison > .st-heading { margin-block: var(--st-space-5) var(--st-space-2); }
+  [hidden] { display: none !important; }
 }

@@ -15,7 +15,7 @@ Components are grouped into families, each behind a cargo feature. The facade en
 | `feedback` | `EmptyState`, `LiveRegion`, `ReadinessPanel`, `Requirement`, `Progress`, `Meter`, `Callout` |
 | `navigation` | `Pagination`, `NavLink`, `Tabs`, `Breadcrumbs`, `Steps` |
 | `overlay` | `Dialog`, `Menu`, `Toast`, `Tooltip` |
-| `data` | `Card`, `Panel`, `Table`, `ResultCount`, `Badge`, `Avatar`, `DescriptionList`, `Stat` |
+| `data` | `Card`, `Panel`, `Table`, `ResultCount`, `Badge`, `Avatar`, `DescriptionList`, `Stat`, `Sparkline`, `Timeline` |
 | `app` | `AppShell`, `PageHeader`, `SectionHeader`, `Footer` |
 | `collections` | `DataTable`, `Col`, `FilterBar`, `SearchForm`, `SortControl` |
 | `icons` | The Lucide icon catalog |
@@ -129,6 +129,11 @@ let orders = Stat::new("Orders", "128")
 - **`Avatar`** shows initials, with an optional image over them, and accepts `size`. The name labels the avatar; use `decorative` when the same name is written beside it. Initials remain underneath if the image fails to load.
 - **`DescriptionList`** renders term/detail pairs as a `<dl>`. Details accept any `Render` value, including badges and links. Terms stack above details in narrow containers and sit beside them from 32rem of container width.
 - **`Stat`** shows a label and a formatted value. `change` takes text and `Trend::Up`, `Down` or `Flat`, with hidden text conveying the direction. Changes stay neutral until you set `change_tone`: a rising number can be good or bad. `context` explains the comparison.
+
+- **`Sparkline`** renders supplied finite samples with a visible summary and text values. Empty, single and constant series have defined output.
+- **`Timeline`** is a named ordered list of `TimelineEntry` values with semantic timestamps and optional decorative icons.
+
+See [Signature directions and complete screens](visual-design.html) for trend and timeline recipes.
 
 See [Show status and details](recipes.html#show-status-and-details) for a complete order page.
 

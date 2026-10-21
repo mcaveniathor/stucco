@@ -105,3 +105,17 @@
   .st-stat-delta[data-tone="danger"] { background: var(--st-danger-soft); color: var(--st-danger-text); }
   .st-stat-delta[data-tone="info"] { background: var(--st-info-soft); color: var(--st-info-text); }
 }
+
+@layer stucco.components {
+  .st-sparkline { margin: 0; display: grid; gap: var(--st-space-2); min-inline-size: 0; }
+  .st-sparkline figcaption { color: var(--st-text-muted); font-size: var(--st-text-sm); overflow-wrap: anywhere; }
+  .st-sparkline svg { inline-size: 100%; max-inline-size: 20rem; block-size: 5rem; color: var(--st-accent-text); fill: currentColor; }
+  .st-timeline { list-style: none; margin: 0; padding: 0; }
+  .st-timeline > li { position: relative; display: flex; gap: var(--st-space-3); padding-block-end: var(--st-space-6); }
+  .st-timeline > li:not(:last-child)::before { content: ""; position: absolute; inset-inline-start: .65rem; inset-block: 1.5rem 0; border-inline-start: 1px solid var(--st-border); }
+  .st-timeline-mark { display: grid; place-items: center; inline-size: 1.4rem; block-size: 1.4rem; border: 1px solid var(--st-border-strong); border-radius: 50%; flex: none; color: var(--st-accent-text); background: var(--st-surface); }
+  .st-timeline-mark:empty::after { content: ""; inline-size: .35rem; block-size: .35rem; background: currentColor; border-radius: 50%; }
+  .st-timeline-mark svg { inline-size: .9rem; block-size: .9rem; }
+  .st-timeline-content { min-inline-size: 0; overflow-wrap: anywhere; }
+  .st-timeline time { display: block; color: var(--st-text-muted); font-size: var(--st-text-sm); margin-block-end: var(--st-space-1); }
+}

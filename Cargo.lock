@@ -332,6 +332,7 @@ version = "0.3.0"
 dependencies = [
  "insta",
  "stucco",
+ "stucco-showcase",
 ]
 
 [[package]]
@@ -626,6 +627,7 @@ dependencies = [
  "serde",
  "stucco",
  "stucco-redb",
+ "stucco-showcase",
  "tempfile",
  "tokio",
  "tower",
@@ -867,6 +869,7 @@ dependencies = [
  "gallery",
  "pulldown-cmark",
  "stucco",
+ "stucco-showcase",
 ]
 
 [[package]]
@@ -969,6 +972,13 @@ dependencies = [
  "tempfile",
  "tokio",
  "xxhash-rust",
+]
+
+[[package]]
+name = "stucco-showcase"
+version = "0.3.0"
+dependencies = [
+ "stucco",
 ]
 
 [[package]]

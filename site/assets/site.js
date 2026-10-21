@@ -107,6 +107,8 @@ for (const menu of document.querySelectorAll('[data-site-theme="menu"]')) {
   const preset = menu.querySelector("#site-theme-preset");
   const scheme = menu.querySelector("#site-theme-scheme");
   const status = menu.querySelector('[data-site-theme="status"]');
+  const edit = menu.querySelector('[data-site-action="edit"]');
+  const playgroundUrl = edit.href.split("?")[0];
   const custom = preset.querySelector('option[value="custom"]');
   const sync = () => {
     const saved = readSaved();
@@ -114,8 +116,11 @@ for (const menu of document.querySelectorAll('[data-site-theme="menu"]')) {
     // Seeds are up to 20 digits: keep the option short enough to read.
     const label = saved?.label?.length > 18 ? `${saved.label.slice(0, 17)}…` : saved?.label;
     custom.textContent = saved?.css ? `Custom: ${label}` : "Custom";
-    preset.value = saved?.css ? "custom" : saved?.preset ?? "slate";
+    preset.value = saved?.css ? "custom" : saved?.preset ?? "";
     scheme.value = root.dataset.theme ?? "system";
+    const query = saved?.css ? saved.query : saved?.preset ? `preset=${saved.preset}` : null;
+    edit.href = query ? `${playgroundUrl}?${query}` : edit.dataset.defaultRecipe;
+    edit.textContent = query ? "Edit in the playground" : "View Atelier recipe";
   };
   sync();
   document.addEventListener("site-theme-change", sync);
@@ -123,7 +128,7 @@ for (const menu of document.querySelectorAll('[data-site-theme="menu"]')) {
 
   preset.addEventListener("change", () => {
     if (preset.value === "custom") return;
-    applyThemeAndSave({ preset: preset.value });
+    applyThemeAndSave(preset.value ? { preset: preset.value } : null);
     status.textContent = `Theme: ${preset.selectedOptions[0].textContent}.`;
   });
   scheme.addEventListener("change", () => applyScheme(scheme.value));
@@ -140,14 +145,9 @@ for (const menu of document.querySelectorAll('[data-site-theme="menu"]')) {
     applyThemeAndSave(null);
     applyScheme("system");
     sync();
-    status.textContent = "Theme reset to Slate.";
+    status.textContent = "Theme reset to Atelier.";
   });
-  const edit = menu.querySelector('[data-site-action="edit"]');
-  edit.addEventListener("click", () => {
-    const saved = readSaved();
-    const query = saved?.css ? saved.query : `preset=${saved?.preset ?? "slate"}`;
-    edit.href = `${edit.href.split("?")[0]}?${query}`;
-  });
+
 }
 
 function applyThemeAndSave(state) {
@@ -214,47 +214,67 @@ if (form) playground(form);
 
 function playground(form) {
   const byId = (id) => document.getElementById(id);
-  const preset = byId("pg-preset");
-  const seed = byId("pg-seed");
+  const preset = byId("pg-preset"), seed = byId("pg-seed"), mode = byId("pg-mode"), direction = byId("pg-direction");
   const status = byId("pg-status");
-  const options = [...form.querySelectorAll("select")].filter((s) => s !== preset);
-  // Digits are a seed (Theme::seeded); other text is a name (Theme::seeded_str).
+  const options = [...form.querySelectorAll(".site-pg-options select")];
   const numeric = () => /^\d+$/.test(seed.value.trim());
   const validSeed = () => numeric() && BigInt(seed.value.trim()) < 2n ** 64n;
-  let current;
-  let ticket = 0;
+  const typeKeys = ["heading-font", "headings", "leading", "labels", "icons"];
+  const groupFor = (key) => key === "palette" ? "palette" : typeKeys.includes(key) ? "type" : "structure";
+  const locks = [...form.querySelectorAll("[data-pg-lock]")];
+  const favoriteSelect = byId("pg-favorite");
+  const FAVORITES = "stucco-favorites-v1";
+  let current, ticket = 0, comparisonTicket = 0, favorites = [];
+  try {
+    const saved = JSON.parse(localStorage.getItem(FAVORITES) ?? "[]");
+    if (Array.isArray(saved)) favorites = saved.filter((f) => typeof f?.query === "string" && f.query.length < 8192 && typeof f?.label === "string").slice(0, 6);
+  } catch { /* Local discovery still works when storage is unavailable. */ }
 
   const query = () => {
     const params = new URLSearchParams();
     const text = seed.value.trim();
-    if (validSeed()) params.set("seed", text);
+    if (mode.value === "guided") params.set("guided", `${direction.value}:1:${text || "0"}`);
+    else if (validSeed()) params.set("seed", text);
     else if (text && !numeric()) params.set("name", text);
     else params.set("preset", preset.value);
     for (const select of options) if (select.value) params.set(select.name, select.value);
     return params.toString();
   };
-
   const load = (search) => {
     const params = new URLSearchParams(search);
+    mode.value = !search || params.has("guided") || params.has("direction") ? "guided" : "unrestricted";
+    const guided = params.get("guided")?.split(":");
+    if (guided) {
+      direction.value = guided[0];
+      seed.value = guided[2] ?? "0";
+    } else {
+      direction.value = params.get("direction") ?? "atelier";
+      seed.value = params.get("seed") ?? params.get("name") ?? "";
+    }
+    if (!direction.value) direction.value = "atelier";
     if (params.has("preset")) preset.value = params.get("preset");
-    seed.value = params.get("seed") ?? params.get("name") ?? "";
     for (const select of options) select.value = params.get(select.name) ?? "";
   };
-
   async function update(remember) {
     const mine = ++ticket;
-    seed.setAttribute("aria-invalid", String(numeric() && !validSeed()));
-    let result;
-    try {
-      result = await generate(query(), "playground");
-    } catch {
-      status.textContent = "The theme engine could not load, so the preview can't update.";
-      return;
+    const guided = mode.value === "guided";
+    direction.disabled = !guided;
+    preset.disabled = guided || seed.value.trim() !== "";
+    byId("pg-locks").disabled = !guided;
+    const invalid = (numeric() && !validSeed()) || (guided && seed.value.trim() !== "" && !validSeed());
+    seed.setAttribute("aria-invalid", String(invalid));
+    if (invalid) {
+      status.textContent = "Use a whole-number seed from 0 to 18446744073709551615. The preview still shows the last valid theme.";
+      return false;
     }
-    if (mine !== ticket) return;
+    let result;
+    try { result = await generate(query(), "playground"); }
+    catch {
+      status.textContent = "The theme engine could not load, so the preview can't update.";
+      return false;
+    }
+    if (mine !== ticket) return false;
     current = result;
-    // A seed or name replaces the preset as the starting point.
-    preset.disabled = !result.query.startsWith("preset=");
     byId("pg-theme").textContent = result.scoped;
     byId("pg-rust").textContent = result.rust;
     byId("pg-css").textContent = result.css;
@@ -265,37 +285,122 @@ function playground(form) {
       const choice = value && [...select.options].find((o) => o.value === value);
       select.options[0].textContent = choice ? `Base (${choice.textContent})` : "Base";
     }
-    if (remember) history.replaceState(null, "", `?${result.query}`);
+    if (remember) history.replaceState(null, "", `?${result.query}${location.hash}`);
+    return true;
   }
 
-  form.addEventListener("input", () => update(true));
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
+  function view() {
+    const screen = byId("pg-screen").value, scheme = byId("pg-scheme").value;
+    document.querySelectorAll("[data-pg-screen]").forEach((el) => el.hidden = el.dataset.pgScreen !== screen);
+    document.querySelectorAll("[data-pg-scheme]").forEach((el) => el.hidden = scheme !== "both" && el.dataset.pgScheme !== scheme);
+    document.querySelectorAll(".site-pg-screens").forEach((el) => el.classList.toggle("site-pg-narrow", byId("pg-narrow").checked));
+  }
+  for (const id of ["pg-screen", "pg-scheme", "pg-narrow"]) byId(id).addEventListener("change", view);
+  function listFavorites(selected = "") {
+    favoriteSelect.replaceChildren(new Option("Choose a saved theme", ""));
+    favorites.forEach((f, i) => favoriteSelect.add(new Option(f.label, String(i))));
+    favoriteSelect.value = selected;
+  }
+  function persistFavorites() {
+    try { localStorage.setItem(FAVORITES, JSON.stringify(favorites)); return true; }
+    catch { return false; }
+  }
+  async function compare() {
+    const mine = ++comparisonTicket;
+    byId("pg-comparison").hidden = true;
+    if (favoriteSelect.value === "") return;
+    const favorite = favorites[Number(favoriteSelect.value)];
+    if (!favorite) return;
+    try {
+      const result = await generate(favorite.query, "comparison");
+      if (mine !== comparisonTicket) return;
+      byId("pg-comparison-theme").textContent = result.scoped;
+      byId("pg-comparison-label").textContent = result.label;
+      byId("pg-comparison").hidden = false;
+      view();
+    } catch { status.textContent = "The saved theme could not be loaded."; }
+  }
+  favoriteSelect.addEventListener("change", compare);
+  byId("pg-load-favorite").addEventListener("click", async () => {
+    if (favoriteSelect.value === "") return;
+    load(favorites[Number(favoriteSelect.value)].query);
+    await update(true);
+  });
+  byId("pg-remove-favorite").addEventListener("click", () => {
+    if (favoriteSelect.value === "") return;
+    favorites.splice(Number(favoriteSelect.value), 1);
+    const stored = persistFavorites();
+    listFavorites(); compare();
+    status.textContent = stored ? "Favorite removed." : "Removed for this visit; local storage is unavailable.";
+  });
+  form.addEventListener("input", (event) => {
+    if (event.target === direction) {
+      seed.value = "0";
+      for (const select of options) select.value = "";
+      for (const lock of locks) lock.checked = false;
+    }
     update(true);
   });
+  form.addEventListener("submit", (event) => { event.preventDefault(); update(true); });
   form.addEventListener("click", async (event) => {
     const action = event.target.closest("[data-pg-action]")?.dataset.pgAction;
     if (action === "random") {
+      // Resolve the current controls before capturing locks, including rapid input.
+      if (!(await update(false))) return;
+      const retained = [];
+      if (mode.value === "guided") {
+        for (const select of options) {
+          const locked = locks.find((lock) => lock.dataset.pgLock === groupFor(select.name))?.checked;
+          select.value = locked ? current.summary[select.name] ?? "" : "";
+        }
+        for (const lock of locks) if (lock.checked) retained.push(lock.parentElement.textContent.replace("Lock ", "").trim());
+      }
       seed.value = randomSeed();
-      await update(true);
-      status.textContent = `Seed ${seed.value}.`;
+      if (await update(true)) status.textContent = `Seed ${seed.value}.${retained.length ? ` Kept ${retained.join(", ")}.` : ""}`;
     } else if (action === "clear") {
       seed.value = "";
-      await update(true);
-      status.textContent = "Starting from the preset.";
-    } else if (action === "apply" && current) {
+      if (await update(true)) status.textContent = mode.value === "guided" ? "Starting from the signature with your overrides." : "Starting from the preset.";
+    } else if (action === "apply") {
+      if (!(await update(true))) return;
       try {
-        await useGenerated(current.query);
-        status.textContent = `The site now uses ${current.label}${current.query.includes("&") ? " with your options" : ""}.`;
-      } catch {
-        status.textContent = "The theme engine could not load.";
-      }
+        const chosen = current;
+        await useGenerated(chosen.query);
+        status.textContent = `The site now uses ${chosen.label}${chosen.query.includes("&") ? " with your options" : ""}.`;
+      } catch { status.textContent = "The theme engine could not load."; }
     } else if (action === "link") {
+      if (!(await update(true))) return;
       const ok = await copyText(location.href);
       status.textContent = ok ? "Link copied." : "Copy the address bar to share this theme.";
+    } else if (action === "favorite") {
+      if (!(await update(true))) return;
+      if (favorites.some((f) => f.query === current.query)) { status.textContent = "This theme is already saved."; return; }
+      if (favorites.length === 6) { status.textContent = "Six favorites saved. Remove one before saving another."; return; }
+      favorites.push({ query: current.query, label: current.label });
+      const stored = persistFavorites();
+      listFavorites(String(favorites.length - 1));
+      await compare();
+      status.textContent = stored ? "Favorite saved on this device." : "Favorite kept for this visit; local storage is unavailable.";
     }
   });
-
   load(location.search);
-  update(location.search !== "");
+  listFavorites(); view(); update(location.search !== "");
+}
+
+// Landing links remain ordinary links to complete server-rendered showcases.
+const directionPreview = document.getElementById("landing-preview");
+if (directionPreview) {
+  document.querySelectorAll("[data-preview-direction]").forEach((link) => {
+    link.addEventListener("click", (event) => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      const name = link.dataset.previewDirection;
+      directionPreview.dataset.stTheme = name;
+      document.querySelectorAll("[data-preview-direction]").forEach((other) => {
+        if (other === link) other.setAttribute("aria-current", "true");
+        else other.removeAttribute("aria-current");
+      });
+      document.getElementById("landing-preview-label").textContent = name.toUpperCase();
+      document.getElementById("landing-showcase-link").href = link.href;
+    });
+  });
 }

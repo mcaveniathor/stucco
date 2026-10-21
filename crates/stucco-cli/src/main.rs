@@ -11,8 +11,8 @@ use std::process::ExitCode;
 
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgGroup, ArgMatches, Command, value_parser};
-use stucco_theme::spec::{Base, OPTIONS, OptionInfo, ThemeSpec, tokens_json};
-use stucco_theme::{Preset, Scope, random_seed};
+use stucco_theme::spec::{Base, OPTIONS, OptionInfo, ThemeSpec};
+use stucco_theme::{Direction, Preset, Scope, random_seed};
 
 const AFTER_THEME_HELP: &str = "\
 Examples:
@@ -65,7 +65,29 @@ fn cli() -> Command {
                 .action(ArgAction::SetTrue)
                 .help("Start from a random seed (printed to stderr, so you can keep it)"),
         )
-        .group(ArgGroup::new("base").args(["preset", "seed", "name", "random"]))
+        .arg(
+            Arg::new("direction")
+                .long("direction")
+                .value_name("NAME")
+                .value_parser(PossibleValuesParser::new(
+                    Direction::ALL.map(Direction::name),
+                ))
+                .help("Start from Atelier, Precision, Prism or Play"),
+        )
+        .arg(
+            Arg::new("guided")
+                .long("guided")
+                .value_name("DIRECTION:1:SEED")
+                .help("Generate a bounded version 1 variation"),
+        )
+        .group(ArgGroup::new("base").args([
+            "preset",
+            "seed",
+            "name",
+            "random",
+            "direction",
+            "guided",
+        ]))
         .next_help_heading("Theme options");
     for option in OPTIONS {
         let values: Vec<&'static str> = option.choices.iter().map(|c| c.value).collect();
@@ -144,7 +166,16 @@ fn theme(m: &ArgMatches) -> io::Result<()> {
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?,
         None => ThemeSpec::default(),
     };
-    if let Some(name) = m.get_one::<String>("preset") {
+    if let Some(value) = m
+        .get_one::<String>("direction")
+        .map(|s| format!("direction={s}"))
+        .or_else(|| m.get_one::<String>("guided").map(|s| format!("guided={s}")))
+    {
+        let parsed: ThemeSpec = value
+            .parse()
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+        spec.set_base(parsed.base().clone());
+    } else if let Some(name) = m.get_one::<String>("preset") {
         let preset = Preset::ALL.into_iter().find(|p| p.name() == name);
         spec.set_base(Base::Preset(preset.expect("clap checks preset names")));
     } else if let Some(&seed) = m.get_one::<u64>("seed") {
@@ -171,7 +202,7 @@ fn theme(m: &ArgMatches) -> io::Result<()> {
     })?;
     let mut text = match m.get_one::<String>("format").map(String::as_str) {
         Some("rust") => spec.rust(),
-        Some("json") => tokens_json(&built),
+        Some("json") => spec.export_json(&built),
         Some("query") => spec.to_query(),
         Some("summary") => summary(&spec),
         _ => match m.get_one::<String>("scope") {
@@ -209,13 +240,13 @@ fn summary(spec: &ThemeSpec) -> String {
     let width = OPTIONS.iter().map(|o| o.label.len()).max().unwrap_or(0);
     for (key, value) in spec.summary() {
         let option = OptionInfo::find(key).expect("summaries use known keys");
-        let choice = option.choice(value).expect("summaries use known values");
+        let label = option.choice(value).map_or("Custom", |choice| choice.label);
         let set = if spec.overrides().iter().any(|(k, _)| *k == key) {
             "  (set)"
         } else {
             ""
         };
-        out.push_str(&format!("{:width$}  {}{set}\n", option.label, choice.label));
+        out.push_str(&format!("{:width$}  {}{set}\n", option.label, label));
     }
     out
 }

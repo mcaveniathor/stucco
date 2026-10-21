@@ -177,6 +177,19 @@ impl Theme {
         self
     }
 
+    /// Applies a preset's colours without changing typography, layout or motion.
+    pub fn palette_preset(mut self, preset: crate::Preset) -> Theme {
+        let source = Theme::preset(preset);
+        self.accent_hue = source.accent_hue;
+        self.accent_chroma = source.accent_chroma;
+        self.neutral_hue = source.neutral_hue;
+        self.neutral_tint = source.neutral_tint;
+        self.accent_from_neutral = source.accent_from_neutral;
+        self.text_lightness = source.text_lightness;
+        self.high_contrast = source.high_contrast;
+        self
+    }
+
     /// Uses the text colour as the accent ("ink" accent, for monochrome
     /// themes).
     pub fn accent_from_neutral(mut self) -> Theme {

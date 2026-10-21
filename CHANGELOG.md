@@ -1,5 +1,33 @@
 # Changelog
 
+## Unreleased
+
+- `Heading::display()` adds responsive display sizing without changing body,
+  form or table typography.
+- `FilterBar::compact()` and `DataTable::compact_filters()` put ranges, sorting
+  and page size in a native disclosure while preserving GET form behavior.
+- The site and orders example adopt the Atelier recipe, with responsive order
+  cards, page-scoped metrics and a shared landing/gallery preview. Existing
+  presets and seeded themes retain their behavior.
+- An opt-in browser capture workflow records light/dark visual baselines at
+  phone, tablet and desktop widths; see `browser/README.md`.
+
+- `Direction::{Atelier, Precision, Prism, Play}` supplies coordinated signatures;
+  `guided_v1(seed)` generates bounded variations without changing legacy seeds.
+  Theme queries, CLI flags and exports support directions and versioned generation;
+  JSON adds a complete recipe alongside the existing color maps.
+- The playground adds palette/type/structure locks, six local favorites, matching
+  screen comparisons, and orders/editorial/project previews. The landing preview
+  switches directions, with ordinary showcase links as its no-script fallback.
+- `Sparkline` and `Timeline` add semantic trend and activity presentations. Shared
+  screen recipes and an opt-in, licensed local font pairing live in the showcase.
+- Ghost actions stay flat when pressed. Disabled/busy buttons do not react to
+  hover or press; reduced-motion preferences remove press and opening movement.
+
+Compatibility note: `spec::Base` adds `Direction` and `GuidedV1` variants and
+`SpecError` adds `InvalidDirection`. Downstream exhaustive matches must handle
+these new cases. Existing preset/seed inputs keep their meaning.
+
 ## 0.3.0 — 2026-10-21
 
 Conflict-checked storage, CSRF and flash, eleven new display and status
