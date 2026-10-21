@@ -1,8 +1,8 @@
 # Signature directions and complete screens
 
-Atelier, Precision, Prism and Play coordinate typography, density, surfaces and
-motion. They are additional recipes; existing presets and `Theme::seeded` keep
-their original mappings.
+Atelier, Precision, Prism, Play, Grove, Relay and Marquee coordinate typography,
+density, surfaces and motion. They are additional recipes; existing presets and
+`Theme::seeded` keep their original mappings.
 
 ```rust
 use stucco::theme::{Direction, Radius};
@@ -18,16 +18,29 @@ let variation = Direction::Prism.guided_v1(42);
 | Precision | Cool grey/blue, compact controls, crisp sans headings, sharp edges |
 | Prism | Violet, layered depth, selective frost, luminous backdrop |
 | Play | Gold, heavy rounded headings, strong outlines, offset button shadows |
+| Grove | Botanical green, airy rounded headings, pill buttons, soft filled controls and open tables |
+| Relay | Monochrome ink, monospace throughout, compact square controls, dashed rules and striped tables |
+| Marquee | Warm gold, heavy serif headings, uppercase labels, beveled corners and layered depth |
+
+Grove, Relay and Marquee are new in Stucco 0.5.
+
+Grove suits calm community and wellbeing spaces. Relay takes its cues from
+printed dispatches and instrument panels. Marquee brings a theatrical feel to
+portfolios and cultural programs. Their guided palettes stay within those
+families: botanical and mineral tones for Grove, ink and signal colors for
+Relay, and gold, sepia and ember for Marquee.
 
 Each supports light and dark. Tables and reading content stay opaque. The
 project's focal card uses the material; supporting metrics use simple rules.
 Reduced transparency makes translucent surfaces solid. Increased contrast and
 forced colors remove decorative backgrounds; reduced motion disables movement.
+Named `ThemeScope`s apply the direction's body typography as well as its colors;
+a scope that only switches the color scheme keeps the surrounding typography.
 
 Explore [orders](../gallery/showcase.html), the
 [reading page](../gallery/showcase-atelier-editorial.html), and the
 [project overview](../gallery/showcase-atelier-project.html). Each page links all
-four directions and renders both schemes without JavaScript. The copyable
+seven directions and renders both schemes without JavaScript. The copyable
 compositions live in `examples/showcase`, an unpublished workspace crate with no
 HTTP or storage dependency. Replace its sample content with application data;
 keep page-scoped metrics honestly labeled.

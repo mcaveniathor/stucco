@@ -55,8 +55,8 @@ behavioral checks.
 
 ## Signature screens and optional fonts
 
-The visual configuration also captures all four directions × three screens ×
-both schemes at 360/768/1440px. These 72 scope images and manifests are written
+The visual configuration also captures all seven directions × three screens ×
+both schemes at 360/768/1440px. These 126 scope images and manifests are written
 to `target/visual-design/directions/`; landing/playground captures accompany them.
 Run only this matrix with:
 
@@ -75,7 +75,7 @@ requests, layout shift below 0.1, and a 360px fallback layout. Captures are unde
 `target/visual-design/fonts/`. The feature is off in normal builds.
 
 `tests/discovery.spec.ts` covers guided locks, saved comparisons, recipe/JSON
-round trips, unavailable storage, invalid seeds, no-script previews, all four
+round trips, unavailable storage, invalid seeds, no-script previews, all seven
 signatures at 320px, form errors, action states, repeated overlay interruption,
 touch, enlarged text, CSS zoom, and preferences. Reduced transparency uses
 Chromium CDP; that one emulation check is explicitly skipped on Firefox/WebKit.

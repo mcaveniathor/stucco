@@ -5,7 +5,7 @@ Turn a list of records into a searchable, filterable, sortable, paginated table 
 Enable the `collections` feature:
 
 ```toml
-stucco = { version = "0.4", features = ["collections"] }
+stucco = { version = "0.5", features = ["collections"] }
 ```
 
 ## A table from columns
@@ -39,7 +39,7 @@ let table = DataTable::from_page(&page, "Orders")
 With the `derive` feature, `#[derive(Columns)]` builds the columns from a row type's fields instead, one per field in order. The same columns then give the query parser its column list, so the table and the parser can't disagree:
 
 ```toml
-stucco = { version = "0.4", features = ["derive"] }
+stucco = { version = "0.5", features = ["derive"] }
 ```
 
 ```rust

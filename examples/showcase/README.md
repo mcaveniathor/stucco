@@ -22,7 +22,7 @@ theme recipe and `browser/README.md` for before/after captures.
 `editorial_preview` and `project_preview` extend the same system to reading and
 project tracking. `screen` selects among all three. Every composition declares
 its stylesheet during rendering, including for inline asset delivery.
-`Direction::{Atelier,Precision,Prism,Play}` and `guided_v1(seed)` belong to the
+`Direction::{Atelier,Precision,Prism,Play,Grove,Relay,Marquee}` and `guided_v1(seed)` belong to the
 published theme engine. The gallery has `showcase-{direction}-{screen}.html`
 pages; the landing switcher and playground use these same compositions.
 

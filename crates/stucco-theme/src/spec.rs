@@ -561,7 +561,7 @@ impl fmt::Display for SpecError {
             }
             SpecError::InvalidDirection(value) => write!(
                 f,
-                "invalid direction `{value}`; use atelier, precision, prism or play; guided format is direction:1:seed"
+                "invalid direction `{value}`; use atelier, precision, prism, play, grove, relay or marquee; guided format is direction:1:seed"
             ),
         }
     }

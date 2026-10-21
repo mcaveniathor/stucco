@@ -36,8 +36,9 @@ impl ThemeScope<'_> {
         self
     }
 
-    /// Applies a named theme; `name` must match `[a-z0-9-]+` (debug panic
-    /// "invalid theme name", ignored in release).
+    /// Applies a named theme, including its body font, size and line spacing.
+    /// `name` must match `[a-z0-9-]+` (debug panic "invalid theme name",
+    /// ignored in release).
     pub fn named(mut self, name: &'static str) -> Self {
         let valid = !name.is_empty()
             && name
