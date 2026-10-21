@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.0 — Unreleased
 
 - `Heading::display()` adds responsive display sizing without changing body,
   form or table typography.
@@ -26,7 +26,8 @@
 
 Compatibility note: `spec::Base` adds `Direction` and `GuidedV1` variants and
 `SpecError` adds `InvalidDirection`. Downstream exhaustive matches must handle
-these new cases. Existing preset/seed inputs keep their meaning.
+these new cases. The workspace and internal dependency requirements advance to
+0.4.0 for this breaking API change. Existing preset/seed inputs keep their meaning.
 
 ## 0.3.0 — 2026-10-21
 

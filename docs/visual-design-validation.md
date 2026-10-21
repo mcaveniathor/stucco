@@ -67,6 +67,10 @@ preference changes are asynchronous, so assertions wait for the computed state.
 
 ## Validation evidence
 
+- After the version correction, cargo-semver-checks 0.51.0 accepted the 0.4.0
+  workspace against published 0.3.0. Workspace compilation, CLI tests and the
+  all-feature workspace publish dry run passed with the updated dependency
+  requirements. No crates were published.
 - Formatting, workspace Clippy (`--all-targets -D warnings`) and full workspace
   tests passed. Focused integration tests passed after the final recipe asset fix.
 - All-feature Rust documentation passed with warnings denied. The new data
@@ -97,6 +101,7 @@ Measured local output, before HTTP transfer (gzip uses Python's default level):
 | Optional local font CSS, excluded by default | 127,288 | 96,336 |
 
 Compatibility: public `spec::Base` and `SpecError` have new variants;
-downstream exhaustive matches need corresponding arms. JSON retains the color
+downstream exhaustive matches need corresponding arms. The workspace targets
+0.4.0 to account for this break from published 0.3.0. JSON retains the color
 maps and adds a recipe field. No remote font loading, backend chart dependency,
 or change to legacy preset/seed behavior is introduced.
