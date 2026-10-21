@@ -70,7 +70,8 @@ for (const js of [true, false]) {
     test.use({ javaScriptEnabled: js });
 
     test("create, edit and delete an order", async ({ page }) => {
-      const name = `Browser ${test.info().project.name} ${js ? "js" : "nojs"}`;
+      // Unique per run, so a reused server's leftover orders can't match.
+      const name = `Browser ${test.info().project.name} ${js ? "js" : "nojs"} ${Date.now().toString(36)}`;
       await page.goto("/orders/new");
       await page.getByLabel("Customer").fill(name);
       await page.getByLabel("Status").selectOption("paid");
@@ -120,6 +121,47 @@ for (const js of [true, false]) {
 test("order pages are accessible", async ({ page }) => {
   for (const path of ["/orders/new", "/orders/1", "/orders/1/edit", "/orders/1/delete"]) {
     await page.goto(path);
+    expect((await new AxeBuilder({ page }).analyze()).violations, path).toEqual([]);
+  }
+});
+
+test("a stale edit shows an accessible conflict and keeps the entries", async ({ browser }) => {
+  const context = await browser.newContext({ baseURL: "http://localhost:4181" });
+  try {
+    const name = `Conflict ${test.info().project.name} ${Date.now().toString(36)}`;
+    const mine = await context.newPage();
+    await mine.goto("/orders/new");
+    await mine.getByLabel("Customer").fill(name);
+    await mine.getByLabel("Status").selectOption("pending");
+    await mine.getByLabel("Total").fill("5");
+    await mine.getByLabel("Created").fill("2026-10-01");
+    await mine.getByRole("button", { name: "Create order" }).click();
+    const flash = await mine.getByRole("status").filter({ hasText: "created" }).textContent();
+    const id = flash!.match(/Order (\d+)/)![1];
+
+    await mine.goto(`/orders/${id}/edit`);
+    const theirs = await context.newPage();
+    await theirs.goto(`/orders/${id}/edit`);
+    await theirs.getByLabel("Customer").fill(`${name} theirs`);
+    await theirs.getByRole("button", { name: "Save order" }).click();
+    await expect(theirs.getByRole("status").filter({ hasText: "saved" })).toBeVisible();
+
+    await mine.getByLabel("Customer").fill(`${name} mine`);
+    await mine.getByRole("button", { name: "Save order" }).click();
+    await expect(mine.getByRole("heading", { name: "This record has changed" })).toBeVisible();
+    await expect(mine.getByRole("group", { name: "There is a problem" })).toBeFocused();
+    await expect(mine.getByLabel("Customer")).toHaveValue(`${name} mine`);
+    expect((await new AxeBuilder({ page: mine }).analyze()).violations).toEqual([]);
+  } finally {
+    await context.close();
+  }
+});
+
+test("not-found pages are accessible HTML", async ({ page }) => {
+  for (const path of ["/orders/999999", "/orders/abc/edit", "/nowhere"]) {
+    const response = await page.goto(path);
+    expect(response!.status(), path).toBe(404);
+    await expect(page.getByRole("link", { name: "Back to orders" })).toBeVisible();
     expect((await new AxeBuilder({ page }).analyze()).violations, path).toEqual([]);
   }
 });
