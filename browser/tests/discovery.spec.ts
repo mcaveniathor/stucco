@@ -1,3 +1,4 @@
+import { directions } from "../directions";
 import { test, expect, type Page } from "@playwright/test";
 import { audit } from "../audit";
 const SITE = "http://localhost:4182/";
@@ -6,7 +7,8 @@ const ready = async (page: Page) => expect(page.locator("#pg-corners option").fi
 test("landing direction links enhance in place and preserve a complete destination", async ({ page }) => {
   await page.goto(SITE);
   const preview = page.locator("#landing-preview");
-  for (const name of ["precision", "prism", "play", "atelier"]) {
+  await expect(page.locator("[data-preview-direction]")).toHaveCount(directions.length);
+  for (const name of [...directions.slice(1), directions[0]]) {
     const link = page.locator(`[data-preview-direction="${name}"]`);
     await expect(link).toHaveAttribute("href", new RegExp(`showcase-${name}-orders.html$`));
     await link.click();
@@ -14,6 +16,26 @@ test("landing direction links enhance in place and preserve a complete destinati
     await expect(link).toHaveAttribute("aria-current", "true");
   }
 });
+
+for (const direction of ["grove", "relay", "marquee"]) {
+  test(`${direction} guided exports survive selection and URL reload`, async ({ page }) => {
+    await page.goto(`${SITE}playground.html`);
+    await ready(page);
+    await expect(page.locator("#pg-direction option")).toHaveCount(directions.length);
+    await page.locator("#pg-direction").selectOption(direction);
+    await page.locator("#pg-seed").fill("42");
+    const variant = direction[0].toUpperCase() + direction.slice(1);
+    await expect(page.locator("#pg-rust")).toContainText(`Direction::${variant}.guided_v1(42)`);
+    const css = await page.locator("#pg-css").textContent();
+    const tokens = JSON.parse(await page.locator("#pg-json").innerText());
+    expect(tokens.recipe.query).toBe(`guided=${direction}:1:42`);
+    await page.goto(`${SITE}playground.html?${tokens.recipe.query}`);
+    await ready(page);
+    await expect(page.locator("#pg-direction")).toHaveValue(direction);
+    await expect(page.locator("#pg-css")).toHaveText(css!);
+    expect(JSON.parse(await page.locator("#pg-json").innerText())).toEqual(tokens);
+  });
+}
 
 test("guided locks, favorites, comparisons and JSON reproduce the displayed theme", async ({ page }) => {
   await page.goto(`${SITE}playground.html?guided=atelier:1:42`);
@@ -81,7 +103,7 @@ test("without scripts the previews, exports and direction destinations remain us
   await context.close();
 });
 
-for (const direction of ["atelier", "precision", "prism", "play"]) {
+for (const direction of directions) {
   test(`${direction} complete screens fit 320px and pass axe in both schemes`, async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 800 });
     for (const screen of ["orders", "editorial", "project"]) {
@@ -110,7 +132,7 @@ test("Prism becomes opaque for accessibility preferences and supports enlarged t
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(720);
 });
 
-for (const direction of ["atelier", "precision", "prism", "play"]) {
+for (const direction of directions) {
   test(`${direction} retains error, selected, busy and overlay states`, async ({ page }) => {
     for (const scheme of ["light", "dark"]) {
       await page.goto("/forms.html");

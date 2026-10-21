@@ -1,3 +1,4 @@
+import { directions } from "../directions";
 import { test, expect } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -9,7 +10,7 @@ for (const width of [360, 768, 1440]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.emulateMedia({ reducedMotion: "reduce" });
     const manifest: object[] = [];
-    for (const direction of ["atelier", "precision", "prism", "play"]) {
+    for (const direction of directions) {
       for (const screen of ["orders", "editorial", "project"]) {
         await page.goto(`http://localhost:4173/showcase-${direction}-${screen}.html`);
         for (const scheme of ["light", "dark"]) {

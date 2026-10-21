@@ -105,3 +105,30 @@ downstream exhaustive matches need corresponding arms. The workspace targets
 0.4.0 to account for this break from published 0.3.0. JSON retains the color
 maps and adds a recipe field. No remote font loading, backend chart dependency,
 or change to legacy preset/seed behavior is introduced.
+
+## Additional directions — 0.5.0
+
+Grove, Relay and Marquee extend the registry to seven signatures. Each has
+bounded version 1 variations and appears in the landing switcher, playground,
+CLI exports and all three showcase compositions. Existing recipe mappings are
+unchanged. The public enum additions and array length change require 0.5.0.
+
+Visual inspection exposed body typography inherited from the outer page in
+named scopes. Named `ThemeScope`s now apply their own font, size and leading;
+scheme-only scopes retain inherited typography. A browser regression checks
+Relay's monospace body and Grove's airy leading in both schemes, plus isolation
+from the surrounding page.
+
+- Workspace tests, affected-crate tests after the scope fix, formatting,
+  Clippy and all-feature documentation checks pass.
+- Rust 1.85.0 checks the workspace excluding the existing newer-MSRV storage
+  crates. The semver checker accepts 0.5.0 against the `v0.4.0` tag.
+- The final browser suite passes 442 tests across Chromium, Firefox and WebKit;
+  the two existing CDP-only reduced-transparency checks remain skipped.
+- The direction capture workflow passes at 360, 768 and 1440px: 126 scope
+  captures, covering seven directions, three screens and both schemes, with
+  zero horizontal page overflows. Representative new-direction captures were
+  inspected for typography, wrapping, hierarchy and surface treatment.
+
+Logs are `target/additional-directions-*.log`; captures and manifests are in
+`target/visual-design/directions/`. These are local checks; release CI verifies the merged implementation.

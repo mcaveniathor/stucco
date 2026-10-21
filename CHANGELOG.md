@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.5.0 — 2026-10-21
+
+Three new art directions—Grove, Relay and Marquee—plus accurate body typography
+in embedded theme previews. The public direction additions make this a breaking
+release from 0.4; existing recipes and seed mappings remain unchanged.
+
+- Add Grove (botanical and airy), Relay (monospace dispatches) and Marquee
+  (gold and serif display) art directions, each with bounded guided variations.
+  All seven directions are available in the landing preview, playground,
+  theme exports and light/dark showcase screens.
+- Named theme scopes apply their own body font, size and line spacing, so
+  embedded previews match the theme's typography without changing the page.
+- Breaking: `Direction` adds three variants and `Direction::ALL` grows from
+  four to seven entries. Exhaustive matches and explicitly sized arrays must
+  be updated. The workspace advances to 0.5.0; existing directions, presets
+  and version 1 seed mappings retain their behavior.
+
 ## 0.4.0 — 2026-10-21
 
 Four signature visual directions, reproducible guided theme discovery, and

@@ -12,11 +12,25 @@ pub enum Direction {
     Prism,
     /// Heavy outlines, bold type and offset shadows.
     Play,
+    /// Botanical greens, airy type and soft, open surfaces.
+    Grove,
+    /// Monospace ink, dashed rules and compact square controls.
+    Relay,
+    /// Warm gold, bold serif headings and beveled, raised surfaces.
+    Marquee,
 }
 
 impl Direction {
     /// Every signature direction, in display order.
-    pub const ALL: [Self; 4] = [Self::Atelier, Self::Precision, Self::Prism, Self::Play];
+    pub const ALL: [Self; 7] = [
+        Self::Atelier,
+        Self::Precision,
+        Self::Prism,
+        Self::Play,
+        Self::Grove,
+        Self::Relay,
+        Self::Marquee,
+    ];
 
     /// Stable identifier for URLs and named scopes.
     pub fn name(self) -> &'static str {
@@ -25,6 +39,9 @@ impl Direction {
             Self::Precision => "precision",
             Self::Prism => "prism",
             Self::Play => "play",
+            Self::Grove => "grove",
+            Self::Relay => "relay",
+            Self::Marquee => "marquee",
         }
     }
 
@@ -76,6 +93,53 @@ impl Direction {
                 .nav_style(NavStyle::Solid)
                 .focus_style(FocusStyle::Thick)
                 .motion(Motion::Springy),
+            Self::Grove => Theme::preset(Preset::Pine)
+                .heading_font(HeadingFont::Rounded)
+                .heading_weight(HeadingWeight::Regular)
+                .leading(Leading::Airy)
+                .radius(Radius::Round)
+                .corner_style(CornerStyle::Squircle)
+                .button_shape(ButtonShape::Pill)
+                .control_style(ControlStyle::Filled)
+                .table_style(TableStyle::Open)
+                .header_style(HeaderStyle::Plain)
+                .shell_layout(ShellLayout::Topbar)
+                .panel_style(PanelStyle::Ruled)
+                .elevation(Elevation::Flat)
+                .backdrop(Backdrop::Wash)
+                .motion(Motion::Gentle),
+            Self::Relay => Theme::preset(Preset::Terminal)
+                .palette_preset(Preset::Graphite)
+                .heading_font(HeadingFont::Mono)
+                .heading_weight(HeadingWeight::Bold)
+                .density(Density::Compact)
+                .radius(Radius::Sharp)
+                .label_style(LabelStyle::Caps)
+                .tag_style(TagStyle::Outline)
+                .rule_style(RuleStyle::Dashed)
+                .table_style(TableStyle::Striped)
+                .shell_layout(ShellLayout::Rail)
+                .panel_style(PanelStyle::Headed)
+                .nav_style(NavStyle::Solid)
+                .elevation(Elevation::Flat)
+                .button_depth(ButtonDepth::Flat)
+                .motion(Motion::Snappy),
+            Self::Marquee => Theme::preset(Preset::Sol)
+                .heading_font(HeadingFont::Serif)
+                .heading_weight(HeadingWeight::Heavy)
+                .leading(Leading::Tight)
+                .label_style(LabelStyle::Caps)
+                .radius(Radius::Soft)
+                .corner_style(CornerStyle::Bevel)
+                .header_style(HeaderStyle::Tinted)
+                .panel_style(PanelStyle::Headed)
+                .nav_style(NavStyle::Bar)
+                .tag_style(TagStyle::Square)
+                .link_style(LinkStyle::Bold)
+                .elevation(Elevation::Raised)
+                .shadow_style(ShadowStyle::Layered)
+                .button_depth(ButtonDepth::Raised)
+                .motion(Motion::Smooth),
         }
     }
 
@@ -95,6 +159,9 @@ impl Direction {
             Self::Precision => [Preset::Slate, Preset::Fjord, Preset::Graphite],
             Self::Prism => [Preset::Iris, Preset::Ocean, Preset::Rose],
             Self::Play => [Preset::Sol, Preset::Rose, Preset::Pine],
+            Self::Grove => [Preset::Pine, Preset::Fjord, Preset::Stone],
+            Self::Relay => [Preset::Graphite, Preset::Terminal, Preset::Ocean],
+            Self::Marquee => [Preset::Sol, Preset::Sepia, Preset::Ember],
         };
         let palette = palettes[(rng.fork("palette").next_u64() % 3) as usize];
         let alternate_type = rng.fork("type").next_u64() % 2 == 1;
@@ -108,6 +175,9 @@ impl Direction {
                 Self::Precision => theme.heading_font(HeadingFont::Mono),
                 Self::Prism => theme.heading_weight(HeadingWeight::Heavy),
                 Self::Play => theme.heading_font(HeadingFont::Body),
+                Self::Grove => theme.heading_font(HeadingFont::Body),
+                Self::Relay => theme.heading_weight(HeadingWeight::Heavy),
+                Self::Marquee => theme.heading_weight(HeadingWeight::Bold),
             }
         } else {
             theme
@@ -118,6 +188,9 @@ impl Direction {
                 Self::Precision => theme.radius(Radius::Soft),
                 Self::Prism => theme.radius(Radius::Soft).shadow_style(ShadowStyle::Tinted),
                 Self::Play => theme.radius(Radius::Round).button_shape(ButtonShape::Pill),
+                Self::Grove => theme.corner_style(CornerStyle::Even),
+                Self::Relay => theme.rule_style(RuleStyle::Dotted),
+                Self::Marquee => theme.radius(Radius::Sharp).corner_style(CornerStyle::Even),
             }
         } else {
             theme
@@ -134,6 +207,16 @@ mod tests {
     fn signatures_and_bounded_variations_build_and_round_trip() {
         for direction in Direction::ALL {
             assert_eq!(direction.guided_v1(0), direction.theme());
+            let signature = ThemeSpec::new(Base::Direction(direction));
+            assert_eq!(
+                signature.to_query().parse::<ThemeSpec>().unwrap(),
+                signature
+            );
+            assert!(
+                signature
+                    .rust()
+                    .contains(&format!("Direction::{direction:?}.theme()"))
+            );
             for seed in (0..128).chain([u64::MAX]) {
                 let spec = ThemeSpec::new(Base::GuidedV1(direction, seed));
                 let parsed: ThemeSpec = spec.to_query().parse().unwrap();
@@ -144,6 +227,18 @@ mod tests {
                     direction.guided_v1(seed).build().unwrap().css(Scope::Root)
                 );
                 assert!(spec.export_json(&built).contains(&spec.to_query()));
+            }
+        }
+    }
+
+    #[test]
+    fn signatures_have_distinct_names_and_compositions() {
+        for (index, direction) in Direction::ALL.iter().enumerate() {
+            // Presets and directions share the gallery's named-theme namespace.
+            assert!(Preset::ALL.iter().all(|p| p.name() != direction.name()));
+            for other in &Direction::ALL[index + 1..] {
+                assert_ne!(direction.name(), other.name());
+                assert_ne!(direction.theme().personality, other.theme().personality);
             }
         }
     }

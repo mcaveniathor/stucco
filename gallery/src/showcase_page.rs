@@ -32,7 +32,7 @@ pub fn screen_page(bundle: &Bundle, direction: Direction, screen: &str) -> Strin
     crate::shell::component_page(
         bundle,
         &format!("{} / {screen}", direction.name()),
-        "One composition, four directions. All data is illustrative; both schemes are rendered in Rust.",
+        "One composition, seven directions. All data is illustrative; both schemes are rendered in Rust.",
         [
             crate::shell::section("Explore", (nav, screens)),
             crate::shell::section(

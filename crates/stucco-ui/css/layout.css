@@ -158,6 +158,7 @@
   .st-surface[data-radius="lg"] { border-radius: var(--st-radius-lg); }
   /* Theme scope: repaints its subtree in another scheme or theme. */
   .st-theme-scope { background: var(--st-finish, none), var(--st-relief, none), var(--st-backdrop, none) var(--st-bg); color: var(--st-text); }
+  .st-theme-scope[data-st-theme] { font-family: var(--st-font-sans); font-size: var(--st-text-base); line-height: var(--st-leading, 1.5); }
   @media (prefers-contrast: more), (forced-colors: active) {
     .st-theme-scope { background-image: none; }
   }
