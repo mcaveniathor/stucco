@@ -9,9 +9,13 @@
 //!     .footer(ResultCount::new(1, Some(1), Some(0)));
 //! assert!(to_html(&panel).contains("<caption>Orders</caption>"));
 //! ```
+mod avatar;
+mod badge;
 mod panel;
 mod result_count;
 mod table;
+pub use avatar::Avatar;
+pub use badge::Badge;
 pub use panel::{Card, Panel};
 pub use result_count::ResultCount;
 pub use table::{Row, Table};
@@ -23,3 +27,5 @@ pub static DATA: stucco_core::Asset = stucco_core::Asset {
     deps: &[],
 };
 stucco_core::register_asset!(DATA);
+#[cfg(test)]
+mod tests;

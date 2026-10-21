@@ -51,4 +51,30 @@
   @media print {
     .st-table-cards { container-type: normal; }
   }
+  /* Badge: a status pill. Coloured tones use the soft/text pair every theme
+     contrast-checks; the neutral ones match the filter tags. */
+  .st-badge {
+    display: inline-flex; align-items: center; gap: 0.35em; max-inline-size: 100%;
+    padding: 0.125em 0.625em; border: var(--st-line, 1px) solid var(--st-tag-border, var(--st-border));
+    border-radius: var(--st-tag-radius, var(--st-radius-full));
+    background: var(--st-tag-bg, var(--st-surface-raised)); color: var(--st-text);
+    font-size: var(--st-text-sm); font-weight: 550; line-height: 1.4; overflow-wrap: anywhere;
+  }
+  .st-badge > svg { inline-size: 1em; block-size: 1em; flex: none; }
+  .st-badge[data-tone="accent"] { background: var(--st-accent-soft); color: var(--st-accent-text); border-color: transparent; }
+  .st-badge[data-tone="success"] { background: var(--st-success-soft); color: var(--st-success-text); border-color: transparent; }
+  .st-badge[data-tone="warning"] { background: var(--st-warning-soft); color: var(--st-warning-text); border-color: transparent; }
+  .st-badge[data-tone="danger"] { background: var(--st-danger-soft); color: var(--st-danger-text); border-color: transparent; }
+  .st-badge[data-tone="info"] { background: var(--st-info-soft); color: var(--st-info-text); border-color: transparent; }
+
+  /* Avatar: initials, with an optional picture laid over them. */
+  .st-avatar {
+    position: relative; display: inline-grid; place-items: center; flex: none; overflow: hidden;
+    inline-size: 2.5rem; block-size: 2.5rem; border-radius: var(--st-radius-full);
+    background: var(--st-accent-soft); color: var(--st-accent-text);
+    font-size: var(--st-text-sm); font-weight: 600; line-height: 1; user-select: none;
+  }
+  .st-avatar[data-size="sm"] { inline-size: 1.75rem; block-size: 1.75rem; font-size: var(--st-text-xs); }
+  .st-avatar[data-size="lg"] { inline-size: 3.5rem; block-size: 3.5rem; font-size: var(--st-text-lg); }
+  .st-avatar > img { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; object-fit: cover; }
 }
