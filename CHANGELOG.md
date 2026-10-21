@@ -31,6 +31,14 @@ listed under Breaking with its replacement.
   messages, stale-edit conflicts, a row Actions menu and a delete dialog that
   falls back to a confirmation page. HTTP tests cover each status path.
 - A "Build a create/edit/delete flow" recipe replaces "Confirm before deleting".
+
+### Fixed
+
+- Visually hidden text in a table cell no longer widens narrow pages: the
+  table scroller is now its containing block.
+
+### Also in this release
+
 - Opt-in `CsrfLayer` verifies signed double-submit tokens on unsafe methods,
   checks the public origin and Fetch Metadata, and replays bounded form bodies
   for `Submission`. `CsrfToken` is available through `RequestContext`.

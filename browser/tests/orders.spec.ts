@@ -31,7 +31,8 @@ test("cursor, sorting and numbered navigation preserve state", async ({ page }) 
   expect(new URL(page.url()).searchParams.has("before")).toBe(false);
   await page.goto("/orders?mode=pages&per=10");
   await page.getByRole("link", { name: "Page 2", exact: true }).click();
-  await expect(page.getByRole("status")).toHaveText("Showing 11–20 of 67");
+  // Parallel CRUD tests may add orders, so only the range is fixed.
+  await expect(page.getByRole("status")).toHaveText(/^Showing 11–20 of \d+$/);
   await page.goto("/orders?q=DoesNotExist&sort=unknown&after=garbage");
   await expect(page.getByRole("heading", { name: "No results" })).toBeVisible();
 });
@@ -54,7 +55,71 @@ for (const scheme of ["light", "dark"] as const) {
     });
   });
 }
-test("server collections add no behavior module", async ({ page }) => {
+test("collections add no behavior module of their own", async ({ page }) => {
+  // The row menus and delete dialogs load the overlay script; the table,
+  // filters and pagination still need none.
   await page.goto("/orders");
-  expect(await page.locator('script[type="module"]').count()).toBe(0);
+  const modules = await page.locator('script[type="module"]').evaluateAll((scripts) =>
+    scripts.map((s) => s.getAttribute("src") ?? ""),
+  );
+  expect(modules.map((src) => src.replace(/^\/_stucco\/|\.[0-9a-f]+\.js$/g, "")).sort()).toEqual(["overlay", "stucco-runtime"]);
+});
+
+for (const js of [true, false]) {
+  test.describe(`orders CRUD with JavaScript ${js ? "on" : "off"}`, () => {
+    test.use({ javaScriptEnabled: js });
+
+    test("create, edit and delete an order", async ({ page }) => {
+      const name = `Browser ${test.info().project.name} ${js ? "js" : "nojs"}`;
+      await page.goto("/orders/new");
+      await page.getByLabel("Customer").fill(name);
+      await page.getByLabel("Status").selectOption("paid");
+      await page.getByLabel("Total").fill("12.50");
+      await page.getByLabel("Created").fill("2026-10-01");
+      await page.getByRole("button", { name: "Create order" }).click();
+      await expect(page).toHaveURL(/\/orders$/);
+      await expect(page.getByRole("status").filter({ hasText: "created" })).toBeVisible();
+
+      await page.goto(`/orders?q=${encodeURIComponent(name)}`);
+      const row = page.locator("tbody tr").filter({ hasText: name });
+      await row.getByRole("button", { name: /^Actions/ }).click();
+      await row.getByRole("link", { name: "Edit" }).click();
+      await page.getByLabel("Customer").fill(`${name} edited`);
+      await page.getByRole("button", { name: "Save order" }).click();
+      await expect(page.getByRole("status").filter({ hasText: "saved" })).toBeVisible();
+
+      await page.goto(`/orders?q=${encodeURIComponent(`${name} edited`)}`);
+      const edited = page.locator("tbody tr").filter({ hasText: `${name} edited` });
+      await edited.getByRole("button", { name: /^Actions/ }).click();
+      await edited.getByRole("link", { name: "Delete…" }).click();
+      // With script the dialog opens in place; without it, the link goes to
+      // the confirmation page. Either way one "Delete order" button shows.
+      if (js) await expect(page.getByRole("dialog")).toBeVisible();
+      else await expect(page).toHaveURL(/\/orders\/\d+\/delete$/);
+      await page.getByRole("button", { name: "Delete order" }).click();
+      await expect(page.getByRole("status").filter({ hasText: "deleted" })).toBeVisible();
+      await page.goto(`/orders?q=${encodeURIComponent(`${name} edited`)}`);
+      await expect(page.getByRole("heading", { name: "No results" })).toBeVisible();
+    });
+
+    test("a failed submit focuses the error summary", async ({ page }) => {
+      await page.goto("/orders/new");
+      await page.getByLabel("Customer").fill("Ada");
+      await page.getByLabel("Status").selectOption("paid");
+      // Passes the browser's own checks, fails the server's.
+      await page.getByLabel("Total").fill("abc");
+      await page.getByLabel("Created").fill("2026-10-01");
+      await page.getByRole("button", { name: "Create order" }).click();
+      const summary = page.getByRole("group", { name: "There is a problem" });
+      await expect(summary).toBeFocused();
+      await expect(summary.getByRole("link", { name: "Enter an amount like 12.50" })).toHaveAttribute("href", "#order-total");
+    });
+  });
+}
+
+test("order pages are accessible", async ({ page }) => {
+  for (const path of ["/orders/new", "/orders/1", "/orders/1/edit", "/orders/1/delete"]) {
+    await page.goto(path);
+    expect((await new AxeBuilder({ page }).analyze()).violations, path).toEqual([]);
+  }
 });
