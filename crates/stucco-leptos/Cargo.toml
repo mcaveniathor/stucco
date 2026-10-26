@@ -1,0 +1,34 @@
+[package]
+name = "stucco-leptos"
+description = "Reactive Leptos components using Stucco's existing styles and accessibility conventions."
+version = "0.1.0-alpha.1"
+edition.workspace = true
+rust-version = "1.88"
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+publish = ["crates-io"]
+readme = "README.md"
+include = ["Cargo.toml", "README.md", "LICENSE-MIT", "LICENSE-APACHE", "src/**", "tests/**", "examples/**"]
+keywords = ["leptos", "webassembly", "ui", "ssr", "forms"]
+categories = ["web-programming"]
+
+[dependencies]
+leptos = { version = "=0.8.22", default-features = false }
+stucco-core = { workspace = true, optional = true }
+stucco-theme = { workspace = true, optional = true }
+stucco-ui = { workspace = true, features = ["app", "data", "feedback", "forms", "overlay"], optional = true }
+web-sys = { version = "=0.3.106", features = ["File", "FileList"], optional = true }
+
+[features]
+default = []
+ssr = ["leptos/ssr", "dep:stucco-core", "dep:stucco-theme", "dep:stucco-ui"]
+hydrate = ["leptos/hydrate", "dep:web-sys"]
+
+[[example]]
+name = "native_form"
+required-features = ["ssr"]
+
+[package.metadata.docs.rs]
+no-default-features = true
+features = ["ssr"]

@@ -1,0 +1,53 @@
+/* Page composition only; controls and colors come from Stucco's shared CSS. */
+.orders-shell { max-inline-size: 58rem; margin-inline: auto; padding: 4rem 1.5rem; }
+.orders-shell header { margin-block-end: 2rem; }
+.orders-shell h1 { max-inline-size: 22ch; font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.1; letter-spacing: -.035em; margin-block: .7rem 1rem; }
+.orders-shell .eyebrow { color: var(--st-accent-text); font-size: .75rem; letter-spacing: .16em; font-weight: 700; }
+.orders-shell header > p:last-child, .orders-shell footer { color: var(--st-text-muted); }
+.order-card { background: var(--st-surface); border: 1px solid var(--st-border); border-radius: var(--st-radius-lg); padding: clamp(1rem, 4vw, 2rem); }
+.orders-shell .order-card + .order-card { margin-block-start: 1rem; }
+.order-heading, .total, .form-actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.order-heading { border-block-end: 1px solid var(--st-border); padding-block-end: 1rem; margin-block-end: 1.5rem; }
+.order-heading h2 { margin: 0; font-size: 1.35rem; }
+.order-heading span { color: var(--st-text-muted); font-size: .85rem; }
+.order-card h3 { margin-block: 2rem 1rem; font-size: 1rem; }
+.line-items { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.line-item > p { font-weight: 650; margin-block: 0 1rem; }
+.line-item > p span { display: block; font-size: .85rem; font-weight: 400; color: var(--st-text-muted); }
+.total { padding-block: 1.5rem; margin-block-start: 1.5rem; border-block-start: 1px solid var(--st-border); }
+.total output { font-size: 1.7rem; font-weight: 650; }
+.form-actions { justify-content: flex-start; flex-wrap: wrap; }
+.form-actions a { font-size: .9rem; }
+.form-errors { color: var(--st-danger-text); }
+.form-errors ul:empty { display: none; }
+.orders-shell footer { font-size: .8rem; margin-block-start: 1.5rem; }
+@media (max-width: 36rem) { .line-items { grid-template-columns: 1fr; } .orders-shell { padding-block: 2rem; } }
+.orders-shell > nav { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem 1.5rem; margin-block-end: 2rem; }
+.orders-shell > nav > a { white-space: nowrap; }
+.account-menu { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem; margin-inline-start: auto; min-inline-size: 0; }
+.account-menu > [role="status"]:not(:empty) { flex-basis: 100%; max-inline-size: 32rem; }
+.orders-shell .st-page-header { margin-block-end: 1.5rem; }
+.search-form { display: flex; align-items: end; gap: 1rem; margin-block: 1.5rem; }
+.search-form .st-field { flex: 1; min-inline-size: 0; }
+.results-heading { font-size: 1.1rem; margin-block: 1.5rem 1rem; }
+.table-scroll { max-inline-size: 100%; overflow-x: auto; }
+.table-scroll table { inline-size: 100%; }
+.table-scroll th, .table-scroll td { padding: .7rem .5rem; text-align: start; }
+.table-scroll th:first-child { min-inline-size: 5rem; }
+.pagination { display: flex; justify-content: space-between; gap: 1.5rem; margin-block-start: 1rem; }
+.draft-notice { color: var(--st-text-muted); font-size: .85rem; }
+@media (max-width: 36rem) { .search-form { align-items: stretch; flex-direction: column; } .table-scroll { font-size: .85rem; } }
+.attachment-list { list-style: none; padding: 0; margin-block: 1rem; }
+.attachment-list > li { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem 1rem; padding-block: .75rem; border-block-end: 1px solid var(--st-border); }
+.attachment-list > li > a { flex: 1 1 12rem; min-inline-size: 0; overflow-wrap: anywhere; }
+.attachment-list > li > span { color: var(--st-text-muted); font-size: .85rem; }
+.attachment-list > li > form { max-inline-size: 100%; }
+.attachment-list .st-button { max-inline-size: 100%; white-space: normal; overflow-wrap: anywhere; text-align: start; }
+.export-progress > * + *, form[enctype="multipart/form-data"] > * + * { margin-block-start: 1rem; }
+.export-refresh { display: inline-block; margin-inline-start: 1.5rem; margin-block-end: 1rem; }
+#gallery-file-preview, #gallery-value-preview { overflow-wrap: anywhere; }
+@media (max-width: 36rem) {
+  .account-menu { flex-basis: 100%; margin-inline-start: 0; }
+  .attachment-list > li { align-items: start; }
+  .attachment-list > li > form { flex-basis: 100%; }
+}

@@ -1,0 +1,73 @@
+[package]
+name = "orders-fullstack"
+version.workspace = true
+edition.workspace = true
+rust-version = "1.90"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "orders-fullstack"
+path = "src/main.rs"
+required-features = ["ssr"]
+
+[features]
+default = []
+hydrate = ["leptos/hydrate", "stucco-leptos/hydrate", "dep:wasm-bindgen", "dep:console_error_panic_hook", "dep:web-sys", "dep:wasm-bindgen-futures", "dep:serde_json"]
+ssr = ["leptos/ssr", "leptos_router/ssr", "leptos_meta/ssr", "stucco-leptos/ssr", "dep:leptos_axum", "dep:axum", "dep:tokio", "dep:stucco-tower", "dep:stucco-theme", "dep:tower-http", "dep:any_spawner", "dep:axum-login", "dep:tower-sessions", "dep:password-auth", "dep:time", "dep:clap", "dep:async-trait", "dep:redb", "dep:serde_json", "dep:getrandom", "dep:tempfile", "dep:apalis"]
+
+sqlite = ["ssr", "dep:sqlx", "dep:tower-sessions-sqlx-store", "dep:rmp-serde"]
+
+[dependencies]
+leptos = { version = "=0.8.22", default-features = false }
+leptos_router = { version = "=0.8.17" }
+leptos_meta = { version = "=0.8.7" }
+form_urlencoded.workspace = true
+stucco-leptos = { path = "../../crates/stucco-leptos", version = "=0.1.0-alpha.1", default-features = false }
+serde = { version = "1", features = ["derive"] }
+leptos_axum = { version = "=0.8.10", optional = true }
+axum = { workspace = true, features = ["http1", "tokio", "form", "multipart", "json"], optional = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net", "signal", "sync", "time"], optional = true }
+stucco-tower = { workspace = true, features = ["multipart"], optional = true }
+stucco-theme = { workspace = true, optional = true }
+tower-http = { workspace = true, features = ["fs"], optional = true }
+wasm-bindgen = { version = "=0.2.129", optional = true }
+console_error_panic_hook = { version = "0.1", optional = true }
+any_spawner = { version = "=0.3.0", features = ["tokio"], optional = true }
+sqlx = { version = "=0.8.6", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros"], optional = true }
+axum-login = { version = "=0.17.0", optional = true }
+tower-sessions = { version = "=0.14.0", default-features = false, features = ["axum-core"], optional = true }
+tower-sessions-sqlx-store = { version = "=0.15.0", features = ["sqlite"], optional = true }
+password-auth = { version = "=1.0.0", optional = true }
+time = { version = "=0.3.44", optional = true }
+clap = { version = "=4.6.7", features = ["derive"], optional = true }
+async-trait = { version = "0.1", optional = true }
+
+redb = { version = "=4.3.0", optional = true }
+serde_json = { version = "1", optional = true }
+getrandom = { version = "0.3", optional = true }
+tempfile = { version = "3", optional = true }
+rmp-serde = { version = "=1.3.1", optional = true }
+apalis = { version = "=0.7.4", default-features = false, features = ["limit"], optional = true }
+web-sys = { version = "=0.3.106", features = ["FormData", "HtmlFormElement", "Request", "RequestInit", "RequestMode", "RequestCredentials", "Headers", "Response", "Window"], optional = true }
+wasm-bindgen-futures = { version = "=0.4.79", optional = true }
+
+[dev-dependencies]
+tower = { workspace = true, features = ["util"] }
+http-body-util.workspace = true
+form_urlencoded.workspace = true
+tempfile = "3"
+
+[package.metadata.leptos]
+output-name = "orders-fullstack"
+site-root = "target/orders-fullstack-site"
+site-pkg-dir = "pkg"
+site-addr = "127.0.0.1:4183"
+reload-port = 3013
+bin-features = ["ssr"]
+lib-features = ["hydrate"]
+bin-default-features = false
+lib-default-features = false
+lib-profile-release = "wasm"

@@ -26,6 +26,19 @@ content-hashed assets, and a `Page` produces the document. Applications provide
 data and backend capabilities; components remain independent of HTTP, Tokio,
 and storage.
 
+An unpublished [Leptos integration](crates/stucco-leptos/README.md) now adds
+reactive form controls, dialogs and feedback using the same themes and styles. The
+[full-stack Orders example](examples/orders-fullstack/README.md) uses standard
+Leptos SSR/hydration and Rust/WASM interaction, with embedded redb NoSQL storage
+by default, optional SQLite, account sessions, tenant-scoped orders, attachments
+and background CSV exports. A component gallery demonstrates native fallbacks,
+keyboard interactions and localized RTL layouts. The
+application requires Rust 1.90; the component crate retains Rust 1.88. The
+component and application workflows pass local Rust and cross-browser checks.
+The separate `0.1.0-alpha.1` component preview is prepared for release; it has not
+been published. See the [deployment guide](examples/orders-fullstack/DEPLOYING.md)
+for the application bundle and its supported single-server deployment.
+
 ## Render a page
 
 Add:
@@ -242,6 +255,15 @@ The orders example supports `PORT` and `ORDERS_DB` environment variables;
 its default database is `target/orders.redb`.
 
 ## Development and releases
+
+The [Leptos components and full-stack reference plan](docs/roadmap-fullstack.md)
+describes Stucco's design-system integration with Leptos and the maintained Rust
+application example. The unpublished preview includes routed Orders CRUD, search
+and pagination, native forms, WASM interaction, and tenant-scoped accounts backed
+by default redb storage. It also includes database-backed attachments, background
+CSV exports, and a localized component gallery. SQLite remains an optional server
+feature. Preview package checks consume an extracted archive against published
+styling crates; release-bundle checks exercise the copied server and WASM assets.
 
 ```sh
 cargo fmt --all --check
