@@ -93,10 +93,22 @@ async function scrollTableWithKeyboard(page: Page, region: Locator) {
   }
   await expect(region).toBeFocused();
   expect(await region.evaluate(element => element.scrollWidth - element.clientWidth)).toBeGreaterThan(1);
-  const initial = await region.evaluate(element => element.scrollLeft);
+  // WebKit animates keyboard scrolling even with reduced motion, so compare
+  // positions only after each scroll has stopped moving.
+  const settled = async () => {
+    let previous = Number.NaN;
+    await expect.poll(async () => {
+      const current = await region.evaluate(element => element.scrollLeft);
+      const stable = current === previous;
+      previous = current;
+      return stable;
+    }, { intervals: [100] }).toBe(true);
+    return previous;
+  };
+  const initial = await settled();
   await page.keyboard.press("ArrowRight");
   await expect.poll(() => region.evaluate(element => element.scrollLeft)).toBeGreaterThan(initial);
-  const right = await region.evaluate(element => element.scrollLeft);
+  const right = await settled();
   await page.keyboard.press("ArrowLeft");
   await expect.poll(() => region.evaluate(element => element.scrollLeft)).toBeLessThan(right);
   await expect(region).toBeFocused();
