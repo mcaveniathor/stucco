@@ -169,9 +169,9 @@ fn OrderResults(result: OrderPage) -> impl IntoView {
                 view! { <p>"No orders match this search. Try another customer name or create an order."</p> }.into_any()
             } else {
                 view! {
-                    <div class="table-scroll">
+                    <div class="table-scroll" tabindex="0" role="region" aria-labelledby="order-results-caption">
                         <table class="st-table">
-                            <caption class="st-sr-only">"Orders matching your search"</caption>
+                            <caption id="order-results-caption" class="st-sr-only">"Orders matching your search"</caption>
                             <thead><tr><th scope="col">"Order"</th><th scope="col">"Customer"</th><th scope="col">"Total"</th><th scope="col">"Revision"</th></tr></thead>
                             <tbody>{result.orders.into_iter().map(|order| {
                                 let total = order.total_cents().map(money).unwrap_or_else(|error| error.to_string());
@@ -261,9 +261,9 @@ fn OrderDetails(order: Order) -> impl IntoView {
             </div>
             <div class="order-card">
                 <p>{format!("Saved revision {}", order.revision)}</p>
-                <div class="table-scroll">
+                <div class="table-scroll" tabindex="0" role="region" aria-labelledby="order-items-caption">
                     <table class="st-table">
-                        <caption>"Line items"</caption>
+                        <caption id="order-items-caption">"Line items"</caption>
                         <thead><tr><th scope="col">"Item"</th><th scope="col">"Unit price"</th><th scope="col">"Quantity"</th></tr></thead>
                         <tbody>{order.items.into_iter().map(|item| view! {
                             <tr><th scope="row">{item.name}</th><td>{money(item.unit_price_cents)}</td><td>{item.quantity}</td></tr>
