@@ -1,4 +1,4 @@
-import { type Page, type Request, type Response } from "@playwright/test";
+import { type Locator, type Page, type Request, type Response } from "@playwright/test";
 import { test, expect } from "./fixtures";
 import { audit } from "../audit";
 
@@ -84,9 +84,39 @@ async function removeOrder(page: Page, id: number, hydrated = true) {
   await expect(page).toHaveURL(/\/orders$/);
 }
 
+async function scrollTableWithKeyboard(page: Page, region: Locator) {
+  // Use native Tab navigation from the page's initial focus. No element.focus()
+  // or scroll assignment can stand in for keyboard access to the overflow.
+  for (let press = 0; press < 24; press++) {
+    await page.keyboard.press("Tab");
+    if (await region.evaluate(element => element === document.activeElement)) break;
+  }
+  await expect(region).toBeFocused();
+  expect(await region.evaluate(element => element.scrollWidth - element.clientWidth)).toBeGreaterThan(1);
+  const initial = await region.evaluate(element => element.scrollLeft);
+  await page.keyboard.press("ArrowRight");
+  await expect.poll(() => region.evaluate(element => element.scrollLeft)).toBeGreaterThan(initial);
+  const right = await region.evaluate(element => element.scrollLeft);
+  await page.keyboard.press("ArrowLeft");
+  await expect.poll(() => region.evaluate(element => element.scrollLeft)).toBeLessThan(right);
+  await expect(region).toBeFocused();
+}
+
 for (const hydrated of [true, false]) {
   test.describe(hydrated ? "hydrated workflows" : "native workflows without JavaScript", () => {
     test.use({ javaScriptEnabled: hydrated });
+
+    test("narrow results and line items scroll with native keyboard controls", async ({ page }) => {
+      // At 320px the card leaves less than 240px for the fixed catalogue's
+      // nonwrapping columns. Assert real overflow before sending arrow keys.
+      await page.setViewportSize({ width: 320, height: 900 });
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await openList(page, hydrated);
+      await scrollTableWithKeyboard(page, page.getByRole("region", { name: "Orders matching your search", exact: true }));
+      await page.goto("/orders/1");
+      await ready(page, hydrated);
+      await scrollTableWithKeyboard(page, page.getByRole("region", { name: "Line items", exact: true }));
+    });
 
     test("create, inspect, edit and delete an order through the UI", async ({ page }) => {
       await openList(page, hydrated);

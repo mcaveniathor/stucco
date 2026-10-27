@@ -28,8 +28,9 @@ The packager copies the native executable, the matching JS/WASM/CSS from
 refuses an existing output directory. It does not copy databases, environment
 files, account credentials or repository source. `build.json` records whether the
 source checkout was dirty; an uncommitted build is suitable for local review, not
-an identified release. Checksums detect changed files; successful hydration in the
-rehearsal establishes that the executable and assets work together.
+an identified release. Checksums detect changed files. The HTTP-only CLI rehearsal
+verifies native workflows and asset delivery; the separate Playwright run verifies
+hydration and server-function calls against the copied executable and assets.
 
 The default bundle uses redb. To build the optional SQLite adapter, add
 `--bin-features ssr,sqlite` to the same cargo-leptos build and use `--backend sqlite`
@@ -98,15 +99,19 @@ behavior remains authored in Rust.
 
 Use a maintenance restart for this single-writer reference:
 
-1. Build and rehearse a new bundle in a separate directory. Check its checksums.
+1. Build a new bundle in a separate directory and check its checksums. Require both
+   the CLI rehearsal and the Playwright suite below to pass against that bundle
+   before deployment; native HTTP checks alone cannot detect mismatched hydration
+   assets and server-function routes.
 2. Stop new traffic at the proxy, then send SIGTERM to the running process and
    wait for it to exit. In-flight HTTP requests drain; the export worker has a
    bounded shutdown window and pending work is reconstructed at startup.
 3. With the server stopped, run its `backup --destination <new-file>` command.
 4. Switch the service's working directory and executable to the new bundle,
    retaining the database location and secret. Start it and wait for `/ready` to
-   return 200 before reopening traffic. Readiness checks storage access; the bundle
-   rehearsal also checks assets, login, hydration and persisted data.
+   return 200 before reopening traffic. Readiness checks storage access. The CLI
+   rehearsal checks native login, assets and persisted data; the required browser
+   suite checks hydration and interactive server calls.
 5. Ask users to reload existing tabs before resuming edits. Capture unsaved text
    before reload. There is no cross-release browser/server API compatibility
    guarantee: server-function routes and serialized inputs can change. Stable
@@ -137,6 +142,8 @@ From the repository root, after packaging:
 ```sh
 python3 tools/smoke-orders-bundle.py target/orders-release
 cd browser
+npm ci
+npx playwright install --with-deps chromium firefox webkit
 STUCCO_E2E_BUNDLE=../target/orders-release npx playwright test --config playwright.fullstack.config.ts
 ```
 
@@ -145,7 +152,8 @@ bundle directory, checks native login and asset delivery, stops the process,
 backs up and restores into a new path, and verifies restored state and invalidated
 sessions. It removes only its own temporary files. The browser harness separately
 provisions disposable accounts and runs the real native/hydrated workflows against
-the copied executable and assets. Neither check uses a production database.
+the copied executable and assets. It requires Node.js and the Playwright host
+dependencies. Run both checks before deployment; neither uses a production database.
 
 Upstream references: [cargo-leptos 0.3.11 configuration](https://docs.rs/crate/cargo-leptos/0.3.11/source/README.md),
 [Leptos SSR deployment](https://book.leptos.dev/deployment/ssr.html), and

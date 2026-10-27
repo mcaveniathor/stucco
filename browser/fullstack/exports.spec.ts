@@ -138,21 +138,119 @@ test("replaying a native export request returns the same job without another lis
   }
 });
 
-test("cancelling a completed export revokes its download and cannot be retried", async ({ page, context }) => {
+test("cancel retains pending and unknown outcomes across poll ticks until explicit reconciliation", async ({ page, context }) => {
   let token: string | undefined;
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => { release = resolve; });
+  let committed!: () => void;
+  const cancellationCommitted = new Promise<void>((resolve) => { committed = resolve; });
+  let statusReads = 0;
+  let mutations = 0;
+  let showRunning = true;
+  let failRefresh = false;
   try {
     token = (await startNative(context.request)).token;
     await page.goto(`/exports/${token}`);
     await ready(page);
     await expect(downloadLink(page)).toBeVisible({ timeout: 20_000 });
-    await page.getByRole("button", { name: "Cancel and remove export", exact: true }).click();
-    await expect(page.locator('[role="status"]').filter({ hasText: /^Cancelled$/ })).toBeVisible();
+
+    // A controlled status fixture keeps the real job visually running long
+    // enough to cross polling ticks. The second cancel reaches the real server;
+    // only its committed response is delayed and lost.
+    await page.route("**/api/**", async (route) => {
+      const request = route.request();
+      if (request.method() === "GET" && new URL(request.url()).searchParams.get("token") === token) {
+        statusReads++;
+        if (failRefresh) {
+          failRefresh = false;
+          await route.abort("failed");
+          return;
+        }
+        const response = await route.fetch();
+        if (showRunning) {
+          const result = await response.json();
+          expect(result.Ok.token).toBe(token);
+          result.Ok.state = { Running: { processed: 0, total: 1 } };
+          await route.fulfill({ response, json: result });
+        } else {
+          await route.fulfill({ response });
+        }
+      } else if (request.method() === "POST" && new URLSearchParams(request.postData() ?? "").get("token") === token) {
+        mutations++;
+        if (mutations === 1) {
+          // A definite service rejection must survive subsequent status reads.
+          await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ Err: { Service: "NotFound" } }) });
+          return;
+        }
+        const response = await route.fetch();
+        expect(response.status()).toBe(200);
+        expect((await response.json()).Ok.state).toBe("Cancelled");
+        committed();
+        await held;
+        await route.abort("failed").catch(() => {});
+      } else {
+        await route.continue();
+      }
+    });
+    const refresh = page.getByRole("link", { name: "Refresh status", exact: true });
+    const form = page.locator(`form[action="/exports/${token}/cancel"]`);
+    const button = form.getByRole("button");
+    await refresh.click();
+    await expect(page.getByRole("status").filter({ hasText: /^Exporting 0 of 1 orders$/ })).toBeVisible();
+    await expect(button).toHaveAttribute("aria-disabled", "false");
+
+    await button.click();
+    const rejected = page.getByRole("status").filter({ hasText: "Export not found or no longer available." });
+    await expect(rejected).toBeVisible();
+    const readsBeforeRejectionPoll = statusReads;
+    await expect.poll(() => statusReads, { timeout: 8_000 }).toBeGreaterThan(readsBeforeRejectionPoll);
+    await expect(button).toHaveAttribute("aria-disabled", "false");
+    await expect(rejected).toBeVisible();
+
+    await button.click();
+    await cancellationCommitted;
+    await expect(button).toHaveText("Submitting…");
+    await expect(button).toHaveAttribute("aria-disabled", "true");
+    const readsWhilePending = statusReads;
+    // Deliberately wait beyond two 2-second polling ticks to detect a reset.
+    await page.waitForTimeout(4_200);
+    await expect(button).toHaveText("Submitting…");
+    await expect(button).toHaveAttribute("aria-busy", "true");
+    expect(statusReads).toBe(readsWhilePending);
+    await form.evaluate((element) => (element as HTMLFormElement).requestSubmit());
+    await refresh.click({ force: true });
+    expect(mutations).toBe(2);
+    expect(statusReads).toBe(readsWhilePending);
+    expect((await context.request.get(`/exports/${token}/download`)).status()).toBe(404);
+
+    release();
+    const unknown = page.getByRole("status").filter({ hasText: "The change could not be confirmed." });
+    await expect(unknown).toBeVisible();
+    await expect(button).toHaveAttribute("aria-busy", "false");
+    await expect(button).toHaveAttribute("aria-disabled", "true");
+    await page.waitForTimeout(4_200);
+    await expect(unknown).toBeVisible();
+    expect(statusReads).toBe(readsWhilePending);
+    await form.evaluate((element) => (element as HTMLFormElement).requestSubmit());
+    expect(mutations).toBe(2);
+
+    // A failed explicit read cannot clear uncertainty or resume background polls.
+    failRefresh = true;
+    await refresh.click();
+    await expect(page.getByRole("alert").filter({ hasText: "Could not check this export." })).toBeVisible();
+    await expect(unknown).toBeVisible();
+    showRunning = false;
+    await refresh.click();
+    await expect(page.getByRole("status").filter({ hasText: /^Cancelled$/ })).toBeVisible();
+    await expect(unknown).toHaveCount(0);
     await expect(downloadLink(page)).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Retry export", exact: true })).toHaveCount(0);
-    expect((await context.request.get(`/exports/${token}/download`)).status()).toBe(404);
+    await expect(form).toHaveCount(0);
     await page.reload();
-    await expect(page.locator('[role="status"]').filter({ hasText: /^Cancelled$/ })).toBeVisible();
+    await expect(page.getByRole("status").filter({ hasText: /^Cancelled$/ })).toBeVisible();
   } finally {
+    release();
+    await page.unroute("**/api/**");
     await cancel(context.request, token);
   }
 });
