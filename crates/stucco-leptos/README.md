@@ -4,7 +4,7 @@ An unpublished preview of reactive Leptos components using Stucco's existing
 styles and accessibility conventions. It provides a small set of form and page
 components using Leptos directly; it does not hydrate the static `Render` builders.
 This preview does not yet cover the full Stucco component catalogue. Its separate
-prerelease version is **0.1.0-alpha.1**; the existing Stucco crates remain at 0.5.0.
+prerelease version is **0.1.0-alpha.1**; the existing Stucco crates are at 0.5.1.
 Preparing the package does not mean that the prerelease has been published.
 
 | Area | Available in this preview | Still missing |
@@ -26,7 +26,7 @@ application's `Cargo.toml`. Adjust the paths to the Stucco checkout:
 [dependencies]
 leptos = { version = "=0.8.22", default-features = false }
 stucco-leptos = { path = "../stucco/crates/stucco-leptos", version = "=0.1.0-alpha.1", default-features = false }
-stucco-theme = { path = "../stucco/crates/stucco-theme", version = "=0.5.0", optional = true }
+stucco-theme = { path = "../stucco/crates/stucco-theme", version = "=0.5.1", optional = true }
 
 [features]
 default = []
@@ -40,7 +40,7 @@ pending publication:
 
 ```toml
 stucco-leptos = { version = "=0.1.0-alpha.1", default-features = false }
-stucco-theme = { version = "=0.5.0", optional = true }
+stucco-theme = { version = "=0.5.1", optional = true }
 ```
 
 The theme dependency is only needed by server code calling `stylesheet`.
@@ -57,8 +57,8 @@ This first preview targets SSR with hydration; client-only mounting is not yet a
 supported or tested mode. Your application still owns its HTTP server, routing,
 hydration entry point and asset delivery. The
 [Orders example](https://github.com/mcaveniathor/stucco/tree/main/examples/orders-fullstack)
-shows that full setup; its application and unreleased middleware changes are
-checkout examples, not a registry-installable application.
+shows that full setup; its application code is a
+checkout example, not a registry-installable application.
 
 ## Text fields
 

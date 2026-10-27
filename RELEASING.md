@@ -9,8 +9,8 @@ replaced.
 The opt-in `stucco-leptos` preview has its own prerelease version and release
 procedure below. It remains excluded from the stable publication workflow and
 the stable published-package semver checks. The `orders-fullstack` reference
-has `publish = false` and remains checkout-based: its upload routes require
-the workspace's unreleased `stucco-tower` multipart feature. Its separate SSR,
+has `publish = false` and remains checkout-based: it is an application, not a
+library, and is built from the workspace. Its separate SSR,
 hydration, storage and browser checks run in CI.
 
 ## Once: the registry token
@@ -75,7 +75,7 @@ version or publish the Orders application.
    API changes require an explicit new preview version.
 2. Check that every registry dependency is already published. The preview's
    style dependencies currently use published `stucco-core`, `stucco-theme`
-   and `stucco-ui` 0.5.0; its Leptos dependency is pinned to 0.8.22. The
+   and `stucco-ui` 0.5.1; its Leptos dependency is pinned to 0.8.22. The
    archive consumer must pass against those registry dependencies, even
    when the checkout's copies have additional changes.
 3. Merge the reviewed release preparation to `main`. Require CI, including
