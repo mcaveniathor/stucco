@@ -14,8 +14,57 @@ Playwright starts the repository's orders, gallery, site (including WASM) and
 hello workflows. Install the Playwright host dependencies when a browser reports
 missing shared libraries. Local HTTP server ports must be available.
 
-Accessibility audits wait for loaded fonts, layout frames and finite transitions
-before running Axe; scheme tests also wait for the requested media preference.
+The opt-in Leptos application suite uses the built full-stack example on port 4183:
+
+```sh
+# From the repository root; requires cargo-leptos 0.3.11 and the WASM target.
+cargo leptos build -p orders-fullstack --cargo-locked
+cd browser
+npx playwright test --config playwright.fullstack.config.ts
+```
+
+Run the cargo-leptos build after ordinary Cargo tests, immediately before this
+suite, so the server binary matches its hydration assets. The application requires
+Rust 1.90 and uses embedded redb NoSQL storage by default; SQLite is an optional
+server feature.
+
+The suite provisions an isolated database and test accounts before starting the
+server, then runs serially. It checks native and hydrated CRUD, URL search and
+pagination, browser history, draft retention, stale revisions, delayed and lost
+responses, account isolation, hydration, keyboard focus, accessibility and layouts.
+It also covers native and hydrated attachments, private CSV exports, delayed export
+navigation, and the component gallery's dialogs, repeated fields, suggestions, file
+metadata and English/Arabic RTL layouts. Dedicated export accounts for each browser
+keep quota and idempotency scenarios isolated. Recovery tests create and remove
+disposable records through the application. Workflow screenshots are retained with
+the test results. See [the example setup](../examples/orders-fullstack/README.md)
+for provisioning, backup and maintenance prerequisites.
+
+To test the copied optimized runtime, follow the
+[deployment build/package instructions](../examples/orders-fullstack/DEPLOYING.md),
+then run from this directory:
+
+```sh
+STUCCO_E2E_BUNDLE=../target/orders-release npx playwright test --config playwright.fullstack.config.ts
+```
+
+The harness runs that executable from its bundle directory and serves its copied
+assets, using a new disposable database. Step 5 passes **210 cases**, **70 each in
+Chromium, Firefox and WebKit**, against that release bundle. The added CSP check
+verifies hydration, a saved mutation and reload without policy violations, then
+confirms that an untrusted inline script is blocked. The release attachment and
+Arabic RTL narrow-dark screenshots were visually inspected in WebKit.
+
+At the Step 4 checkpoint, all **207 browser cases pass**: **69 each in Chromium,
+Firefox and WebKit**, including accessibility and overflow checks. Selected
+attachment, export, dialog and English/Arabic RTL gallery screenshots were visually
+inspected in wide light and narrow dark layouts across the three browsers. Step 3's
+144 cases and earlier Step 2 counts describe their historical checkpoints.
+
+Native workflows run with JavaScript disabled and check form behavior and semantics.
+Accessibility audits on enhanced pages wait for loaded fonts, layout frames and
+finite transitions before running Axe; scheme tests also wait for the requested
+media preference.
 Indefinite busy animations keep running. All rules remain enabled. On a violation,
 the test attaches Axe's findings, computed page colors and a viewport screenshot;
 failed CI runs retain `browser/test-results/` as the `browser-test-results`

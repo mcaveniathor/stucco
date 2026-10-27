@@ -126,10 +126,13 @@ test("Prism becomes opaque for accessibility preferences and supports enlarged t
   await page.emulateMedia({ forcedColors: "active" });
   await expect(card).toBeVisible();
   await page.setViewportSize({ width: 720, height: 900 });
+  // Chromium can report one transient overflowing layout while text resizes;
+  // the settled page must fit without horizontal scrolling.
+  const scrollWidth = () => page.evaluate(() => document.documentElement.scrollWidth);
   await page.evaluate(() => document.documentElement.style.fontSize = "200%");
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(720);
+  await expect.poll(scrollWidth).toBeLessThanOrEqual(720);
   await page.evaluate(() => { document.documentElement.style.fontSize = ""; document.documentElement.style.zoom = "2"; });
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(720);
+  await expect.poll(scrollWidth).toBeLessThanOrEqual(720);
 });
 
 for (const direction of directions) {

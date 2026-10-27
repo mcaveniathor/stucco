@@ -30,7 +30,11 @@ jobs:
       - name: Build the API reference
         run: >-
           cargo doc --workspace --no-deps --all-features
-          --exclude gallery --exclude hello --exclude orders --exclude site --exclude site-wasm
+          --exclude gallery --exclude hello --exclude orders --exclude orders-fullstack --exclude stucco-leptos --exclude site --exclude site-wasm
+      - name: Build the opt-in Leptos preview API reference
+        run: cargo doc -p stucco-leptos --no-default-features --features ssr --no-deps --locked
+        env:
+          RUSTDOCFLAGS: -D warnings
       - run: cp -r target/doc _site/api
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

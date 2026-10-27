@@ -1,7 +1,13 @@
 target/
 node_modules/
+__pycache__/
 browser/test-results/
 browser/playwright-report/
 .superpowers/
 docs/superpowers/
 /_site
+# Local full-stack reference databases, sessions and backups.
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+*.redb
