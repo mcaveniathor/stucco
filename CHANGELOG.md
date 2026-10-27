@@ -1,19 +1,22 @@
 # Changelog
 
-## Unreleased
+## 0.5.1 — 2026-10-27
+
+Backward-compatible middleware additions for full-stack Rust applications, and
+the first Leptos component preview. Existing defaults and APIs are unchanged.
 
 - Prepare the separately versioned `stucco-leptos` **0.1.0-alpha.1** preview:
   Rust/Leptos form controls, feedback, page headers and dialogs sharing Stucco
   themes and CSS. Include native form examples, localized/RTL gallery coverage,
-  separate SSR/WASM builds and packaged-consumer verification. Publication is
-  pending; the stable workspace remains at 0.5.0.
+  separate SSR/WASM builds and packaged-consumer verification. The preview is
+  published on its own `stucco-leptos-v0.1.0-alpha.1` tag against these 0.5.1
+  crates, not by the stable workspace release.
 - Add the maintained `orders-fullstack` reference using direct Leptos SSR and
   Rust/WASM hydration, Axum, default embedded redb and optional SQLite. It
   demonstrates tenant-scoped accounts, revision-checked CRUD, native form recovery,
   bounded database attachments, durable CSV exports and backup/restore.
 - Extend `stucco-tower` with explicit CSRF token rotation/rejection metadata and
   opt-in bounded multipart CSRF verification. Existing defaults remain unchanged.
-  These middleware additions are not yet part of the published 0.5.0 package.
 - Add nonce CSP, response cache policy, deployment layout checks, a copied-runtime
   rehearsal and release-bundle CI. Document root-path hosting, maintenance restarts
   and the limits of cross-release browser compatibility.

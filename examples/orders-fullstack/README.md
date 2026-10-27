@@ -370,8 +370,8 @@ the application.
 `stucco_leptos::stylesheet` generates CSS from the existing theme and component
 assets. No legacy behavior scripts are mounted inside the Leptos tree. The component
 crate's independent `0.1.0-alpha.1` preview is prepared and remains unpublished.
-Its package can consume published Stucco styling crates; this application still
-uses checkout code for the unreleased Tower multipart/session additions.
+Its package can consume published Stucco styling crates; this application uses
+the workspace's `stucco-tower` multipart/session support, released in 0.5.1.
 
 For release builds, runtime packaging, CSP/cache policy, root-path hosting,
 maintenance upgrades and backup/restore rehearsals, follow
