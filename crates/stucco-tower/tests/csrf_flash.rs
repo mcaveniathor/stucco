@@ -9,8 +9,8 @@ use bytes::Bytes;
 use http::{Request, StatusCode, header::SET_COOKIE};
 use http_body_util::{BodyExt, Full};
 use stucco_tower::{
-    CsrfLayer, CsrfToken, Flash, FlashLayer, FlashLevel, RequestContext, SecretKey, SeeOther,
-    Submission,
+    CsrfLayer, CsrfRejection, CsrfToken, Flash, FlashLayer, FlashLevel, RequestContext, SecretKey,
+    SeeOther, Submission,
 };
 use tower::{Layer, ServiceExt};
 
@@ -133,6 +133,7 @@ async fn missing_wrong_duplicate_and_cross_client_tokens_are_forbidden() {
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::FORBIDDEN);
+        assert!(response.extensions().get::<CsrfRejection>().is_some());
         assert!(!response.headers().contains_key(SET_COOKIE));
     }
     let response = app
@@ -299,6 +300,259 @@ async fn bounded_form_buffering_and_submission_work_together() {
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::PAYLOAD_TOO_LARGE);
+}
+
+#[cfg(feature = "multipart")]
+const MULTIPART_BOUNDARY: &str = "stucco-csrf-test-boundary";
+
+#[cfg(feature = "multipart")]
+fn multipart_body(fields: &[(&str, Option<&str>, &[u8])]) -> Vec<u8> {
+    let mut body = Vec::new();
+    for (name, filename, bytes) in fields {
+        body.extend_from_slice(
+            format!("--{MULTIPART_BOUNDARY}\r\nContent-Disposition: form-data; name=\"{name}\"")
+                .as_bytes(),
+        );
+        if let Some(filename) = filename {
+            body.extend_from_slice(format!("; filename=\"{filename}\"").as_bytes());
+        }
+        body.extend_from_slice(b"\r\n\r\n");
+        body.extend_from_slice(bytes);
+        body.extend_from_slice(b"\r\n");
+    }
+    body.extend_from_slice(format!("--{MULTIPART_BOUNDARY}--\r\n").as_bytes());
+    body
+}
+
+#[cfg(feature = "multipart")]
+fn multipart_request(cookie: &str) -> http::request::Builder {
+    Request::builder()
+        .method("POST")
+        .uri("/write")
+        .header("cookie", cookie)
+        .header(
+            "content-type",
+            format!("multipart/form-data; boundary={MULTIPART_BOUNDARY}"),
+        )
+}
+
+#[cfg(feature = "multipart")]
+fn multipart_app(layer: CsrfLayer) -> Router {
+    Router::new()
+        .route("/token", get(token))
+        .route("/write", post(|body: Bytes| async move { body }))
+        .layer(layer)
+}
+
+#[cfg(feature = "multipart")]
+#[tokio::test]
+async fn multipart_parsing_is_disabled_until_explicitly_enabled() {
+    let app = multipart_app(csrf());
+    let (cookie, token) = issue(&app).await;
+    let body = multipart_body(&[("_csrf", None, token.as_bytes())]);
+    let response = app
+        .oneshot(multipart_request(&cookie).body(Body::from(body)).unwrap())
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
+    assert!(response.extensions().get::<CsrfRejection>().is_some());
+}
+
+#[cfg(feature = "multipart")]
+#[tokio::test]
+async fn multipart_tokens_round_trip_binary_bytes_and_all_trailing_fields_exactly() {
+    let app = multipart_app(csrf().multipart(true));
+    let (cookie, token) = issue(&app).await;
+    let body = multipart_body(&[
+        ("note", None, b"first"),
+        ("_csrf", None, token.as_bytes()),
+        (
+            "attachment",
+            Some("bytes.bin"),
+            b"\x00\xff\r\n--not-the-boundary\x80",
+        ),
+        ("note", None, b"second"),
+    ]);
+    let response = app
+        .oneshot(
+            multipart_request(&cookie)
+                .body(Body::from(body.clone()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(response.headers()["cache-control"], "private, no-store");
+    assert_eq!(
+        response
+            .into_body()
+            .collect()
+            .await
+            .unwrap()
+            .to_bytes()
+            .as_ref(),
+        body
+    );
+}
+
+#[cfg(feature = "multipart")]
+#[tokio::test]
+async fn multipart_rejects_missing_wrong_duplicate_and_file_tokens_before_dispatch() {
+    let app = multipart_app(csrf().multipart(true));
+    let (cookie, token) = issue(&app).await;
+    let (_, other_token) = issue(&app).await;
+    for fields in [
+        vec![("note", None, b"missing".as_slice())],
+        vec![("_csrf", None, b"wrong".as_slice())],
+        vec![("_csrf", None, other_token.as_bytes())],
+        vec![
+            ("_csrf", None, token.as_bytes()),
+            ("_csrf", None, token.as_bytes()),
+        ],
+        vec![("_csrf", Some("csrf.txt"), token.as_bytes())],
+        vec![("_csrf", Some(""), token.as_bytes())],
+    ] {
+        let response = app
+            .clone()
+            .oneshot(
+                multipart_request(&cookie)
+                    .body(Body::from(multipart_body(&fields)))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            response.status(),
+            StatusCode::FORBIDDEN,
+            "fields: {fields:?}"
+        );
+        assert!(response.extensions().get::<CsrfRejection>().is_some());
+    }
+}
+
+#[cfg(feature = "multipart")]
+#[tokio::test]
+async fn multipart_checks_malformed_trailing_data_after_a_valid_token() {
+    let app = multipart_app(csrf().multipart(true));
+    let (cookie, token) = issue(&app).await;
+    let first = format!(
+        "--{MULTIPART_BOUNDARY}\r\nContent-Disposition: form-data; name=\"_csrf\"\r\n\r\n{token}\r\n"
+    );
+    let cases = [
+        format!(
+            "{first}--{MULTIPART_BOUNDARY}\r\nContent-Disposition: form-data; name=\"attachment\"; filename=\"unfinished.txt\"\r\n\r\nmissing closing boundary"
+        ),
+        format!(
+            "{first}--{MULTIPART_BOUNDARY}\r\nnot a valid header\r\n\r\nbody\r\n--{MULTIPART_BOUNDARY}--\r\n"
+        ),
+    ];
+    for body in cases {
+        let response = app
+            .clone()
+            .oneshot(multipart_request(&cookie).body(Body::from(body)).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/write")
+                .header("cookie", &cookie)
+                .header("content-type", "multipart/form-data")
+                .body(Body::from(multipart_body(&[(
+                    "_csrf",
+                    None,
+                    token.as_bytes(),
+                )])))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    let response = app
+        .oneshot(
+            multipart_request(&cookie)
+                .header("content-type", "multipart/form-data; boundary=other")
+                .body(Body::from(multipart_body(&[(
+                    "_csrf",
+                    None,
+                    token.as_bytes(),
+                )])))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
+}
+
+#[cfg(feature = "multipart")]
+#[tokio::test]
+async fn multipart_counts_actual_body_bytes_and_bounds_the_token_field() {
+    let app = multipart_app(csrf().multipart(true).body_limit(256));
+    let (cookie, token) = issue(&app).await;
+    let body = multipart_body(&[
+        ("_csrf", None, token.as_bytes()),
+        ("attachment", Some("large.txt"), &[b'x'; 256]),
+    ]);
+    let response = app
+        .oneshot(multipart_request(&cookie).body(Body::from(body)).unwrap())
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::PAYLOAD_TOO_LARGE);
+    let app = multipart_app(csrf().multipart(true));
+    let response = app
+        .oneshot(
+            multipart_request(&cookie)
+                .body(Body::from(multipart_body(&[(
+                    "_csrf",
+                    None,
+                    &[b'x'; 1025],
+                )])))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+}
+
+#[cfg(feature = "multipart")]
+#[tokio::test]
+async fn header_authenticated_multipart_keeps_the_body_stream_unpolled() {
+    use std::sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+    };
+    let app = Router::new()
+        .route("/token", get(token))
+        .route(
+            "/write",
+            post(|_body: Body| async { "accepted without reading" }),
+        )
+        .layer(csrf().multipart(true).body_limit(0));
+    let (cookie, token) = issue(&app).await;
+    let polls = Arc::new(AtomicUsize::new(0));
+    let captured = polls.clone();
+    let stream = futures_util::stream::poll_fn(move |_| {
+        captured.fetch_add(1, Ordering::SeqCst);
+        std::task::Poll::Ready(Some(Ok::<_, std::io::Error>(Bytes::from_static(
+            b"unparsed multipart bytes",
+        ))))
+    });
+    let response = app
+        .oneshot(
+            multipart_request(&cookie)
+                .header("stucco-csrf", token)
+                .body(Body::from_stream(stream))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(text(response).await, "accepted without reading");
+    assert_eq!(polls.load(Ordering::SeqCst), 0);
 }
 
 fn flash_app() -> Router {
@@ -585,4 +839,53 @@ async fn outer_body_limit_errors_remain_413() {
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::PAYLOAD_TOO_LARGE);
+}
+
+#[tokio::test]
+async fn rotated_token_matches_only_the_rotated_cookie() {
+    let app = app();
+    let (old_cookie, old_token) = issue(&app).await;
+    let (new_token, header) = csrf().rotate_token().unwrap();
+    let new_cookie = header.to_str().unwrap().split(';').next().unwrap();
+    assert_ne!(new_cookie, old_cookie);
+    assert_ne!(new_token.as_str(), old_token);
+    for (cookie, token, expected) in [
+        (new_cookie, new_token.as_str(), StatusCode::OK),
+        (new_cookie, old_token.as_str(), StatusCode::FORBIDDEN),
+        (
+            old_cookie.as_str(),
+            new_token.as_str(),
+            StatusCode::FORBIDDEN,
+        ),
+    ] {
+        let response = app
+            .clone()
+            .oneshot(
+                request("POST", cookie)
+                    .body(Body::from(format!("_csrf={token}")))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), expected);
+    }
+}
+
+#[tokio::test]
+async fn application_forbidden_response_is_not_marked_as_a_csrf_rejection() {
+    let app = Router::new()
+        .route("/token", get(token))
+        .route("/write", post(|| async { StatusCode::FORBIDDEN }))
+        .layer(csrf());
+    let (cookie, token) = issue(&app).await;
+    let response = app
+        .oneshot(
+            request("POST", &cookie)
+                .body(Body::from(format!("_csrf={token}")))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
+    assert!(response.extensions().get::<CsrfRejection>().is_none());
 }

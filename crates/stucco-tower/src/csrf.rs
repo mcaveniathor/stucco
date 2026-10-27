@@ -104,6 +104,8 @@ pub struct CsrfLayer {
     origin: Origin,
     secure: bool,
     body_limit: usize,
+    #[cfg(feature = "multipart")]
+    multipart: bool,
 }
 impl CsrfLayer {
     /// Uses a stable key and the browser-visible origin, e.g. `https://example.com`.
@@ -113,6 +115,8 @@ impl CsrfLayer {
             origin: Origin::parse(origin)?,
             secure: true,
             body_limit: 1024 * 1024,
+            #[cfg(feature = "multipart")]
+            multipart: false,
         })
     }
     /// Disables Secure and the `__Host-` prefix for local HTTP development only.
@@ -128,6 +132,15 @@ impl CsrfLayer {
         self.body_limit = bytes;
         self
     }
+    /// Accept a single `_csrf` text field in bounded multipart form bodies.
+    /// Requires the `multipart` feature. Disabled by default. The complete body
+    /// is checked before calling the application, then replayed unchanged.
+    /// Configure [`Self::body_limit`] and the application's upload limit together.
+    #[cfg(feature = "multipart")]
+    pub fn multipart(mut self, enabled: bool) -> Self {
+        self.multipart = enabled;
+        self
+    }
     /// Cookie name, also useful when clearing it on login/logout.
     pub fn cookie_name(&self) -> &'static str {
         if self.secure {
@@ -135,6 +148,25 @@ impl CsrfLayer {
         } else {
             "stucco-csrf"
         }
+    }
+    /// Issues a fresh form token and its matching `Set-Cookie` header.
+    ///
+    /// Use after a CSRF-validated login/logout POST to rotate protection with
+    /// the authentication session. Append the header to that response and use
+    /// the returned token for subsequent forms. Do not rotate during an initial
+    /// GET: the middleware may already be issuing its own cookie for that request.
+    pub fn rotate_token(&self) -> Result<(CsrfToken, http::HeaderValue), crate::SecretKeyError> {
+        let mut nonce = [0; 32];
+        getrandom::fill(&mut nonce).map_err(|_| crate::SecretKeyError::Random)?;
+        Ok((
+            CsrfToken(self.key.sign(DOMAIN, &nonce)),
+            cookie::header(
+                self.cookie_name(),
+                &URL_SAFE_NO_PAD.encode(nonce),
+                self.secure,
+                None,
+            ),
+        ))
     }
     fn trusted_source(&self, headers: &HeaderMap) -> bool {
         let origins = headers.get_all(ORIGIN);
@@ -204,14 +236,14 @@ where
                 .filter(|v| v.len() == 32);
             let issue = existing.is_none();
             if !safe && (issue || !config.trusted_source(req.headers())) {
-                return Ok(reject(StatusCode::FORBIDDEN));
+                return Ok(reject_csrf(StatusCode::FORBIDDEN));
             }
             let nonce = if let Some(nonce) = existing {
                 nonce
             } else {
                 let mut nonce = vec![0; 32];
                 if getrandom::fill(&mut nonce).is_err() {
-                    return Ok(reject(StatusCode::INTERNAL_SERVER_ERROR));
+                    return Ok(reject_csrf(StatusCode::INTERNAL_SERVER_ERROR));
                 }
                 nonce
             };
@@ -221,28 +253,42 @@ where
             } else {
                 let headers = parts.headers.get_all(HEADER_CSRF);
                 if headers.iter().count() > 1 {
-                    return Ok(reject(StatusCode::FORBIDDEN));
+                    return Ok(reject_csrf(StatusCode::FORBIDDEN));
                 }
                 if let Some(token) = headers.iter().next() {
                     if !token
                         .to_str()
                         .is_ok_and(|t| config.key.verify(DOMAIN, &nonce, t))
                     {
-                        return Ok(reject(StatusCode::FORBIDDEN));
+                        return Ok(reject_csrf(StatusCode::FORBIDDEN));
                     }
                     Either::Right(body)
                 } else {
-                    let is_form = parts
+                    let content_type = parts
                         .headers
                         .get(CONTENT_TYPE)
-                        .and_then(|h| h.to_str().ok())
-                        .and_then(|s| s.split(';').next())
-                        .is_some_and(|s| {
-                            s.trim()
-                                .eq_ignore_ascii_case("application/x-www-form-urlencoded")
-                        });
-                    if !is_form {
-                        return Ok(reject(StatusCode::FORBIDDEN));
+                        .and_then(|header| header.to_str().ok())
+                        .unwrap_or("");
+                    let mime = content_type.split(';').next().unwrap_or("").trim();
+                    let is_form = mime.eq_ignore_ascii_case("application/x-www-form-urlencoded");
+                    #[cfg(feature = "multipart")]
+                    let boundary =
+                        if config.multipart && mime.eq_ignore_ascii_case("multipart/form-data") {
+                            Some(match multer::parse_boundary(content_type) {
+                                Ok(boundary) => boundary,
+                                Err(_) => return Ok(reject_csrf(StatusCode::BAD_REQUEST)),
+                            })
+                        } else {
+                            None
+                        };
+                    #[cfg(not(feature = "multipart"))]
+                    let is_multipart = false;
+                    #[cfg(feature = "multipart")]
+                    let is_multipart = boundary.is_some();
+                    if (!is_form && !is_multipart)
+                        || parts.headers.get_all(CONTENT_TYPE).iter().count() != 1
+                    {
+                        return Ok(reject_csrf(StatusCode::FORBIDDEN));
                     }
                     let bytes = match Limited::new(body, config.body_limit).collect().await {
                         Ok(collected) => collected.to_bytes(),
@@ -258,17 +304,38 @@ where
                                     None => break StatusCode::BAD_REQUEST,
                                 }
                             };
-                            return Ok(reject(status));
+                            return Ok(reject_csrf(status));
                         }
                     };
-                    let mut tokens =
-                        form_urlencoded::parse(&bytes).filter(|(name, _)| name == CSRF_FIELD);
-                    let valid = tokens
-                        .next()
-                        .is_some_and(|(_, t)| config.key.verify(DOMAIN, &nonce, &t))
-                        && tokens.next().is_none();
+                    let valid = if is_form {
+                        let mut tokens =
+                            form_urlencoded::parse(&bytes).filter(|(name, _)| name == CSRF_FIELD);
+                        tokens
+                            .next()
+                            .is_some_and(|(_, token)| config.key.verify(DOMAIN, &nonce, &token))
+                            && tokens.next().is_none()
+                    } else {
+                        #[cfg(feature = "multipart")]
+                        {
+                            match multipart_token(
+                                bytes.clone(),
+                                boundary.expect("multipart boundary"),
+                                &config,
+                                &nonce,
+                            )
+                            .await
+                            {
+                                Ok(valid) => valid,
+                                Err(status) => return Ok(reject_csrf(status)),
+                            }
+                        }
+                        #[cfg(not(feature = "multipart"))]
+                        {
+                            false
+                        }
+                    };
                     if !valid {
-                        return Ok(reject(StatusCode::FORBIDDEN));
+                        return Ok(reject_csrf(StatusCode::FORBIDDEN));
                     }
                     Either::Left(Full::new(bytes))
                 }
@@ -307,4 +374,60 @@ pub(crate) fn reject<R>(status: StatusCode) -> Response<Either<Full<Bytes>, R>> 
         .expect("valid response");
     cookie::private(response.headers_mut());
     response
+}
+
+/// Marks a CSRF rejection made before the inner application is called.
+/// Transport adapters can distinguish this definite non-mutation from an
+/// unrelated proxy or application response. It is an extension, not a header.
+#[derive(Clone, Copy, Debug)]
+pub struct CsrfRejection;
+fn reject_csrf<R>(status: StatusCode) -> Response<Either<Full<Bytes>, R>> {
+    let mut response = reject(status);
+    if status == StatusCode::FORBIDDEN {
+        response.extensions_mut().insert(CsrfRejection);
+    }
+    response
+}
+
+#[cfg(feature = "multipart")]
+async fn multipart_token(
+    bytes: Bytes,
+    boundary: String,
+    config: &CsrfLayer,
+    nonce: &[u8],
+) -> Result<bool, StatusCode> {
+    let stream =
+        futures_util::stream::once(async move { Ok::<_, std::convert::Infallible>(bytes) });
+    let constraints = multer::Constraints::new().size_limit(
+        multer::SizeLimit::new()
+            .whole_stream(config.body_limit as u64)
+            .for_field(CSRF_FIELD, 1024),
+    );
+    let mut multipart = multer::Multipart::with_constraints(stream, boundary, constraints);
+    let mut seen = false;
+    while let Some(mut field) = multipart
+        .next_field()
+        .await
+        .map_err(|_| StatusCode::BAD_REQUEST)?
+    {
+        if field.name() == Some(CSRF_FIELD) {
+            if seen || field.file_name().is_some() {
+                return Ok(false);
+            }
+            seen = true;
+            let token = field.text().await.map_err(|_| StatusCode::BAD_REQUEST)?;
+            if !config.key.verify(DOMAIN, nonce, &token) {
+                return Ok(false);
+            }
+        } else {
+            // Parse every field, including trailing data, before authorizing.
+            while field
+                .chunk()
+                .await
+                .map_err(|_| StatusCode::BAD_REQUEST)?
+                .is_some()
+            {}
+        }
+    }
+    Ok(seen)
 }

@@ -6,6 +6,8 @@
 //! integration and the standard layer stack.
 //! The default `csrf` feature provides opt-in `CsrfLayer` and `FlashLayer`
 //! middleware, backed by `SecretKey`. These layers also work without axum.
+//! The optional `multipart` feature enables explicitly configured, bounded
+//! multipart CSRF token extraction through `CsrfLayer::multipart(true)`.
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![forbid(unsafe_code)]
@@ -41,7 +43,7 @@ pub use assets::{AssetService, FallbackFuture, WithFallback};
 pub use axum_support::assets_router;
 pub use collection::{CollectionSource, RequestContext, SourceError};
 #[cfg(feature = "csrf")]
-pub use csrf::{CsrfLayer, CsrfService, CsrfToken, InvalidOrigin};
+pub use csrf::{CsrfLayer, CsrfRejection, CsrfService, CsrfToken, InvalidOrigin};
 #[cfg(feature = "csrf")]
 pub use flash::{Flash, FlashLayer, FlashLevel, FlashService};
 #[cfg(all(feature = "axum", feature = "tower-http"))]

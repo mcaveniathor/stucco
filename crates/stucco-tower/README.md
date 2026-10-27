@@ -40,6 +40,17 @@ on your routes before calling `.stucco(...)`. Read `CsrfToken` through
 unsafe methods, checks source headers against your public origin, and replays
 bounded form bodies for `Submission`. It is not installed automatically.
 
+Native multipart forms can opt in with the `multipart` crate feature and
+`CsrfLayer::multipart(true)`. The layer requires exactly one `_csrf` text field,
+buffers within `body_limit`, parses the complete multipart body, and replays its
+bytes unchanged to the application's upload handler. Missing, duplicate or
+file-valued tokens fail before dispatch, as do malformed trailing fields. This
+mode is disabled by default. Configure its body limit together with the server's
+upload limits; the token field itself is limited to 1024 bytes. Applications still
+own upload authorization, file validation, storage and cleanup. Requests carrying
+a valid `stucco-csrf` header pass their body through without buffering, so they
+remain subject to the application's independent streaming/body limits.
+
 `FlashLayer::new(key)` transports `SeeOther::new("/done").flash(Flash::new(
 FlashLevel::Success, "Saved"))` through a signed five-minute cookie. Read the
 next request's `Flash` from its context and render it with `FlashMessages`.
