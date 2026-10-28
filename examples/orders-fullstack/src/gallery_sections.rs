@@ -2,10 +2,10 @@
 
 use leptos::prelude::*;
 use stucco_leptos::{
-    Avatar, Badge, BreadcrumbCurrent, BreadcrumbLink, Breadcrumbs, Card, Cell, CellKind,
-    CursorPagination, DescriptionItem, DescriptionList, HeaderCell, NavLink, Pagination, Panel,
-    Row, Size, Sparkline, Stat, StatChange, StepItem, Steps, Table, TableBody, TableHead, Tabs,
-    Timeline, TimelineItem, Tone, Trend,
+    Avatar, Badge, BreadcrumbCurrent, BreadcrumbLink, Breadcrumbs, Callout, CalloutActions, Card,
+    Cell, CellKind, CursorPagination, DescriptionItem, DescriptionList, EmptyState, HeaderCell,
+    Meter, NavLink, Pagination, Panel, Progress, Row, Size, Sparkline, Stat, StatChange, StepItem,
+    Steps, Table, TableBody, TableHead, Tabs, Timeline, TimelineItem, Tone, Trend,
 };
 
 use crate::gallery::text;
@@ -194,6 +194,44 @@ pub(crate) fn DataSection(arabic: bool, hydrated: RwSignal<bool>) -> impl IntoVi
                     {text(arabic, "Payment received", "استُلمت الدفعة")}
                 </TimelineItem>
             </Timeline>
+        </section>
+    }
+}
+
+/// Feedback components: progress and a gauge driven by a button, a callout and an
+/// empty state.
+#[component]
+pub(crate) fn FeedbackSection(arabic: bool, hydrated: RwSignal<bool>) -> impl IntoView {
+    let done = RwSignal::new(40.0);
+    view! {
+        <section id="gallery-feedback" class="st-surface st-stack" data-level="raised"
+            data-border="" data-padding="5" data-space="4"
+            aria-labelledby="gallery-feedback-heading">
+            <h2 id="gallery-feedback-heading">{text(arabic, "Feedback", "الملاحظات")}</h2>
+            <Progress id="gallery-import" label=text(arabic, "Import", "الاستيراد")
+                value=Signal::derive(move || Some(done.get())) max=100.0 show_value=true/>
+            <Progress id="gallery-sync" label=text(arabic, "Sync", "المزامنة")/>
+            <Meter id="gallery-disk" label=text(arabic, "Disk usage", "استخدام القرص")
+                value=Signal::derive(move || done.get()) min=0.0 max=100.0
+                low=50.0 high=80.0 optimum=10.0
+                value_text=text(arabic, "Percent of the disk used", "نسبة استخدام القرص")/>
+            <div class="st-cluster" data-space="3">
+                <button id="gallery-advance" type="button" class="st-button"
+                    data-variant="secondary" data-size="md" disabled=move || !hydrated.get()
+                    on:click=move |_| done.update(|done| *done = (*done + 20.0).min(100.0))>
+                    {text(arabic, "Advance 20%", "تقدم 20%")}
+                </button>
+            </div>
+            <Callout tone=Tone::Success title=text(arabic, "Import finished", "اكتمل الاستيراد")
+                success_label=text(arabic, "Success: ", "نجاح: ")>
+                <CalloutActions slot>
+                    <a href="/orders">{text(arabic, "View orders", "عرض الطلبات")}</a>
+                </CalloutActions>
+                <p>{text(arabic, "Every row was imported.", "تم استيراد كل الصفوف.")}</p>
+            </Callout>
+            <EmptyState title=text(arabic, "No exports yet", "لا توجد عمليات تصدير بعد")
+                description=move || view! { <p>{text(arabic, "Exports you request appear here.", "تظهر هنا عمليات التصدير التي تطلبها.")}</p> }
+                actions=move || view! { <a href="/exports">{text(arabic, "Go to exports", "الانتقال إلى التصدير")}</a> }/>
         </section>
     }
 }

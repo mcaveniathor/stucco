@@ -289,3 +289,19 @@ test("data displays are accessible in wide and narrow, light and dark, LTR and R
     expect(errors).toEqual([]);
   }
 });
+
+test("feedback components expose their state and update with their signals", async ({ page }) => {
+  const errors = await open(page, "/components?lang=en&dir=ltr");
+  const feedback = page.locator("#gallery-feedback");
+  const progress = feedback.getByRole("progressbar", { name: "Import", exact: true });
+  await expect(progress).toHaveAttribute("value", "40");
+  await expect(feedback.locator(".st-progress-value")).toHaveText("40%");
+  await expect(feedback.getByRole("progressbar", { name: "Sync", exact: true })).not.toHaveAttribute("value");
+  await feedback.getByRole("button", { name: "Advance 20%", exact: true }).click();
+  await expect(progress).toHaveAttribute("value", "60");
+  await expect(feedback.getByRole("meter", { name: "Disk usage", exact: true })).toHaveAttribute("value", "60");
+  await expect(feedback.getByText("Success:")).toBeAttached();
+  await expect(feedback.getByRole("heading", { name: "No exports yet", exact: true })).toBeVisible();
+  expect((await audit(page)).violations).toEqual([]);
+  expect(errors).toEqual([]);
+});

@@ -4,7 +4,7 @@ use leptos::prelude::*;
 use leptos_meta::Title;
 use leptos_router::hooks::use_query_map;
 
-use crate::gallery_sections::{DataSection, NavigationSection, TablesSection};
+use crate::gallery_sections::{DataSection, FeedbackSection, NavigationSection, TablesSection};
 use stucco_leptos::{
     Autocomplete, AutocompleteOption, Dialog, FileInput, PageHeader, RepeatedField, RepeatedValue,
     SelectedFile, StatusMessage, SubmitButton,
@@ -205,6 +205,7 @@ fn GalleryExamples(state: GalleryState) -> impl IntoView {
             <NavigationSection arabic=ar lang=lang dir=dir page=state.page hydrated=hydrated/>
             <TablesSection arabic=ar/>
             <DataSection arabic=ar hydrated=hydrated/>
+            <FeedbackSection arabic=ar hydrated=hydrated/>
         </article>
     }
 }

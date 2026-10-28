@@ -11,6 +11,8 @@
 - `stucco-leptos`: add `Badge`, `Avatar`, `DescriptionList`, `Stat`, `Card`, `Panel`,
   `Timeline` and `Sparkline`, with `Tone`, `Trend` and `Size` values matching the
   static components.
+- `stucco-leptos`: add `Progress`, `Meter`, `Callout` (with `CalloutActions`) and
+  `EmptyState`.
 
 ## 0.5.1 — 2026-10-27
 
