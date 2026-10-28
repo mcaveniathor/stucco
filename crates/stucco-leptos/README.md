@@ -11,9 +11,10 @@ Stucco crates are at 0.5.1.
 | --- | --- | --- |
 | Form controls | `TextField`, `Autocomplete`, `RepeatedField`, `FileInput`, `SubmitButton` | Selects, date inputs and other specialized controls |
 | Form feedback | `ErrorSummary`, `StatusMessage` | Other feedback and notification components |
-| Page composition | `PageHeader` with description and actions, `Dialog` | Data displays and the remaining static component catalogue |
+| Page composition | `PageHeader` with description and actions, `Dialog` | The remaining static component catalogue |
 | Navigation | `NavLink`, `Tabs`, `Breadcrumbs`, `Steps`, `Pagination`, `CursorPagination` | |
 | Tables | `Table`, `TableHead`, `TableBody`, `Row`, `Cell`, `HeaderCell` | `DataTable`, filters, search and sorting controls |
+| Data displays | `Badge`, `Avatar`, `DescriptionList`, `Stat`, `Card`, `Panel`, `Timeline`, `Sparkline` | Result counts, icons on badges |
 
 The integration pins Leptos **0.8.22** and requires Rust **1.88**; its native SSR
 and WASM dependency graphs are checked on that compiler.
@@ -328,6 +329,54 @@ fn Orders(orders: Vec<(String, String)>) -> impl IntoView {
 - Sortable columns are ordinary links in a `HeaderCell` with `aria_sort` set to
   `"ascending"`, `"descending"` or `"none"`. The application sorts and builds the URLs.
 - `DataTable` and its filter and search components are not included.
+
+## Status and details
+
+The data components present a record's status, people, fields and metrics with
+the static components' markup. They render fully on the server, and signal props
+update them after hydration.
+
+```rust
+use leptos::prelude::*;
+use stucco_leptos::{
+    Avatar, Badge, DescriptionItem, DescriptionList, Panel, Stat, StatChange, Tone, Trend,
+};
+
+#[component]
+fn OrderSummary(orders: Signal<String>) -> impl IntoView {
+    view! {
+        <Panel id="order-1042" title="Order 1042">
+            <DescriptionList>
+                <DescriptionItem term="Customer">
+                    <Avatar name="Ada Lovelace" decorative=true/>" Ada Lovelace"
+                </DescriptionItem>
+                <DescriptionItem term="Status">
+                    <Badge tone=Tone::Success>"Paid"</Badge>
+                </DescriptionItem>
+            </DescriptionList>
+        </Panel>
+        <Stat label="Orders" value=orders
+            change=Some(StatChange { text: "12%".into(), trend: Trend::Up })
+            change_tone=Tone::Success context="vs last week"/>
+    }
+}
+```
+
+- `Badge` takes a `tone`; choose a label that says what the status means.
+  Badges have no icon in this preview.
+- `Avatar` shows initials with an optional `image` over them, and takes a `size`.
+  The name labels it; use `decorative` when the name is written beside it.
+- `DescriptionList` and `DescriptionItem` render a `<dl>`; details accept any view.
+- `Stat` takes `label`, `value` and `change` as signals. A change stays neutral
+  until you set `change_tone`. Translate the hidden direction text with `up_label`,
+  `down_label` and `flat_label`.
+- `Card` and `Panel` take `header`, `footer` and, for `Panel`, `description` and
+  `actions` as closures returning views. `Panel` needs a page-unique `id` and
+  reserves `{id}-title` for its heading; `level` sets the heading level.
+- `Timeline` holds `TimelineItem`s with a machine-readable `datetime` and display
+  `time`; with none it shows `empty_label`.
+- `Sparkline` takes a `summary` and `values` signal; non-finite samples are ignored.
+  `no_data_label` and `values_label` translate its text.
 
 ## Styles and validation
 

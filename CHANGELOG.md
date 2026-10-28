@@ -8,6 +8,9 @@
   Orders component gallery demonstrates them.
 - `stucco-leptos`: add `Table`, `TableHead`, `TableBody`, `Row`, `Cell` and
   `HeaderCell` with the static table's responsive card layout.
+- `stucco-leptos`: add `Badge`, `Avatar`, `DescriptionList`, `Stat`, `Card`, `Panel`,
+  `Timeline` and `Sparkline`, with `Tone`, `Trend` and `Size` values matching the
+  static components.
 
 ## 0.5.1 — 2026-10-27
 
