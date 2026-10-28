@@ -13,12 +13,27 @@ has `publish = false` and remains checkout-based: it is an application, not a
 library, and is built from the workspace. Its separate SSR,
 hydration, storage and browser checks run in CI.
 
-## Once: the registry token
+## Once: trusted publishing
 
-Create a crates.io API token with the `publish-new` and `publish-update`
-scopes, limited to the `stucco*` crates if you like, and add it to the
-repository as the `CARGO_REGISTRY_TOKEN` Actions secret (Settings → Secrets
-and variables → Actions). Never commit a token.
+The Release workflow publishes with crates.io
+[trusted publishing](https://crates.io/docs/trusted-publishing): the job
+exchanges its GitHub OIDC identity for a crates.io token that expires after
+30 minutes. No registry token is stored in the repository.
+
+Each published crate, the stable eight and `stucco-leptos`, has one trusted
+publisher on crates.io (the crate's Settings → Trusted Publishing):
+
+| Field | Value |
+| --- | --- |
+| Repository owner | `mcaveniathor` |
+| Repository name | `stucco` |
+| Workflow filename | `release.yml` |
+| Environment | `crates-io` |
+
+The repository's `crates-io` environment (Settings → Environments) only
+accepts deployments from `v*` and `stucco-leptos-v*` tags. A new crate's first
+version must be published by hand with an API token, after which you add its
+trusted publisher. Trusted publishing can't create a crate.
 
 ## Prepare the release
 
@@ -51,7 +66,8 @@ release as it is.
 
 If publishing stops partway, the crates already uploaded stay published.
 Fix the cause, then publish the rest by hand from the tagged commit with
-`cargo publish -p <crate>` in dependency order (theme, core, macros, ui,
+`cargo publish -p <crate>` (after `cargo login` with your own token) in
+dependency order (theme, core, macros, ui,
 tower, stucco, redb, cli), and create the GitHub release with
 `gh release create vX.Y.Z --notes-file <section>`.
 
@@ -104,17 +120,29 @@ version or publish the Orders application.
    consumer, lockfile and build outputs. `--offline` requires an already
    populated registry cache. The default compilation limit is two jobs.
 4. After the explicit preview release decision, tag the same reviewed commit
-   using `stucco-leptos-v0.1.0-alpha.1`, substituting the prepared version.
-   This prefix does not trigger the stable `v*` Release workflow. Publish
-   only the preview from that commit:
+   using `stucco-leptos-v0.1.0-alpha.1`, substituting the prepared version,
+   and push the tag:
+
+   ```sh
+   git tag -a stucco-leptos-v0.1.0-alpha.1 -m "Release stucco-leptos 0.1.0-alpha.1"
+   git push origin stucco-leptos-v0.1.0-alpha.1
+   ```
+
+   This prefix does not match the stable `v*` tags. The Release workflow's
+   preview job checks the tag against the crate version and `main`, repeats
+   the Rust 1.88 tests, documentation and packaged-consumer checks, and then
+   publishes only `stucco-leptos` with the `ssr` feature set. It creates no
+   GitHub release; keep preview release notes distinct from stable releases.
+
+   Trusted publishing can't create a crate. The first preview version must be
+   published by hand from the tagged commit, with your own token. Add the
+   crate's trusted publisher once that version exists:
 
    ```sh
    cargo publish -p stucco-leptos --locked --no-default-features --features ssr
    ```
 
-   Publish versions are permanent. Keep preview release notes and its tag
-   distinct from stable workspace releases; no automatic preview publication
-   workflow is installed.
+   Publish versions are permanent.
 5. Once crates.io has indexed the upload, prove an exact registry installation:
 
    ```sh
