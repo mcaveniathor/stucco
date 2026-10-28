@@ -2,8 +2,10 @@
 
 use leptos::prelude::*;
 use stucco_leptos::{
-    BreadcrumbCurrent, BreadcrumbLink, Breadcrumbs, Cell, CellKind, CursorPagination, HeaderCell,
-    NavLink, Pagination, Row, StepItem, Steps, Table, TableBody, TableHead, Tabs,
+    Avatar, Badge, BreadcrumbCurrent, BreadcrumbLink, Breadcrumbs, Card, Cell, CellKind,
+    CursorPagination, DescriptionItem, DescriptionList, HeaderCell, NavLink, Pagination, Panel,
+    Row, Size, Sparkline, Stat, StatChange, StepItem, Steps, Table, TableBody, TableHead, Tabs,
+    Timeline, TimelineItem, Tone, Trend,
 };
 
 use crate::gallery::text;
@@ -128,6 +130,70 @@ pub(crate) fn TablesSection(arabic: bool) -> impl IntoView {
                     }).collect_view()}
                 </TableBody>
             </Table>
+        </section>
+    }
+}
+
+/// Status and detail displays, with buttons that change the signals behind them.
+#[component]
+pub(crate) fn DataSection(arabic: bool, hydrated: RwSignal<bool>) -> impl IntoView {
+    let orders = RwSignal::new(128u32);
+    let samples = RwSignal::new(vec![4.0, 7.0, 5.0, 9.0]);
+    view! {
+        <section id="gallery-data" class="st-surface st-stack" data-level="raised"
+            data-border="" data-padding="5" data-space="4"
+            aria-labelledby="gallery-data-heading">
+            <h2 id="gallery-data-heading">{text(arabic, "Status and details", "الحالة والتفاصيل")}</h2>
+            <div class="st-cluster" data-space="3">
+                <Badge tone=Tone::Success>{text(arabic, "Paid", "مدفوع")}</Badge>
+                <Badge tone=Tone::Warning>{text(arabic, "Pending", "قيد الانتظار")}</Badge>
+                <Badge tone=Tone::Danger>{text(arabic, "Overdue", "متأخر")}</Badge>
+                <Avatar name="Ada Lovelace" size=Size::Lg/>
+            </div>
+            <Panel id="gallery-orders-panel" title=text(arabic, "Order 1042", "الطلب 1042")
+                description=move || text(arabic, "Placed by Ada Lovelace.", "قدّمته أدا لوفلايس.")>
+                <DescriptionList>
+                    <DescriptionItem term=text(arabic, "Customer", "العميل")>
+                        <span class="st-cluster" data-space="2">
+                            <Avatar name="Ada Lovelace" decorative=true/>
+                            "Ada Lovelace"
+                        </span>
+                    </DescriptionItem>
+                    <DescriptionItem term=text(arabic, "Status", "الحالة")>
+                        <Badge tone=Tone::Success>{text(arabic, "Paid", "مدفوع")}</Badge>
+                    </DescriptionItem>
+                    <DescriptionItem term=text(arabic, "Total", "الإجمالي")>"$128.00"</DescriptionItem>
+                </DescriptionList>
+            </Panel>
+            <Card header=move || view! { <strong>{text(arabic, "This week", "هذا الأسبوع")}</strong> }>
+                <Stat label=text(arabic, "Orders", "الطلبات")
+                    value=Signal::derive(move || orders.get().to_string())
+                    change=Signal::derive(move || Some(StatChange {
+                        text: format!("{}%", orders.get() - 116),
+                        trend: Trend::Up,
+                    }))
+                    change_tone=Tone::Success
+                    context=text(arabic, "vs last week", "مقارنة بالأسبوع الماضي")
+                    up_label=text(arabic, "Up ", "ارتفاع ")/>
+                <Sparkline summary=text(arabic, "Orders per day", "الطلبات يومياً")
+                    values=Signal::derive(move || samples.get())/>
+                <button id="gallery-add-order" type="button" class="st-button"
+                    data-variant="secondary" data-size="md" disabled=move || !hydrated.get()
+                    on:click=move |_| {
+                        orders.update(|orders| *orders += 1);
+                        samples.update(|samples| samples.push(6.0));
+                    }>
+                    {text(arabic, "Add an order", "إضافة طلب")}
+                </button>
+            </Card>
+            <Timeline label=text(arabic, "Order history", "سجل الطلب")>
+                <TimelineItem datetime="2026-10-01T09:00" time="1 Oct, 09:00">
+                    {text(arabic, "Order created", "أُنشئ الطلب")}
+                </TimelineItem>
+                <TimelineItem datetime="2026-10-02T14:30" time="2 Oct, 14:30">
+                    {text(arabic, "Payment received", "استُلمت الدفعة")}
+                </TimelineItem>
+            </Timeline>
         </section>
     }
 }

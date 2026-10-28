@@ -261,3 +261,31 @@ test("gallery table keeps table semantics and becomes labelled cards when narrow
   await expect(table.getByRole("cell", { name: "$128.00" })).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test("data displays update their text when signals change after hydration", async ({ page }) => {
+  const errors = await open(page, "/components?lang=en&dir=ltr");
+  const data = page.locator("#gallery-data");
+  await expect(data.getByRole("region", { name: "Order 1042", exact: true })).toBeVisible();
+  await expect(data.locator(".st-stat-value")).toHaveText("128");
+  const points = () => data.locator("polyline").getAttribute("points");
+  const before = await points();
+  await data.getByRole("button", { name: "Add an order", exact: true }).click();
+  await expect(data.locator(".st-stat-value")).toHaveText("129");
+  await expect(data.locator(".st-stat-delta")).toContainText("13%");
+  expect(await points()).not.toBe(before);
+  await expect(data.getByRole("list", { name: "Order history", exact: true }).locator("time")).toHaveCount(2);
+  expect(errors).toEqual([]);
+});
+
+test("data displays are accessible in wide and narrow, light and dark, LTR and RTL", async ({ page }) => {
+  for (const [lang, dir] of [["en", "ltr"], ["ar", "rtl"]] as const) {
+    const errors = await open(page, `/components?lang=${lang}&dir=${dir}`);
+    for (const [width, colorScheme] of [[1280, "light"], [360, "dark"]] as const) {
+      await page.setViewportSize({ width, height: 1000 });
+      await page.emulateMedia({ colorScheme, reducedMotion: "reduce" });
+      expect((await audit(page)).violations).toEqual([]);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    }
+    expect(errors).toEqual([]);
+  }
+});
