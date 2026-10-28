@@ -39,3 +39,11 @@ fn assert_parity_accepts_equivalent_markup() {
 fn assert_parity_panics_with_both_strings_on_difference() {
     assert_parity("<p>one</p>", "<p>two</p>");
 }
+
+#[test]
+fn normalize_treats_self_closed_svg_shapes_like_empty_pairs() {
+    assert_eq!(
+        normalize(r#"<svg><path d="M0 0" /><circle r="3"></circle></svg>"#),
+        normalize(r#"<svg><path d="M0 0"></path><circle r="3" /></svg>"#)
+    );
+}

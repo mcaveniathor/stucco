@@ -5,8 +5,13 @@ mod common;
 use common::assert_parity;
 use leptos::prelude::*;
 use stucco_core::to_html;
-use stucco_leptos::{Avatar, Badge, Size, Tone};
-use stucco_ui::data::{Avatar as StaticAvatar, Badge as StaticBadge};
+use stucco_leptos::{
+    Avatar, Badge, DescriptionItem, DescriptionList, Size, Stat, StatChange, Tone, Trend,
+};
+use stucco_ui::data::{
+    Avatar as StaticAvatar, Badge as StaticBadge, DescriptionList as StaticDescriptionList,
+    Stat as StaticStat,
+};
 
 fn render(view: impl FnOnce() -> String) -> String {
     Owner::new().with(view)
@@ -118,4 +123,111 @@ fn avatar_image_source_is_sanitized_and_name_escaped() {
         &html,
         &to_html(&StaticAvatar::new("<Ada>").image("javascript:alert(1)")),
     );
+}
+
+#[test]
+fn description_list_matches_static_markup() {
+    let html = render(|| {
+        view! {
+            <DescriptionList>
+                <DescriptionItem term="Customer">"Ada"</DescriptionItem>
+                <DescriptionItem term="Status"><Badge tone=Tone::Success>"Paid"</Badge></DescriptionItem>
+            </DescriptionList>
+        }
+        .to_html()
+    });
+    let expected = to_html(&StaticDescriptionList::new().item("Customer", "Ada").item(
+        "Status",
+        StaticBadge::new("Paid").tone(stucco_ui::Tone::Success),
+    ));
+    assert_parity(&html, &expected);
+}
+
+#[test]
+fn description_list_without_items_is_an_empty_dl() {
+    let html = render(|| view! { <DescriptionList>{()}</DescriptionList> }.to_html());
+    assert_parity(&html, &to_html(&StaticDescriptionList::new()));
+}
+
+#[test]
+fn description_details_accept_views_and_escape_terms() {
+    let html = render(|| {
+        view! {
+            <DescriptionList>
+                <DescriptionItem term="<Link>"><a href="/o/1">"Order"</a></DescriptionItem>
+            </DescriptionList>
+        }
+        .to_html()
+    });
+    assert!(html.contains("&lt;Link&gt;"), "{html}");
+    assert!(html.contains(r#"<a href="/o/1">Order</a>"#), "{html}");
+}
+
+fn change(text: &str, trend: Trend) -> Option<StatChange> {
+    Some(StatChange {
+        text: text.to_owned(),
+        trend,
+    })
+}
+
+#[test]
+fn stat_matches_static_markup() {
+    let plain = render(|| view! { <Stat label="Orders" value="128"/> }.to_html());
+    assert_parity(&plain, &to_html(&StaticStat::new("Orders", "128")));
+
+    for (trend, static_trend) in [
+        (Trend::Up, stucco_ui::Trend::Up),
+        (Trend::Down, stucco_ui::Trend::Down),
+        (Trend::Flat, stucco_ui::Trend::Flat),
+    ] {
+        let html = render(|| {
+            view! {
+                <Stat label="Orders" value="128" change=change("12%", trend)
+                    change_tone=Tone::Success context="vs last week"/>
+            }
+            .to_html()
+        });
+        let expected = to_html(
+            &StaticStat::new("Orders", "128")
+                .change("12%", static_trend)
+                .change_tone(stucco_ui::Tone::Success)
+                .context("vs last week"),
+        );
+        assert_parity(&html, &expected);
+    }
+}
+
+#[test]
+fn stat_change_without_context_matches_static_markup() {
+    let html = render(|| {
+        view! { <Stat label="Orders" value="128" change=change("12%", Trend::Up)/> }.to_html()
+    });
+    let expected = to_html(&StaticStat::new("Orders", "128").change("12%", stucco_ui::Trend::Up));
+    assert_parity(&html, &expected);
+}
+
+#[test]
+fn stat_text_is_escaped() {
+    let html = render(|| {
+        view! {
+            <Stat label="<L>" value="<V>" change=change("<C>", Trend::Down) context="<X>"/>
+        }
+        .to_html()
+    });
+    for escaped in ["&lt;L&gt;", "&lt;V&gt;", "&lt;C&gt;", "&lt;X&gt;"] {
+        assert!(html.contains(escaped), "{html}");
+    }
+}
+
+#[test]
+fn stat_direction_text_is_translatable() {
+    let html = render(|| {
+        view! {
+            <Stat label="Commandes" value="9" change=change("2%", Trend::Down)
+                down_label="Baisse de "/>
+        }
+        .to_html()
+    });
+    assert!(html.contains("Baisse de "), "{html}");
+    assert!(!html.contains("Down "), "{html}");
 }
