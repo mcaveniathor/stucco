@@ -188,3 +188,78 @@ fn TrendArrow(trend: Trend) -> impl IntoView {
             stroke-linejoin="round" aria-hidden="true" focusable="false">{shapes}</svg>
     }
 }
+
+/// A raised container with optional header and footer slots.
+///
+/// `header` and `footer` take a closure returning any view, for example
+/// `header=|| view! { <h3>"Orders"</h3> }`.
+#[component]
+pub fn Card(
+    /// Content above the body.
+    #[prop(optional, into)]
+    header: ViewFn,
+    /// Content below the body.
+    #[prop(optional, into)]
+    footer: ViewFn,
+    /// The card's body.
+    #[prop(optional)]
+    children: Option<Children>,
+) -> impl IntoView {
+    view! { <div class="st-card">{header.run()}{children.map(|body| body())}{footer.run()}</div> }
+}
+
+/// A titled section with optional description, actions, body and footer.
+///
+/// The section is labelled by its heading. Give it a page-unique `id`;
+/// `{id}-title` is reserved for the heading. `level` is the heading level, 1 to 6
+/// (values outside that range are clamped). `description`, `actions` and `footer`
+/// take closures returning any view.
+#[component]
+pub fn Panel(
+    /// Page-unique id; `{id}-title` is reserved.
+    #[prop(into)]
+    id: String,
+    /// The panel's heading text.
+    #[prop(into)]
+    title: String,
+    /// Heading level, 1 to 6.
+    #[prop(default = 2)]
+    level: u8,
+    /// Text below the heading.
+    #[prop(optional, into)]
+    description: ViewFn,
+    /// Controls beside the heading.
+    #[prop(optional, into)]
+    actions: ViewFn,
+    /// The panel's body.
+    #[prop(optional)]
+    children: Option<Children>,
+    /// Content below the body.
+    #[prop(optional, into)]
+    footer: ViewFn,
+) -> impl IntoView {
+    let title_id = format!("{id}-title");
+    let heading = heading(level.clamp(1, 6), title_id.clone(), title);
+    view! {
+        <section class="st-panel" aria-labelledby=title_id>
+            <div class="st-panel-header">
+                {heading}
+                {description.run()}
+                {actions.run()}
+            </div>
+            {children.map(|body| body())}
+            {footer.run()}
+        </section>
+    }
+}
+
+fn heading(level: u8, id: String, title: String) -> AnyView {
+    match level {
+        1 => view! { <h1 class="st-heading" data-size="lg" id=id>{title}</h1> }.into_any(),
+        2 => view! { <h2 class="st-heading" data-size="lg" id=id>{title}</h2> }.into_any(),
+        3 => view! { <h3 class="st-heading" data-size="lg" id=id>{title}</h3> }.into_any(),
+        4 => view! { <h4 class="st-heading" data-size="lg" id=id>{title}</h4> }.into_any(),
+        5 => view! { <h5 class="st-heading" data-size="lg" id=id>{title}</h5> }.into_any(),
+        _ => view! { <h6 class="st-heading" data-size="lg" id=id>{title}</h6> }.into_any(),
+    }
+}
