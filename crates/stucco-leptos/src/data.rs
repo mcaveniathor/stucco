@@ -84,9 +84,10 @@ fn initials(name: &str) -> String {
 #[component]
 pub fn DescriptionList(
     /// The fields, as [`DescriptionItem`]s.
-    children: Children,
+    #[prop(optional)]
+    children: Option<Children>,
 ) -> impl IntoView {
-    view! { <dl class="st-dl">{children()}</dl> }
+    view! { <dl class="st-dl">{children.map(|fields| fields())}</dl> }
 }
 
 /// One field of a [`DescriptionList`]; the details can be any view.

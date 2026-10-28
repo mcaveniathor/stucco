@@ -145,7 +145,7 @@ fn description_list_matches_static_markup() {
 
 #[test]
 fn description_list_without_items_is_an_empty_dl() {
-    let html = render(|| view! { <DescriptionList>{()}</DescriptionList> }.to_html());
+    let html = render(|| view! { <DescriptionList/> }.to_html());
     assert_parity(&html, &to_html(&StaticDescriptionList::new()));
 }
 
