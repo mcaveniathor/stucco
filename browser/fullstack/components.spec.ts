@@ -244,3 +244,20 @@ test("navigation components update when their signals change after hydration", a
   await expect(steps.locator("[aria-current='step']")).toHaveText("Payment");
   expect(errors).toEqual([]);
 });
+
+test("gallery table keeps table semantics and becomes labelled cards when narrow", async ({ page }) => {
+  const errors = await open(page, "/components?lang=en&dir=ltr");
+  const table = page.locator("#gallery-tables");
+  const region = table.getByRole("region", { name: "Recent orders", exact: true });
+  await expect(region).toHaveAttribute("tabindex", "0");
+  await expect(table.getByRole("columnheader", { name: "Customer" })).toHaveAttribute("aria-sort", "ascending");
+  await expect(table.getByRole("row")).toHaveCount(4);
+  for (const [width, labelsVisible] of [[1280, false], [360, true]] as const) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(table.locator(".st-table-card-label").first()).toBeVisible({ visible: labelsVisible });
+    expect((await audit(page)).violations).toEqual([]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+  await expect(table.getByRole("cell", { name: "$128.00" })).toBeVisible();
+  expect(errors).toEqual([]);
+});

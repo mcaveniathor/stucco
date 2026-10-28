@@ -6,6 +6,8 @@
   `CursorPagination`. They emit the same markup as the static components, work as
   plain links before hydration, and are checked against the static renderer. The
   Orders component gallery demonstrates them.
+- `stucco-leptos`: add `Table`, `TableHead`, `TableBody`, `Row`, `Cell` and
+  `HeaderCell` with the static table's responsive card layout.
 
 ## 0.5.1 — 2026-10-27
 

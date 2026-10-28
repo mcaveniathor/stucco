@@ -11,8 +11,9 @@ Stucco crates are at 0.5.1.
 | --- | --- | --- |
 | Form controls | `TextField`, `Autocomplete`, `RepeatedField`, `FileInput`, `SubmitButton` | Selects, date inputs and other specialized controls |
 | Form feedback | `ErrorSummary`, `StatusMessage` | Other feedback and notification components |
-| Page composition | `PageHeader` with description and actions, `Dialog` | Tables, data displays and the remaining static component catalogue |
+| Page composition | `PageHeader` with description and actions, `Dialog` | Data displays and the remaining static component catalogue |
 | Navigation | `NavLink`, `Tabs`, `Breadcrumbs`, `Steps`, `Pagination`, `CursorPagination` | |
+| Tables | `Table`, `TableHead`, `TableBody`, `Row`, `Cell`, `HeaderCell` | `DataTable`, filters, search and sorting controls |
 
 The integration pins Leptos **0.8.22** and requires Rust **1.88**; its native SSR
 and WASM dependency graphs are checked on that compiler.
@@ -286,6 +287,47 @@ fn OrderNav(tab: Signal<String>) -> impl IntoView {
   page. `page_label` formats each link's accessible name.
 - `CursorPagination` takes optional `previous_href` and `next_href` and renders
   nothing when both are absent.
+
+## Tables
+
+`Table` renders the static table's markup: a keyboard-focusable scroll region
+around a captioned `<table>`. Compose it from `TableHead` and `TableBody` children
+holding `Row`s of `Cell`s and `HeaderCell`s. Cells take any view, and rows can come
+from `<For>` or an iterator.
+
+```rust
+use leptos::prelude::*;
+use stucco_leptos::{Cell, CellKind, HeaderCell, Row, Table, TableBody, TableHead};
+
+#[component]
+fn Orders(orders: Vec<(String, String)>) -> impl IntoView {
+    view! {
+        <Table caption="Orders" cards=true>
+            <TableHead><Row>
+                <HeaderCell aria_sort="ascending"><a href="?sort=customer">"Customer"</a></HeaderCell>
+                <HeaderCell kind=CellKind::Number>"Total"</HeaderCell>
+            </Row></TableHead>
+            <TableBody>
+                {orders.into_iter().map(|(customer, total)| view! {
+                    <Row>
+                        <HeaderCell label="Customer">{customer}</HeaderCell>
+                        <Cell kind=CellKind::Number label="Total">{total}</Cell>
+                    </Row>
+                }).collect_view()}
+            </TableBody>
+        </Table>
+    }
+}
+```
+
+- `cards` presents rows as labelled cards below 48rem of container width. Give
+  each body cell a `label` naming its column; a cell without one gets an empty
+  caption, and labels are ignored when `cards` is off. The label is decoration
+  (assistive technology hears the column heading), and explicit ARIA roles keep the
+  table semantics when CSS changes the display.
+- Sortable columns are ordinary links in a `HeaderCell` with `aria_sort` set to
+  `"ascending"`, `"descending"` or `"none"`. The application sorts and builds the URLs.
+- `DataTable` and its filter and search components are not included.
 
 ## Styles and validation
 
