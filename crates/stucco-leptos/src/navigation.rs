@@ -155,3 +155,95 @@ pub fn Steps(
     };
     view! { <nav class="st-steps" aria-label=label><ol>{items}</ol></nav> }.into_any()
 }
+
+/// Numbered links to a bounded set of pages around the current one.
+///
+/// Shows the first and last page and two pages either side of `page`, with an
+/// ellipsis where pages are skipped. One page, or none, renders nothing. A `page`
+/// of zero counts as page one; one past the end still links back. `href` builds
+/// each page's URL (keep the rest of the query in it); unsafe schemes render as `#`.
+#[component]
+pub fn Pagination(
+    /// Accessible name of the navigation landmark.
+    #[prop(default = "Pagination".to_owned(), into)]
+    label: String,
+    /// The current page, counting from one.
+    #[prop(into)]
+    page: Signal<u64>,
+    /// How many pages there are.
+    #[prop(into)]
+    total_pages: Signal<u64>,
+    /// The URL of a page.
+    href: Callback<u64, String>,
+    /// Accessible label of a page link.
+    #[prop(default = Callback::new(|page| format!("Page {page}")))]
+    page_label: Callback<u64, String>,
+) -> impl IntoView {
+    move || {
+        let count = total_pages.get().max(1);
+        let current = page.get().max(1);
+        if count == 1 && current == 1 {
+            return ().into_any();
+        }
+        let mut pages = std::collections::BTreeSet::from([1, count]);
+        for n in current.saturating_sub(2)..=current.saturating_add(2).min(count) {
+            if n > 0 && n <= count {
+                pages.insert(n);
+            }
+        }
+        let mut previous = 0;
+        let mut items = Vec::new();
+        for n in pages {
+            if previous > 0 && n > previous + 1 {
+                items.push(view! { <span aria-hidden="true">"…"</span> }.into_any());
+            }
+            let destination = safe_href(&href.run(n));
+            let name = page_label.run(n);
+            items.push(
+                view! {
+                    <a href=destination aria-label=name
+                        aria-current=(n == current).then_some("page")>{n}</a>
+                }
+                .into_any(),
+            );
+            previous = n;
+        }
+        view! { <nav class="st-pagination" aria-label=label.clone()>{items}</nav> }.into_any()
+    }
+}
+
+/// Previous and next links for a collection paged by cursor.
+///
+/// Each link renders only when its URL is `Some`; with neither, nothing renders.
+/// Unsafe URL schemes render as `#`.
+#[component]
+pub fn CursorPagination(
+    /// Accessible name of the navigation landmark.
+    #[prop(default = "Pagination".to_owned(), into)]
+    label: String,
+    /// URL of the previous page, if there is one.
+    #[prop(optional, into)]
+    previous_href: MaybeProp<String>,
+    /// URL of the next page, if there is one.
+    #[prop(optional, into)]
+    next_href: MaybeProp<String>,
+    /// Text of the previous link.
+    #[prop(default = "Previous".to_owned(), into)]
+    previous_label: String,
+    /// Text of the next link.
+    #[prop(default = "Next".to_owned(), into)]
+    next_label: String,
+) -> impl IntoView {
+    move || {
+        let previous = previous_href.get();
+        let next = next_href.get();
+        if previous.is_none() && next.is_none() {
+            return ().into_any();
+        }
+        let previous =
+            previous.map(|url| view! { <a href=safe_href(&url)>{previous_label.clone()}</a> });
+        let next = next.map(|url| view! { <a href=safe_href(&url)>{next_label.clone()}</a> });
+        view! { <nav class="st-pagination" aria-label=label.clone()>{previous}{next}</nav> }
+            .into_any()
+    }
+}

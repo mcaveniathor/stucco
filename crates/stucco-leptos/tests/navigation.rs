@@ -4,13 +4,14 @@ mod common;
 
 use common::assert_parity;
 use leptos::prelude::*;
-use stucco_core::to_html;
+use stucco_core::{CollectionQuery, Cursor, Href, Window, to_html};
 use stucco_leptos::{
-    BreadcrumbCurrent, BreadcrumbLink, Breadcrumbs, NavLink, StepItem, Steps, Tabs,
+    BreadcrumbCurrent, BreadcrumbLink, Breadcrumbs, CursorPagination, NavLink, Pagination,
+    StepItem, Steps, Tabs,
 };
 use stucco_ui::navigation::{
-    Breadcrumbs as StaticBreadcrumbs, NavLink as StaticNavLink, Steps as StaticSteps,
-    Tabs as StaticTabs,
+    Breadcrumbs as StaticBreadcrumbs, NavLink as StaticNavLink, Pagination as StaticPagination,
+    Steps as StaticSteps, Tabs as StaticTabs,
 };
 
 fn render(view: impl FnOnce() -> String) -> String {
@@ -245,5 +246,154 @@ fn hidden_step_text_is_translatable() {
 fn step_hrefs_are_sanitized() {
     let steps = vec![step("Cart", Some("javascript:alert(1)")), step("Pay", None)];
     let html = render(|| view! { <Steps label="Checkout" steps=steps current=1/> }.to_html());
+    assert!(!html.contains("javascript"), "{html}");
+}
+
+fn page_query(page: u64) -> CollectionQuery {
+    CollectionQuery::default()
+        .with_per_page(1)
+        .with_window(Window::Offset { page })
+}
+
+fn page_link(page: u64) -> String {
+    page_query(page)
+        .link(&Href::new("/orders"))
+        .as_str()
+        .to_owned()
+}
+
+fn numbered(page: u64, total_pages: u64) -> String {
+    render(|| {
+        view! {
+            <Pagination page=page total_pages=total_pages
+                href=Callback::new(page_link)/>
+        }
+        .to_html()
+    })
+}
+
+fn static_numbered(page: u64, total_pages: u64) -> String {
+    to_html(&StaticPagination::new("/orders", &page_query(page)).total(Some(total_pages)))
+}
+
+#[test]
+fn numbered_pagination_matches_static_windowing() {
+    for (page, total) in [(1, 2), (5, 10), (1, 10), (10, 10), (3, 5), (2, 3), (4, 4)] {
+        assert_parity(&numbered(page, total), &static_numbered(page, total));
+    }
+}
+
+#[test]
+fn single_page_on_page_one_renders_nothing() {
+    assert!(!numbered(1, 1).contains("<nav"));
+    assert_eq!(static_numbered(1, 1), "");
+}
+
+#[test]
+fn zero_total_pages_renders_nothing() {
+    assert!(!numbered(1, 0).contains("<nav"));
+    assert_eq!(static_numbered(1, 0), "");
+}
+
+#[test]
+fn page_zero_is_treated_as_page_one() {
+    assert_parity(&numbered(0, 5), &static_numbered(1, 5));
+}
+
+#[test]
+fn page_past_the_end_still_links_back() {
+    let html = numbered(20, 10);
+    assert_parity(&html, &static_numbered(20, 10));
+    assert!(html.contains("Page 1"), "{html}");
+    assert!(!html.contains("aria-current"), "{html}");
+}
+
+#[test]
+fn current_page_is_marked_and_every_link_is_labelled() {
+    let html = numbered(3, 5);
+    assert_eq!(html.matches(r#"aria-current="page""#).count(), 1, "{html}");
+    for n in 1..=5 {
+        assert!(
+            html.contains(&format!(r#"aria-label="Page {n}""#)),
+            "{html}"
+        );
+    }
+}
+
+#[test]
+fn page_label_is_translatable() {
+    let html = render(|| {
+        view! {
+            <Pagination page=1u64 total_pages=3u64 href=Callback::new(page_link)
+                label="Pages" page_label=Callback::new(|n| format!("Seite {n}"))/>
+        }
+        .to_html()
+    });
+    assert!(html.contains(r#"aria-label="Seite 2""#), "{html}");
+    assert!(html.contains(r#"aria-label="Pages""#), "{html}");
+}
+
+#[test]
+fn pagination_hrefs_are_sanitized() {
+    let html = render(|| {
+        view! {
+            <Pagination page=1u64 total_pages=3u64
+                href=Callback::new(|_| "javascript:alert(1)".to_owned())/>
+        }
+        .to_html()
+    });
+    assert!(!html.contains("javascript"), "{html}");
+}
+
+fn cursor_link(window: Window) -> String {
+    CollectionQuery::default()
+        .with_window(window)
+        .link(&Href::new("/orders"))
+        .as_str()
+        .to_owned()
+}
+
+fn cursor_case(previous: Option<&str>, next: Option<&str>) -> (String, String) {
+    let previous_href = previous.map(|c| cursor_link(Window::Before(Cursor::new(c).unwrap())));
+    let next_href = next.map(|c| cursor_link(Window::After(Cursor::new(c).unwrap())));
+    let html = render(|| {
+        view! { <CursorPagination previous_href=previous_href next_href=next_href/> }.to_html()
+    });
+    let expected = to_html(
+        &StaticPagination::new("/orders", &CollectionQuery::default())
+            .cursors(next.and_then(Cursor::new), previous.and_then(Cursor::new)),
+    );
+    (html, expected)
+}
+
+#[test]
+fn cursor_pagination_matches_static_markup() {
+    for (previous, next) in [
+        (Some("abc"), None),
+        (None, Some("def")),
+        (Some("abc"), Some("def")),
+    ] {
+        let (html, expected) = cursor_case(previous, next);
+        assert_parity(&html, &expected);
+    }
+}
+
+#[test]
+fn cursor_pagination_without_cursors_renders_nothing() {
+    let (html, expected) = cursor_case(None, None);
+    assert!(!html.contains("<nav"), "{html}");
+    assert_eq!(expected, "");
+}
+
+#[test]
+fn cursor_pagination_labels_are_translatable_and_hrefs_sanitized() {
+    let html = render(|| {
+        view! {
+            <CursorPagination previous_href="javascript:x" next_href="/n"
+                previous_label="Zurück" next_label="Weiter"/>
+        }
+        .to_html()
+    });
+    assert!(html.contains("Zurück") && html.contains("Weiter"), "{html}");
     assert!(!html.contains("javascript"), "{html}");
 }

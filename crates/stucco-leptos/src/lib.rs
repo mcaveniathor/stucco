@@ -61,7 +61,8 @@ pub use inputs::{
     Autocomplete, AutocompleteOption, FileInput, RepeatedField, RepeatedValue, SelectedFile,
 };
 pub use navigation::{
-    BreadcrumbCurrent, BreadcrumbLink, Breadcrumbs, NavLink, StepItem, Steps, Tabs,
+    BreadcrumbCurrent, BreadcrumbLink, Breadcrumbs, CursorPagination, NavLink, Pagination,
+    StepItem, Steps, Tabs,
 };
 pub use overlay::Dialog;
 
