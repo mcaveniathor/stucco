@@ -1,6 +1,6 @@
 mod common;
 
-use common::{assert_parity, normalize};
+use common::{align_ids, assert_parity, normalize};
 
 #[test]
 fn normalize_drops_markers_and_sorts_attributes() {
@@ -54,4 +54,16 @@ fn normalize_lowercases_attribute_names_but_not_values() {
         normalize(r#"<svg viewBox="0 0 24 24" ARIA-Hidden="True">"#),
         r#"<svg aria-hidden="True" viewbox="0 0 24 24">"#
     );
+}
+
+#[test]
+fn align_ids_renames_ids_and_their_references_in_order() {
+    let leptos = r#"<label for="p">L</label><meter id="p" aria-describedby="p-text"></meter><span id="p-text">t</span>"#;
+    let stucco = r#"<label for="meter-1">L</label><meter id="meter-1" aria-describedby="metertext-2"></meter><span id="metertext-2">t</span>"#;
+    assert_eq!(align_ids(leptos, stucco), stucco);
+}
+
+#[test]
+fn align_ids_leaves_markup_without_ids_alone() {
+    assert_eq!(align_ids("<p>x</p>", "<p>x</p>"), "<p>x</p>");
 }

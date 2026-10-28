@@ -117,3 +117,22 @@ fn split_attributes(attrs: &str) -> Vec<String> {
     }
     result
 }
+
+/// Renames the ids in `leptos` to the ids `stucco` generated, matching them in
+/// order of appearance, so markup with generated ids can be compared. References
+/// such as `for` and `aria-describedby` are renamed with them.
+pub fn align_ids(leptos: &str, stucco: &str) -> String {
+    let ids = |html: &str| -> Vec<String> {
+        html.match_indices(" id=\"")
+            .map(|(index, found)| {
+                let start = index + found.len();
+                html[start..].split('"').next().unwrap_or("").to_owned()
+            })
+            .collect()
+    };
+    let mut aligned = leptos.to_owned();
+    for (from, to) in ids(leptos).into_iter().zip(ids(stucco)) {
+        aligned = aligned.replace(&format!("\"{from}\""), &format!("\"{to}\""));
+    }
+    aligned
+}
