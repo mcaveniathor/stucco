@@ -53,6 +53,7 @@
 use leptos::prelude::*;
 
 mod data;
+mod feedback;
 mod href;
 mod inputs;
 mod navigation;
@@ -64,6 +65,7 @@ pub use data::{
     Avatar, Badge, Card, DescriptionItem, DescriptionList, Panel, Sparkline, Stat, StatChange,
     Timeline, TimelineItem,
 };
+pub use feedback::{Callout, CalloutActions, EmptyState, Meter, Progress};
 pub use inputs::{
     Autocomplete, AutocompleteOption, FileInput, RepeatedField, RepeatedValue, SelectedFile,
 };
