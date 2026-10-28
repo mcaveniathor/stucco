@@ -263,3 +263,136 @@ fn heading(level: u8, id: String, title: String) -> AnyView {
         _ => view! { <h6 class="st-heading" data-size="lg" id=id>{title}</h6> }.into_any(),
     }
 }
+
+/// Dated activity in order, such as an order's history.
+///
+/// Fill it with [`TimelineItem`]s. Each item's time is a semantic `<time>`, and
+/// its content can be any view. With no items it shows `empty_label`.
+#[component]
+pub fn Timeline(
+    /// Accessible name of the list.
+    #[prop(into)]
+    label: String,
+    /// Text shown when there are no items.
+    #[prop(default = "No activity yet".to_owned(), into)]
+    empty_label: String,
+    /// The entries, as [`TimelineItem`]s.
+    #[prop(optional)]
+    children: Option<Children>,
+) -> impl IntoView {
+    let body = match children {
+        Some(items) => items().into_any(),
+        None => view! { <li>{empty_label}</li> }.into_any(),
+    };
+    view! { <ol class="st-timeline" aria-label=label>{body}</ol> }
+}
+
+/// One entry of a [`Timeline`].
+#[component]
+pub fn TimelineItem(
+    /// Machine-readable time, such as `2026-10-01T09:00`.
+    #[prop(into)]
+    datetime: String,
+    /// The time as shown to people.
+    #[prop(into)]
+    time: String,
+    /// What happened.
+    children: Children,
+) -> impl IntoView {
+    view! {
+        <li>
+            <span class="st-timeline-mark" aria-hidden="true"></span>
+            <div class="st-timeline-content">
+                <time datetime=datetime>{time}</time>
+                {children()}
+            </div>
+        </li>
+    }
+}
+
+/// A small trend line over supplied samples, with the values also written as text.
+///
+/// Non-finite samples are ignored. No samples show `no_data_label`; one sample is
+/// a dot; a constant series is a flat line. The line is decorative: `summary`
+/// names the figure and the visually hidden list gives the values.
+#[component]
+pub fn Sparkline(
+    /// What the line shows, used as the figure's caption.
+    #[prop(into)]
+    summary: Signal<String>,
+    /// The samples, oldest first.
+    #[prop(into)]
+    values: Signal<Vec<f64>>,
+    /// Text shown when there are no usable samples.
+    #[prop(default = "No data".to_owned(), into)]
+    no_data_label: String,
+    /// Text introducing the hidden list of values.
+    #[prop(default = "Values in order: ".to_owned(), into)]
+    values_label: String,
+) -> impl IntoView {
+    let body = move || {
+        let samples: Vec<f64> = values
+            .get()
+            .into_iter()
+            .filter(|value| value.is_finite())
+            .collect();
+        if samples.is_empty() {
+            return view! { <p>{no_data_label.clone()}</p> }.into_any();
+        }
+        let shape = if samples.len() == 1 {
+            view! { <circle cx="100" cy="30" r="3"/> }.into_any()
+        } else {
+            view! {
+                <polyline points=sparkline_points(&samples) fill="none" stroke="currentColor"
+                    stroke-width="2" vector-effect="non-scaling-stroke"/>
+            }
+            .into_any()
+        };
+        let listed = samples
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(", ");
+        view! {
+            <svg viewBox="0 0 200 60" aria-hidden="true" focusable="false">{shape}</svg>
+            <p class="st-sr-only">{format!("{}{listed}", values_label)}</p>
+        }
+        .into_any()
+    };
+    view! {
+        <figure class="st-sparkline">
+            <figcaption>{move || summary.get()}</figcaption>
+            {body}
+        </figure>
+    }
+}
+
+/// Polyline points for at least two finite samples in a 200 by 60 box.
+///
+/// Samples are divided by the largest magnitude before subtracting, so opposite
+/// extrema of `f64` cannot overflow.
+fn sparkline_points(samples: &[f64]) -> String {
+    let scale = samples.iter().map(|v| v.abs()).fold(1.0, f64::max);
+    let lo = samples
+        .iter()
+        .map(|v| v / scale)
+        .fold(f64::INFINITY, f64::min);
+    let hi = samples
+        .iter()
+        .map(|v| v / scale)
+        .fold(f64::NEG_INFINITY, f64::max);
+    samples
+        .iter()
+        .enumerate()
+        .map(|(i, v)| {
+            let x = 4.0 + 192.0 * i as f64 / (samples.len() - 1) as f64;
+            let y = if hi == lo {
+                30.0
+            } else {
+                56.0 - 52.0 * (v / scale - lo) / (hi - lo)
+            };
+            format!("{x:.2},{y:.2}")
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
