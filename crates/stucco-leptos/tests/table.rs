@@ -2,7 +2,7 @@
 
 mod common;
 
-use common::assert_parity;
+use common::{assert_parity, normalize};
 use leptos::prelude::*;
 use stucco_core::{Attrs, to_html};
 use stucco_leptos::{Cell, CellKind, HeaderCell, Row, Table, TableBody, TableHead};
@@ -165,4 +165,70 @@ fn rows_can_come_from_a_for_loop_in_order() {
     });
     let (a, b, c) = (html.find("n1"), html.find("n2"), html.find("n3"));
     assert!(a < b && b < c && a.is_some(), "{html}");
+}
+
+#[test]
+fn rows_from_a_for_loop_keep_their_tables_card_mode_when_another_table_follows() {
+    let html = render(|| {
+        view! {
+            <Table caption="A" cards=true>
+                <TableBody>
+                    <For each=move || vec![1] key=|n| *n
+                        children=move |n| view! { <Row><Cell label="Number">{n}</Cell></Row> }/>
+                </TableBody>
+            </Table>
+            <Table caption="B"><TableBody/></Table>
+        }
+        .to_html()
+    });
+    let html = normalize(&html);
+    let first = html.split("<caption>B").next().unwrap();
+    assert!(first.contains(r#"role="row""#), "{html}");
+    assert!(first.contains(r#"role="cell""#), "{html}");
+    assert!(
+        first.contains(r#"<span aria-hidden="true" class="st-table-card-label">Number</span>"#),
+        "{html}"
+    );
+}
+
+#[test]
+fn reactive_header_cells_stay_column_headings() {
+    let html = render(|| {
+        let columns = RwSignal::new(vec!["Customer", "Total"]);
+        view! {
+            <Table caption="A">
+                <TableHead><Row>
+                    {move || columns.get().into_iter()
+                        .map(|name| view! { <HeaderCell>{name}</HeaderCell> })
+                        .collect_view()}
+                </Row></TableHead>
+                <TableBody><Row><Cell>"x"</Cell></Row></TableBody>
+            </Table>
+        }
+        .to_html()
+    });
+    assert_eq!(html.matches(r#"scope="col""#).count(), 2, "{html}");
+    assert!(!html.contains(r#"scope="row""#), "{html}");
+}
+
+#[test]
+fn a_table_nested_in_a_cards_cell_does_not_change_the_outer_tables_cells() {
+    let html = render(|| {
+        view! {
+            <Table caption="Outer" cards=true>
+                <TableBody>
+                    <Row>
+                        <Cell label="Inner"><Table caption="Inner"><TableBody/></Table></Cell>
+                        <Cell label="After">"after"</Cell>
+                    </Row>
+                </TableBody>
+            </Table>
+        }
+        .to_html()
+    });
+    assert!(
+        normalize(&html)
+            .contains(r#"<span aria-hidden="true" class="st-table-card-label">After</span>"#),
+        "{html}"
+    );
 }

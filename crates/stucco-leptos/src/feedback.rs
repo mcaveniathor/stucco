@@ -117,9 +117,10 @@ pub fn Meter(
     /// The best value.
     #[prop(optional, into)]
     optimum: Option<f64>,
-    /// A description of the value, such as "70% used".
+    /// A description of the value, such as "70% used". Pass a signal when the text
+    /// depends on `value`, so the description does not go stale.
     #[prop(optional, into)]
-    value_text: Option<String>,
+    value_text: MaybeProp<String>,
 ) -> impl IntoView {
     let (min, max) = meter_bounds(min, max);
     let low = low.map(|low| clamp_finite(low, min, max));
@@ -128,16 +129,22 @@ pub fn Meter(
         .map(|high| high.max(low.unwrap_or(min)));
     let optimum = optimum.map(|optimum| clamp_finite(optimum, min, max));
     let current = move || clamp_finite(value.get(), min, max);
-    let text_id = value_text.as_ref().map(|_| format!("{id}-text"));
-    let description = value_text.map(|text| {
-        view! { <span id=text_id.clone() class="st-meter-text">{text}</span> }
-    });
+    let text_id = format!("{id}-text");
+    let described_by = {
+        let text_id = text_id.clone();
+        move || value_text.get().map(|_| text_id.clone())
+    };
+    let description = move || {
+        value_text.get().map(|text| {
+            view! { <span id=text_id.clone() class="st-meter-text">{text}</span> }
+        })
+    };
     view! {
         <div class="st-meter">
             <label for=id.clone()>{label}</label>
             <meter id=id value=move || num(current()) min=num(min) max=num(max)
                 low=low.map(num) high=high.map(num) optimum=optimum.map(num)
-                aria-describedby=text_id.clone()>
+                aria-describedby=described_by>
                 {move || num(current())}
             </meter>
             {description}

@@ -207,3 +207,25 @@ fn empty_state_title_is_escaped() {
     let html = render(|| view! { <EmptyState title="<None>"/> }.to_html());
     assert!(html.contains("&lt;None&gt;"), "{html}");
 }
+
+#[test]
+fn meter_description_follows_a_reactive_value_text() {
+    let html = render(|| {
+        let used = RwSignal::new(70.0);
+        view! {
+            <Meter id="m" label="Disk" value=used min=0.0 max=100.0
+                value_text=Signal::derive(move || Some(format!("{}% used", used.get())))/>
+        }
+        .to_html()
+    });
+    assert!(html.contains("70% used"), "{html}");
+    assert!(html.contains(r#"aria-describedby="m-text""#), "{html}");
+}
+
+#[test]
+fn meter_without_value_text_has_no_description() {
+    let html =
+        render(|| view! { <Meter id="m" label="Disk" value=1.0 min=0.0 max=2.0/> }.to_html());
+    assert!(!html.contains("aria-describedby"), "{html}");
+    assert!(!html.contains("m-text"), "{html}");
+}

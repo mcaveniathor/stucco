@@ -267,7 +267,10 @@ fn heading(level: u8, id: String, title: String) -> AnyView {
 /// Dated activity in order, such as an order's history.
 ///
 /// Fill it with [`TimelineItem`]s. Each item's time is a semantic `<time>`, and
-/// its content can be any view. With no items it shows `empty_label`.
+/// its content can be any view. With no children, or with `empty` set, it shows
+/// `empty_label` instead. When the entries come from a list that may be empty, pass
+/// `empty=entries.is_empty()`; for a list that changes after rendering, render
+/// `<Timeline label=…/>` without children when it is empty.
 #[component]
 pub fn Timeline(
     /// Accessible name of the list.
@@ -276,13 +279,16 @@ pub fn Timeline(
     /// Text shown when there are no items.
     #[prop(default = "No activity yet".to_owned(), into)]
     empty_label: String,
+    /// Show the empty item and ignore `children`, for a list known to be empty.
+    #[prop(optional)]
+    empty: bool,
     /// The entries, as [`TimelineItem`]s.
     #[prop(optional)]
     children: Option<Children>,
 ) -> impl IntoView {
     let body = match children {
-        Some(items) => items().into_any(),
-        None => view! { <li>{empty_label}</li> }.into_any(),
+        Some(items) if !empty => items().into_any(),
+        _ => view! { <li>{empty_label}</li> }.into_any(),
     };
     view! { <ol class="st-timeline" aria-label=label>{body}</ol> }
 }
