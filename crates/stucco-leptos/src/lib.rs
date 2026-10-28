@@ -52,12 +52,15 @@
 
 use leptos::prelude::*;
 
+mod href;
 mod inputs;
+mod navigation;
 mod overlay;
 
 pub use inputs::{
     Autocomplete, AutocompleteOption, FileInput, RepeatedField, RepeatedValue, SelectedFile,
 };
+pub use navigation::{NavLink, Tabs};
 pub use overlay::Dialog;
 
 /// The existing Stucco appearance used by a [`SubmitButton`].
