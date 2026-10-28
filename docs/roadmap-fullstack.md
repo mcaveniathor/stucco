@@ -35,7 +35,7 @@ loading or failure is presented.
 | Boundary | Responsibility |
 | --- | --- |
 | Leptos and `cargo-leptos` | Components, signals, resources, actions, routing, SSR/hydration and the standard build/development workflow. Use their APIs directly. |
-| `stucco-leptos` | Idiomatic Leptos components sharing Stucco's design and accessibility conventions. Separate `ssr` and `hydrate` feature builds. Independent `0.1.0-alpha.1` preview prepared; unpublished. |
+| `stucco-leptos` | Idiomatic Leptos components sharing Stucco's design and accessibility conventions. Separate `ssr` and `hydrate` feature builds. Independent `0.1.0-alpha.1` preview published on crates.io. |
 | `stucco-theme` and existing CSS | Shared visual tokens and styles. Avoid a second design system or a copy of each stylesheet. |
 | `stucco-core` and `stucco-ui` | Preserve existing HTML rendering and builder APIs. Share pure logic and visual assets where useful; do not convert arbitrary HTML strings into reactive components. |
 | `stucco-tower` | Preserve existing middleware, request context, CSRF, flash and native response helpers. Add integration hooks only for demonstrated needs. |
@@ -55,7 +55,7 @@ foundation to a complete Orders workflow. Step 3 adds persistent storage and
 identity. Step 4 adds richer components and application workflows. The
 implementation includes:
 
-- An unpublished [`stucco-leptos`](../crates/stucco-leptos) crate with `TextField`,
+- A published preview [`stucco-leptos`](../crates/stucco-leptos) crate with `TextField`,
   `PageHeader`, `SubmitButton`, `ErrorSummary`, `StatusMessage`, `Dialog`,
   `Autocomplete`, `RepeatedField` and `FileInput`, using existing Stucco theme
   generation and CSS.

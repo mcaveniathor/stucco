@@ -26,7 +26,7 @@ content-hashed assets, and a `Page` produces the document. Applications provide
 data and backend capabilities; components remain independent of HTTP, Tokio,
 and storage.
 
-An unpublished [Leptos integration](crates/stucco-leptos/README.md) now adds
+A preview [Leptos integration](crates/stucco-leptos/README.md) now adds
 reactive form controls, dialogs and feedback using the same themes and styles. The
 [full-stack Orders example](examples/orders-fullstack/README.md) uses standard
 Leptos SSR/hydration and Rust/WASM interaction, with embedded redb NoSQL storage
@@ -258,7 +258,8 @@ its default database is `target/orders.redb`.
 
 The [Leptos components and full-stack reference plan](docs/roadmap-fullstack.md)
 describes Stucco's design-system integration with Leptos and the maintained Rust
-application example. The unpublished preview includes routed Orders CRUD, search
+application example. The checkout-based Orders example, built on the published
+`stucco-leptos` 0.1.0-alpha.1 preview, includes routed Orders CRUD, search
 and pagination, native forms, WASM interaction, and tenant-scoped accounts backed
 by default redb storage. It also includes database-backed attachments, background
 CSV exports, and a localized component gallery. SQLite remains an optional server

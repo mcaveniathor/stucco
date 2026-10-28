@@ -1,11 +1,11 @@
 # stucco-leptos
 
-An unpublished preview of reactive Leptos components using Stucco's existing
+A preview of reactive Leptos components using Stucco's existing
 styles and accessibility conventions. It provides a small set of form and page
 components using Leptos directly; it does not hydrate the static `Render` builders.
 This preview does not yet cover the full Stucco component catalogue. Its separate
-prerelease version is **0.1.0-alpha.1**; the existing Stucco crates are at 0.5.1.
-Preparing the package does not mean that the prerelease has been published.
+prerelease version is **0.1.0-alpha.1**, published on crates.io; the existing
+Stucco crates are at 0.5.1.
 
 | Area | Available in this preview | Still missing |
 | --- | --- | --- |
@@ -19,14 +19,13 @@ The existing Stucco crates retain their own compiler requirements.
 
 ## Dependency and build setup
 
-For the current checkout, add these dependencies and feature forwards to the
-application's `Cargo.toml`. Adjust the paths to the Stucco checkout:
+Add these dependencies and feature forwards to the application's `Cargo.toml`:
 
 ```toml
 [dependencies]
 leptos = { version = "=0.8.22", default-features = false }
-stucco-leptos = { path = "../stucco/crates/stucco-leptos", version = "=0.1.0-alpha.1", default-features = false }
-stucco-theme = { path = "../stucco/crates/stucco-theme", version = "=0.5.1", optional = true }
+stucco-leptos = { version = "=0.1.0-alpha.1", default-features = false }
+stucco-theme = { version = "=0.5.1", optional = true }
 
 [features]
 default = []
@@ -34,14 +33,10 @@ ssr = ["leptos/ssr", "stucco-leptos/ssr", "dep:stucco-theme"]
 hydrate = ["leptos/hydrate", "stucco-leptos/hydrate"]
 ```
 
-After **0.1.0-alpha.1 has been published**, replace the two path dependencies with
-the following registry dependencies. This is the intended install configuration,
-pending publication:
-
-```toml
-stucco-leptos = { version = "=0.1.0-alpha.1", default-features = false }
-stucco-theme = { version = "=0.5.1", optional = true }
-```
+To follow unreleased changes from a Stucco checkout instead, add
+`path = "../stucco/crates/stucco-leptos"` and
+`path = "../stucco/crates/stucco-theme"` to those two dependencies, keeping the
+exact versions.
 
 The theme dependency is only needed by server code calling `stylesheet`.
 `stucco-leptos` has no default features:
