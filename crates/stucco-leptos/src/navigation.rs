@@ -79,3 +79,79 @@ pub fn BreadcrumbCurrent(
 ) -> impl IntoView {
     view! { <li><span aria-current="page">{children()}</span></li> }
 }
+
+/// One step of a [`Steps`] flow.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StepItem {
+    /// Visible step name.
+    pub label: String,
+    /// Where a finished step links back to; `None` keeps it plain text.
+    pub href: Option<String>,
+}
+
+/// Where the user is in a multi-page flow, such as a checkout.
+///
+/// Finished steps link back, the current step is marked `aria-current="step"`,
+/// and later steps are text. Each step's state is also written in visually hidden
+/// text, which `completed_label` and `not_started_label` let you translate.
+/// A `current` past the end means the last step; no steps render nothing.
+#[component]
+pub fn Steps(
+    /// Accessible name of the navigation landmark.
+    #[prop(into)]
+    label: String,
+    /// The steps, in order.
+    steps: Vec<StepItem>,
+    /// Zero-based index of the current step.
+    #[prop(default = Signal::derive(|| 0), into)]
+    current: Signal<usize>,
+    /// Hidden text added after a finished step's name.
+    #[prop(default = " (completed)".to_owned(), into)]
+    completed_label: String,
+    /// Hidden text added after a later step's name.
+    #[prop(default = " (not started)".to_owned(), into)]
+    not_started_label: String,
+) -> impl IntoView {
+    if steps.is_empty() {
+        return ().into_any();
+    }
+    let last = steps.len() - 1;
+    let items = move || {
+        let current = current.get().min(last);
+        steps
+            .iter()
+            .enumerate()
+            .map(|(index, step)| {
+                let name = step.label.clone();
+                let (state, body) = if index < current {
+                    let hidden =
+                        view! { <span class="st-sr-only">{completed_label.clone()}</span> };
+                    let body = match &step.href {
+                        Some(href) => {
+                            let href = safe_href(href);
+                            view! { <a href=href>{name}{hidden}</a> }.into_any()
+                        }
+                        None => view! { <span>{name}{hidden}</span> }.into_any(),
+                    };
+                    ("done", body)
+                } else if index == current {
+                    (
+                        "current",
+                        view! { <span aria-current="step">{name}</span> }.into_any(),
+                    )
+                } else {
+                    let hidden =
+                        view! { <span class="st-sr-only">{not_started_label.clone()}</span> };
+                    ("todo", view! { <span>{name}{hidden}</span> }.into_any())
+                };
+                view! {
+                    <li data-state=state>
+                        <span class="st-steps-marker" aria-hidden="true">{index + 1}</span>
+                        {body}
+                    </li>
+                }
+            })
+            .collect_view()
+    };
+    view! { <nav class="st-steps" aria-label=label><ol>{items}</ol></nav> }.into_any()
+}

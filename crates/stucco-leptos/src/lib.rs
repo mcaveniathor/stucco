@@ -60,7 +60,9 @@ mod overlay;
 pub use inputs::{
     Autocomplete, AutocompleteOption, FileInput, RepeatedField, RepeatedValue, SelectedFile,
 };
-pub use navigation::{BreadcrumbCurrent, BreadcrumbLink, Breadcrumbs, NavLink, Tabs};
+pub use navigation::{
+    BreadcrumbCurrent, BreadcrumbLink, Breadcrumbs, NavLink, StepItem, Steps, Tabs,
+};
 pub use overlay::Dialog;
 
 /// The existing Stucco appearance used by a [`SubmitButton`].
