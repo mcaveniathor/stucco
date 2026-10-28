@@ -2,8 +2,8 @@
 
 use leptos::prelude::*;
 use stucco_leptos::{
-    BreadcrumbCurrent, BreadcrumbLink, Breadcrumbs, CursorPagination, NavLink, Pagination,
-    StepItem, Steps, Tabs,
+    BreadcrumbCurrent, BreadcrumbLink, Breadcrumbs, Cell, CellKind, CursorPagination, HeaderCell,
+    NavLink, Pagination, Row, StepItem, Steps, Table, TableBody, TableHead, Tabs,
 };
 
 use crate::gallery::text;
@@ -83,6 +83,51 @@ pub(crate) fn NavigationSection(
             <CursorPagination label=text(arabic, "Gallery cursor pages", "صفحات المؤشر")
                 previous_href=previous next_href=next
                 previous_label=text(arabic, "Previous", "السابق") next_label=text(arabic, "Next", "التالي")/>
+        </section>
+    }
+}
+
+/// Tables: a semantic table that becomes labelled cards in narrow containers.
+#[component]
+pub(crate) fn TablesSection(arabic: bool) -> impl IntoView {
+    let rows = [
+        ("Ada Lovelace", "أدا لوفلايس", "2026-10-01", "$128.00"),
+        ("Grace Hopper", "غريس هوبر", "2026-10-09", "$64.50"),
+        (
+            "Katherine Johnson",
+            "كاثرين جونسون",
+            "2026-10-18",
+            "$212.00",
+        ),
+    ];
+    let customer = text(arabic, "Customer", "العميل");
+    let placed = text(arabic, "Placed", "تاريخ الطلب");
+    let total = text(arabic, "Total", "الإجمالي");
+    view! {
+        <section id="gallery-tables" class="st-surface st-stack" data-level="raised"
+            data-border="" data-padding="5" data-space="4"
+            aria-labelledby="gallery-tables-heading">
+            <h2 id="gallery-tables-heading">{text(arabic, "Tables", "الجداول")}</h2>
+            <Table caption=text(arabic, "Recent orders", "الطلبات الأخيرة") cards=true>
+                <TableHead>
+                    <Row>
+                        <HeaderCell aria_sort="ascending">
+                            <a href="#gallery-tables">{customer}</a>
+                        </HeaderCell>
+                        <HeaderCell kind=CellKind::Date>{placed}</HeaderCell>
+                        <HeaderCell kind=CellKind::Number>{total}</HeaderCell>
+                    </Row>
+                </TableHead>
+                <TableBody>
+                    {rows.into_iter().map(|(english, arabic_name, date, amount)| view! {
+                        <Row>
+                            <HeaderCell label=customer>{text(arabic, english, arabic_name)}</HeaderCell>
+                            <Cell kind=CellKind::Date label=placed>{date}</Cell>
+                            <Cell kind=CellKind::Number label=total>{amount}</Cell>
+                        </Row>
+                    }).collect_view()}
+                </TableBody>
+            </Table>
         </section>
     }
 }
