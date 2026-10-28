@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// Reduces HTML to a form where equivalent markup compares equal: hydration
-/// markers (`<!>`) and comments are dropped, attributes are sorted by name, and
+/// markers (`<!>`) and comments are dropped, attribute names are lowercased and sorted, and
 /// whitespace between tags is removed. Self-closing tags are written as open tags,
 /// and SVG shapes have no closing tag. Text content is left untouched.
 pub fn normalize(html: &str) -> String {
@@ -73,7 +73,13 @@ fn normalize_tag(tag: &str) -> String {
     let inner = inner.strip_suffix('/').unwrap_or(inner);
     let name_end = inner.find(char::is_whitespace).unwrap_or(inner.len());
     let (name, attrs) = inner.split_at(name_end);
-    let mut attrs = split_attributes(attrs);
+    let mut attrs: Vec<String> = split_attributes(attrs)
+        .into_iter()
+        .map(|attr| match attr.split_once('=') {
+            Some((name, value)) => format!("{}={value}", name.to_ascii_lowercase()),
+            None => attr.to_ascii_lowercase(),
+        })
+        .collect();
     attrs.sort();
     let mut out = format!("<{name}");
     for attr in attrs {

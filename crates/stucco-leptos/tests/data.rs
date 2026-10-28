@@ -6,12 +6,13 @@ use common::assert_parity;
 use leptos::prelude::*;
 use stucco_core::to_html;
 use stucco_leptos::{
-    Avatar, Badge, Card, DescriptionItem, DescriptionList, Panel, Size, Stat, StatChange, Tone,
-    Trend,
+    Avatar, Badge, Card, DescriptionItem, DescriptionList, Panel, Size, Sparkline, Stat,
+    StatChange, Timeline, TimelineItem, Tone, Trend,
 };
 use stucco_ui::data::{
     Avatar as StaticAvatar, Badge as StaticBadge, Card as StaticCard,
-    DescriptionList as StaticDescriptionList, Panel as StaticPanel, Stat as StaticStat,
+    DescriptionList as StaticDescriptionList, Panel as StaticPanel, Sparkline as StaticSparkline,
+    Stat as StaticStat, Timeline as StaticTimeline, TimelineEntry,
 };
 
 fn render(view: impl FnOnce() -> String) -> String {
@@ -313,4 +314,116 @@ fn panel_is_labelled_by_its_heading() {
 fn panel_title_is_escaped() {
     let html = render(|| view! { <Panel id="p" title="<Orders> & more"/> }.to_html());
     assert!(html.contains("&lt;Orders&gt; &amp; more"), "{html}");
+}
+
+#[test]
+fn timeline_items_render_semantic_times_and_arbitrary_content() {
+    let html = render(|| {
+        view! {
+            <Timeline label="Order history">
+                <TimelineItem datetime="2026-10-01T09:00" time="1 Oct, 09:00">"Created"</TimelineItem>
+                <TimelineItem datetime="2026-10-02" time="2 Oct">
+                    <a href="/o/1">"Shipped"</a>
+                </TimelineItem>
+            </Timeline>
+        }
+        .to_html()
+    });
+    assert!(
+        html.contains(r#"<time datetime="2026-10-01T09:00">1 Oct, 09:00</time>"#),
+        "{html}"
+    );
+    assert!(html.contains(r#"<a href="/o/1">Shipped</a>"#), "{html}");
+}
+
+#[test]
+fn timeline_structure_matches_static_for_plain_text_entries() {
+    let html = render(|| {
+        view! {
+            <Timeline label="History">
+                <TimelineItem datetime="2026-10-01" time="1 Oct">"Created"</TimelineItem>
+            </Timeline>
+        }
+        .to_html()
+    });
+    let expected = to_html(&StaticTimeline::new("History").entry(TimelineEntry::new(
+        "2026-10-01",
+        "1 Oct",
+        "Created",
+    )));
+    assert_parity(&html, &expected);
+}
+
+#[test]
+fn empty_timeline_shows_the_empty_item() {
+    let html = render(|| view! { <Timeline label="History"/> }.to_html());
+    assert_parity(&html, &to_html(&StaticTimeline::new("History")));
+    assert!(html.contains("No activity yet"), "{html}");
+}
+
+#[test]
+fn timeline_empty_text_is_translatable() {
+    let html = render(|| {
+        view! { <Timeline label="Verlauf" empty_label="Noch keine Aktivität"/> }.to_html()
+    });
+    assert!(html.contains("Noch keine Aktivität"), "{html}");
+    assert!(!html.contains("No activity yet"), "{html}");
+}
+
+fn sparkline(values: Vec<f64>) -> String {
+    render(|| view! { <Sparkline summary="Orders per day" values=values/> }.to_html())
+}
+
+fn static_sparkline(values: Vec<f64>) -> String {
+    to_html(&StaticSparkline::new("Orders per day", values))
+}
+
+#[test]
+fn sparkline_matches_static_markup() {
+    for values in [
+        vec![1.0, 2.0, 3.0],
+        vec![5.0],
+        vec![2.0, 2.0, 2.0],
+        vec![],
+        vec![3.5, -1.25, 8.0, 0.0],
+    ] {
+        assert_parity(&sparkline(values.clone()), &static_sparkline(values));
+    }
+}
+
+#[test]
+fn sparkline_drops_non_finite_samples() {
+    let with_junk = vec![1.0, f64::NAN, 3.0, f64::INFINITY, f64::NEG_INFINITY];
+    assert_parity(&sparkline(with_junk), &sparkline(vec![1.0, 3.0]));
+    assert_parity(&sparkline(vec![f64::NAN]), &sparkline(vec![]));
+}
+
+#[test]
+fn sparkline_survives_opposite_extrema() {
+    let values = vec![f64::MAX, -f64::MAX];
+    let html = sparkline(values.clone());
+    assert!(!html.contains("NaN") && !html.contains("inf"), "{html}");
+    assert_parity(&html, &static_sparkline(values));
+}
+
+#[test]
+fn sparkline_lists_its_values_as_text() {
+    let html = sparkline(vec![1.0, 2.5]);
+    assert!(html.contains("Values in order: 1, 2.5"), "{html}");
+}
+
+#[test]
+fn sparkline_text_is_translatable_and_escaped() {
+    let html = render(|| {
+        view! {
+            <Sparkline summary="<Résumé>" values=vec![] no_data_label="Keine Daten"/>
+        }
+        .to_html()
+    });
+    assert!(html.contains("&lt;Résumé&gt;"), "{html}");
+    assert!(html.contains("Keine Daten"), "{html}");
+    let html = render(|| {
+        view! { <Sparkline summary="s" values=vec![1.0, 2.0] values_label="Werte: "/> }.to_html()
+    });
+    assert!(html.contains("Werte: 1, 2"), "{html}");
 }

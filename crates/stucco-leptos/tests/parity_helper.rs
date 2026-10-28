@@ -47,3 +47,11 @@ fn normalize_treats_self_closed_svg_shapes_like_empty_pairs() {
         normalize(r#"<svg><path d="M0 0"></path><circle r="3" /></svg>"#)
     );
 }
+
+#[test]
+fn normalize_lowercases_attribute_names_but_not_values() {
+    assert_eq!(
+        normalize(r#"<svg viewBox="0 0 24 24" ARIA-Hidden="True">"#),
+        r#"<svg aria-hidden="True" viewbox="0 0 24 24">"#
+    );
+}
