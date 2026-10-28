@@ -25,7 +25,7 @@ REGISTRY_SOURCE = "registry+https://github.com/rust-lang/crates.io-index"
 WASM_TARGET = "wasm32-unknown-unknown"
 REQUIRED_FILES = (
     "Cargo.toml", "README.md", "LICENSE-MIT", "LICENSE-APACHE", "src/lib.rs",
-    "src/inputs.rs", "src/overlay.rs", "examples/native_form.rs",
+    "src/href.rs", "src/inputs.rs", "src/navigation.rs", "src/overlay.rs", "examples/native_form.rs",
 )
 
 CONSUMER_SOURCE = r'''use leptos::prelude::*;

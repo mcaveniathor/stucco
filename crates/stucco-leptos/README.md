@@ -11,7 +11,8 @@ Stucco crates are at 0.5.1.
 | --- | --- | --- |
 | Form controls | `TextField`, `Autocomplete`, `RepeatedField`, `FileInput`, `SubmitButton` | Selects, date inputs and other specialized controls |
 | Form feedback | `ErrorSummary`, `StatusMessage` | Other feedback and notification components |
-| Page composition | `PageHeader` with description and actions, `Dialog` | Navigation, data displays and the remaining static component catalogue |
+| Page composition | `PageHeader` with description and actions, `Dialog` | Tables, data displays and the remaining static component catalogue |
+| Navigation | `NavLink`, `Tabs`, `Breadcrumbs`, `Steps`, `Pagination`, `CursorPagination` | |
 
 The integration pins Leptos **0.8.22** and requires Rust **1.88**; its native SSR
 and WASM dependency graphs are checked on that compiler.
@@ -241,6 +242,50 @@ made before hydration. After a server response replaces the form, browsers requi
 the user to select the file again. A form reset does not emit a native `change`
 event; an application resetting its form must also clear its displayed metadata.
 Reserve `{id}-hint` and `{id}-error`.
+
+## Navigation
+
+Navigation components render the same markup as their static `stucco-ui`
+counterparts, so the shared stylesheet already styles them. They are ordinary
+links before and after hydration; hydration only makes their signal props
+reactive. The application decides which link is current, usually from its router
+or request path, and owns every destination. Unsafe URL schemes such as
+`javascript:` render as `#`. `leptos_router` is not required; its link
+interception works on these anchors.
+
+```rust
+use leptos::prelude::*;
+use stucco_leptos::{BreadcrumbCurrent, BreadcrumbLink, Breadcrumbs, NavLink, Tabs};
+
+#[component]
+fn OrderNav(tab: Signal<String>) -> impl IntoView {
+    view! {
+        <Breadcrumbs>
+            <BreadcrumbLink href="/orders">"Orders"</BreadcrumbLink>
+            <BreadcrumbCurrent>"Order 42"</BreadcrumbCurrent>
+        </Breadcrumbs>
+        <Tabs label="Order sections">
+            <NavLink label="Details" href="?tab=details"
+                current=Signal::derive(move || tab.get() == "details")/>
+            <NavLink label="History" href="?tab=history"
+                current=Signal::derive(move || tab.get() == "history")/>
+        </Tabs>
+    }
+}
+```
+
+- `Breadcrumbs` takes `BreadcrumbLink` items and a final `BreadcrumbCurrent`;
+  its `label` defaults to "Breadcrumb". Place it above `PageHeader`.
+- `Steps` takes `steps: Vec<StepItem>` and a `current` index. Finished steps
+  link back when they have an `href`. The hidden "(completed)" and
+  "(not started)" text is translatable with `completed_label` and
+  `not_started_label`.
+- `Pagination` takes `page`, `total_pages` and an `href` callback that builds
+  each page's URL, keeping the rest of the query. It shows the first and last
+  pages and two either side of the current one, and renders nothing for a single
+  page. `page_label` formats each link's accessible name.
+- `CursorPagination` takes optional `previous_href` and `next_href` and renders
+  nothing when both are absent.
 
 ## Styles and validation
 

@@ -12,6 +12,7 @@ pub mod export_api;
 pub mod export_routes;
 pub mod exports;
 mod gallery;
+mod gallery_sections;
 mod pages;
 #[cfg(feature = "ssr")]
 mod redb_store;

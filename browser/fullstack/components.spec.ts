@@ -209,3 +209,38 @@ test("gallery supports localized labels, RTL and accessible light/dark narrow la
   await page.screenshot({ path });
   await test.info().attach("components-dialog-ar-rtl-narrow-dark", { path, contentType: "image/png" });
 });
+
+test.describe("navigation section without JavaScript", () => {
+  test.use({ javaScriptEnabled: false });
+
+  test("tabs, steps and pagination are links that keep the gallery language", async ({ page }) => {
+    await open(page, "/components?lang=en&dir=ltr&page=3", false);
+    const section = page.locator("#gallery-navigation");
+    await expect(section.getByRole("navigation", { name: "Gallery sections", exact: true }).getByRole("link", { name: "Overview" }))
+      .toHaveAttribute("aria-current", "page");
+    await expect(section.getByRole("button", { name: "Next step", exact: true })).toBeDisabled();
+    const pages = section.getByRole("navigation", { name: "Gallery pages", exact: true });
+    await expect(pages.getByRole("link", { name: "Page 3", exact: true })).toHaveAttribute("aria-current", "page");
+    await pages.getByRole("link", { name: "Page 4", exact: true }).click();
+    await expect(page).toHaveURL(/page=4/);
+    await expect(section.getByRole("navigation", { name: "Gallery pages", exact: true }).getByRole("link", { name: "Page 4", exact: true }))
+      .toHaveAttribute("aria-current", "page");
+    await section.getByRole("link", { name: "Previous", exact: true }).click();
+    await expect(page).toHaveURL(/page=3/);
+  });
+});
+
+test("navigation components update when their signals change after hydration", async ({ page }) => {
+  const errors = await open(page, "/components?lang=en&dir=ltr");
+  const section = page.locator("#gallery-navigation");
+  const tabs = section.getByRole("navigation", { name: "Gallery sections", exact: true });
+  await expect(tabs.getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
+  await section.getByRole("button", { name: "Toggle current tab", exact: true }).click();
+  await expect(tabs.getByRole("link", { name: "Reports" })).toHaveAttribute("aria-current", "page");
+  await expect(tabs.getByRole("link", { name: "Overview" })).not.toHaveAttribute("aria-current", "page");
+  const steps = section.getByRole("navigation", { name: "Checkout progress", exact: true });
+  await expect(steps.locator("[aria-current='step']")).toHaveText("Cart");
+  await section.getByRole("button", { name: "Next step", exact: true }).click();
+  await expect(steps.locator("[aria-current='step']")).toHaveText("Payment");
+  expect(errors).toEqual([]);
+});
