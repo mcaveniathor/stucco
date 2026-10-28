@@ -60,7 +60,7 @@ mod overlay;
 mod table;
 mod vocab;
 
-pub use data::{Avatar, Badge, DescriptionItem, DescriptionList, Stat, StatChange};
+pub use data::{Avatar, Badge, Card, DescriptionItem, DescriptionList, Panel, Stat, StatChange};
 pub use inputs::{
     Autocomplete, AutocompleteOption, FileInput, RepeatedField, RepeatedValue, SelectedFile,
 };

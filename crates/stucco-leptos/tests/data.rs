@@ -6,11 +6,12 @@ use common::assert_parity;
 use leptos::prelude::*;
 use stucco_core::to_html;
 use stucco_leptos::{
-    Avatar, Badge, DescriptionItem, DescriptionList, Size, Stat, StatChange, Tone, Trend,
+    Avatar, Badge, Card, DescriptionItem, DescriptionList, Panel, Size, Stat, StatChange, Tone,
+    Trend,
 };
 use stucco_ui::data::{
-    Avatar as StaticAvatar, Badge as StaticBadge, DescriptionList as StaticDescriptionList,
-    Stat as StaticStat,
+    Avatar as StaticAvatar, Badge as StaticBadge, Card as StaticCard,
+    DescriptionList as StaticDescriptionList, Panel as StaticPanel, Stat as StaticStat,
 };
 
 fn render(view: impl FnOnce() -> String) -> String {
@@ -230,4 +231,86 @@ fn stat_direction_text_is_translatable() {
     });
     assert!(html.contains("Baisse de "), "{html}");
     assert!(!html.contains("Down "), "{html}");
+}
+
+#[test]
+fn card_matches_static_markup() {
+    let full = render(|| view! { <Card header=|| "Head" footer=|| "Foot">"Body"</Card> }.to_html());
+    let expected = to_html(
+        &StaticCard::new()
+            .header("Head")
+            .child("Body")
+            .footer("Foot"),
+    );
+    assert_parity(&full, &expected);
+
+    let body_only = render(|| view! { <Card>"Body"</Card> }.to_html());
+    assert_parity(&body_only, &to_html(&StaticCard::new().child("Body")));
+
+    let empty = render(|| view! { <Card/> }.to_html());
+    assert_parity(&empty, &to_html(&StaticCard::new()));
+}
+
+/// The id the static panel generated for its heading.
+fn heading_id(html: &str) -> String {
+    let start = html.find(" id=\"").expect("panel heading id") + 5;
+    html[start..].split('"').next().unwrap().to_owned()
+}
+
+/// The Leptos panel names its heading `panel-title`; the static one generates an
+/// id. Map the first to the second so the rest of the markup can be compared.
+fn with_static_id(html: &str, static_html: &str) -> String {
+    html.replace("panel-title", &heading_id(static_html))
+}
+
+#[test]
+fn panel_matches_static_markup() {
+    let static_html = to_html(
+        &StaticPanel::new("Recent orders")
+            .description("Latest first")
+            .actions("Actions")
+            .body("Body")
+            .footer("Foot"),
+    );
+    let html = render(|| {
+        view! {
+            <Panel id="panel" title="Recent orders" description=|| "Latest first"
+                actions=|| "Actions" footer=|| "Foot">"Body"</Panel>
+        }
+        .to_html()
+    });
+    assert_parity(&with_static_id(&html, &static_html), &static_html);
+}
+
+#[test]
+fn panel_without_optional_parts_matches_static_markup() {
+    let static_html = to_html(&StaticPanel::new("Bare"));
+    let html = render(|| view! { <Panel id="panel" title="Bare"/> }.to_html());
+    assert_parity(&with_static_id(&html, &static_html), &static_html);
+}
+
+#[test]
+fn panel_heading_level_is_clamped_to_one_through_six() {
+    for (level, tag) in [(0u8, "h1"), (1, "h1"), (3, "h3"), (6, "h6"), (9, "h6")] {
+        let html = render(|| view! { <Panel id="panel" title="T" level=level/> }.to_html());
+        assert!(html.contains(&format!("<{tag} ")), "{level}: {html}");
+        let static_html = to_html(&StaticPanel::new("T").level(level));
+        assert_parity(&with_static_id(&html, &static_html), &static_html);
+    }
+}
+
+#[test]
+fn panel_is_labelled_by_its_heading() {
+    let html = render(|| view! { <Panel id="orders-panel" title="Orders"/> }.to_html());
+    assert!(
+        html.contains(r#"aria-labelledby="orders-panel-title""#),
+        "{html}"
+    );
+    assert!(html.contains(r#"id="orders-panel-title""#), "{html}");
+}
+
+#[test]
+fn panel_title_is_escaped() {
+    let html = render(|| view! { <Panel id="p" title="<Orders> & more"/> }.to_html());
+    assert!(html.contains("&lt;Orders&gt; &amp; more"), "{html}");
 }
