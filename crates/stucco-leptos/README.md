@@ -1,11 +1,12 @@
 # stucco-leptos
 
 A preview of reactive Leptos components using Stucco's existing
-styles and accessibility conventions. It provides a small set of form and page
-components using Leptos directly; it does not hydrate the static `Render` builders.
-This preview does not yet cover the full Stucco component catalogue. Its separate
-prerelease version is **0.1.0-alpha.1**, published on crates.io; the existing
-Stucco crates are at 0.5.1.
+styles and accessibility conventions. It provides form, page, navigation, table,
+data-display and feedback components using Leptos directly; it does not hydrate
+the static `Render` builders. This preview does not yet cover the full Stucco
+component catalogue. Its separate prerelease version is **0.1.0-alpha.2**, prepared
+for release; **0.1.0-alpha.1** is the version published on crates.io so far. The
+existing Stucco crates are at 0.5.1.
 
 | Area | Available in this preview | Still missing |
 | --- | --- | --- |
@@ -28,7 +29,7 @@ Add these dependencies and feature forwards to the application's `Cargo.toml`:
 ```toml
 [dependencies]
 leptos = { version = "=0.8.22", default-features = false }
-stucco-leptos = { version = "=0.1.0-alpha.1", default-features = false }
+stucco-leptos = { version = "=0.1.0-alpha.2", default-features = false }
 stucco-theme = { version = "=0.5.1", optional = true }
 
 [features]

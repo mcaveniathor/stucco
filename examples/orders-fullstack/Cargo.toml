@@ -25,7 +25,7 @@ leptos = { version = "=0.8.22", default-features = false }
 leptos_router = { version = "=0.8.17" }
 leptos_meta = { version = "=0.8.7" }
 form_urlencoded.workspace = true
-stucco-leptos = { path = "../../crates/stucco-leptos", version = "=0.1.0-alpha.1", default-features = false }
+stucco-leptos = { path = "../../crates/stucco-leptos", version = "=0.1.0-alpha.2", default-features = false }
 serde = { version = "1", features = ["derive"] }
 leptos_axum = { version = "=0.8.10", optional = true }
 axum = { workspace = true, features = ["http1", "tokio", "form", "multipart", "json"], optional = true }
