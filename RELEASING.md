@@ -78,9 +78,9 @@ preview follows the policy below.
 
 ## Release the opt-in Leptos preview
 
-`stucco-leptos` is a separately versioned component integration, currently
-prepared as `0.1.0-alpha.1`. Preparing and verifying its archive does not mean
-that version has been published. Keep the stable eight-crate workflow's
+`stucco-leptos` is a separately versioned component integration, published as
+`0.1.0-alpha.1`. Preparing and verifying a later version's archive does not
+mean that version has been published. Keep the stable eight-crate workflow's
 `stucco-leptos` exclusion; a preview release does not bump the workspace
 version or publish the Orders application.
 
