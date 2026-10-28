@@ -10,7 +10,8 @@ Stucco crates are at 0.5.1.
 | Area | Available in this preview | Still missing |
 | --- | --- | --- |
 | Form controls | `TextField`, `Autocomplete`, `RepeatedField`, `FileInput`, `SubmitButton` | Selects, date inputs and other specialized controls |
-| Form feedback | `ErrorSummary`, `StatusMessage` | Other feedback and notification components |
+| Form feedback | `ErrorSummary`, `StatusMessage` | Notification components |
+| Status feedback | `Progress`, `Meter`, `Callout`, `EmptyState` | `LiveRegion`, `FlashMessages`, `ReadinessPanel` |
 | Page composition | `PageHeader` with description and actions, `Dialog` | The remaining static component catalogue |
 | Navigation | `NavLink`, `Tabs`, `Breadcrumbs`, `Steps`, `Pagination`, `CursorPagination` | |
 | Tables | `Table`, `TableHead`, `TableBody`, `Row`, `Cell`, `HeaderCell` | `DataTable`, filters, search and sorting controls |
@@ -377,6 +378,21 @@ fn OrderSummary(orders: Signal<String>) -> impl IntoView {
   `time`; with none it shows `empty_label`.
 - `Sparkline` takes a `summary` and `values` signal; non-finite samples are ignored.
   `no_data_label` and `values_label` translate its text.
+
+## Progress, meters and callouts
+
+- `Progress` needs a page-unique `id` (its label uses it) and a `label`. A `value`
+  shows determinate progress, clamped between 0 and `max` (default 100); leave it
+  out for an indeterminate task. `show_value` also writes the percentage as text.
+- `Meter` needs an `id`, `label`, `value`, `min` and `max`, and takes optional
+  `low`, `high`, `optimum` and a `value_text` description. `{id}-text` is reserved.
+  Out-of-range values and degenerate bounds are corrected the way the static meter
+  corrects them.
+- `Callout` takes a `tone`, an optional `title` and content. Place actions in a
+  `<CalloutActions slot>` child. A visually hidden prefix names the tone ("Note:",
+  "Success:", "Warning:", "Important:"); translate them with `note_label`,
+  `success_label`, `warning_label` and `important_label`.
+- `EmptyState` takes a `title` and optional `description` and `actions` closures.
 
 ## Styles and validation
 
