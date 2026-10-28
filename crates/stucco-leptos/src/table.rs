@@ -1,9 +1,14 @@
 //! Semantic tables: [`Table`], [`TableHead`], [`TableBody`], [`Row`], [`Cell`] and
 //! [`HeaderCell`].
 
+use leptos::context::Provider;
 use leptos::prelude::*;
 
 /// Whether the enclosing [`Table`] presents rows as cards in narrow containers.
+///
+/// Provided with `Provider`, which gives each table its own context owner. Rows
+/// built later, by `<For>` or a reactive closure, then read their own table's value
+/// rather than whichever table was rendered last.
 #[derive(Clone, Copy)]
 struct Cards(bool);
 
@@ -56,7 +61,6 @@ pub fn Table(
     /// A [`TableHead`] and a [`TableBody`].
     children: Children,
 ) -> impl IntoView {
-    provide_context(Cards(cards));
     let name = caption.clone();
     let wrapper = if cards {
         "st-table-scroll st-table-cards"
@@ -67,7 +71,7 @@ pub fn Table(
         <div class=wrapper role="region" aria-label=name tabindex="0">
             <table class="st-table" role=cards.then_some("table")>
                 <caption>{caption}</caption>
-                {children()}
+                <Provider value=Cards(cards)>{children()}</Provider>
             </table>
         </div>
     }
@@ -79,8 +83,11 @@ pub fn TableHead(
     /// The heading rows.
     children: Children,
 ) -> impl IntoView {
-    provide_context(InHead(true));
-    view! { <thead role=cards().then_some("rowgroup")>{children()}</thead> }
+    view! {
+        <thead role=cards().then_some("rowgroup")>
+            <Provider value=InHead(true)>{children()}</Provider>
+        </thead>
+    }
 }
 
 /// The table's data rows.
@@ -90,8 +97,11 @@ pub fn TableBody(
     #[prop(optional)]
     children: Option<Children>,
 ) -> impl IntoView {
-    provide_context(InHead(false));
-    view! { <tbody role=cards().then_some("rowgroup")>{children.map(|rows| rows())}</tbody> }
+    view! {
+        <tbody role=cards().then_some("rowgroup")>
+            <Provider value=InHead(false)>{children.map(|rows| rows())}</Provider>
+        </tbody>
+    }
 }
 
 /// A table row.

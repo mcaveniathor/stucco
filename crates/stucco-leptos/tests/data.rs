@@ -427,3 +427,32 @@ fn sparkline_text_is_translatable_and_escaped() {
     });
     assert!(html.contains("Werte: 1, 2"), "{html}");
 }
+
+#[test]
+fn timeline_built_from_an_empty_list_shows_the_empty_item() {
+    let entries: Vec<(&str, &str)> = Vec::new();
+    let html = render(|| {
+        view! {
+            <Timeline label="History" empty=entries.is_empty()>
+                {entries.into_iter()
+                    .map(|(datetime, time)| view! { <TimelineItem datetime=datetime time=time>"x"</TimelineItem> })
+                    .collect_view()}
+            </Timeline>
+        }
+        .to_html()
+    });
+    assert_parity(&html, &to_html(&StaticTimeline::new("History")));
+}
+
+#[test]
+fn timeline_with_entries_ignores_the_empty_flag_being_false() {
+    let html = render(|| {
+        view! {
+            <Timeline label="History" empty=false>
+                <TimelineItem datetime="2026-10-01" time="1 Oct">"Created"</TimelineItem>
+            </Timeline>
+        }
+        .to_html()
+    });
+    assert!(!html.contains("No activity yet"), "{html}");
+}

@@ -376,7 +376,8 @@ fn OrderSummary(orders: Signal<String>) -> impl IntoView {
   `actions` as closures returning views. `Panel` needs a page-unique `id` and
   reserves `{id}-title` for its heading; `level` sets the heading level.
 - `Timeline` holds `TimelineItem`s with a machine-readable `datetime` and display
-  `time`; with none it shows `empty_label`.
+  `time`. With no children, or `empty=true`, it shows `empty_label`; pass
+  `empty=entries.is_empty()` when the entries come from a list.
 - `Sparkline` takes a `summary` and `values` signal; non-finite samples are ignored.
   `no_data_label` and `values_label` translate its text.
 
@@ -386,7 +387,8 @@ fn OrderSummary(orders: Signal<String>) -> impl IntoView {
   shows determinate progress, clamped between 0 and `max` (default 100); leave it
   out for an indeterminate task. `show_value` also writes the percentage as text.
 - `Meter` needs an `id`, `label`, `value`, `min` and `max`, and takes optional
-  `low`, `high`, `optimum` and a `value_text` description. `{id}-text` is reserved.
+  `low`, `high`, `optimum` and a `value_text` description, which can be a signal so
+  it follows the value. `{id}-text` is reserved.
   Out-of-range values and degenerate bounds are corrected the way the static meter
   corrects them.
 - `Callout` takes a `tone`, an optional `title` and content. Place actions in a
