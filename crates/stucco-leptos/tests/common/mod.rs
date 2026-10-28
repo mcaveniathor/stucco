@@ -4,7 +4,8 @@
 
 /// Reduces HTML to a form where equivalent markup compares equal: hydration
 /// markers (`<!>`) and comments are dropped, attributes are sorted by name, and
-/// whitespace between tags is removed. Text content is left untouched.
+/// whitespace between tags is removed. Self-closing tags are written as open tags,
+/// and SVG shapes have no closing tag. Text content is left untouched.
 pub fn normalize(html: &str) -> String {
     let mut out = String::new();
     let mut rest = html;
@@ -52,6 +53,8 @@ fn tag_end(s: &str) -> usize {
     s.len()
 }
 
+const VOID_SHAPES: [&str; 5] = ["path", "circle", "polyline", "line", "rect"];
+
 fn normalize_tag(tag: &str) -> String {
     let inner = tag.trim_start_matches('<').trim_end_matches('>');
     let (closing, inner) = match inner.strip_prefix('/') {
@@ -59,12 +62,15 @@ fn normalize_tag(tag: &str) -> String {
         None => (false, inner),
     };
     if closing {
-        return format!("</{}>", inner.trim());
+        // Shapes are void in practice: `<path/>` and `<path></path>` are the same.
+        let name = inner.trim();
+        return if VOID_SHAPES.contains(&name) {
+            String::new()
+        } else {
+            format!("</{name}>")
+        };
     }
-    let (inner, self_closing) = match inner.strip_suffix('/') {
-        Some(inner) => (inner, true),
-        None => (inner, false),
-    };
+    let inner = inner.strip_suffix('/').unwrap_or(inner);
     let name_end = inner.find(char::is_whitespace).unwrap_or(inner.len());
     let (name, attrs) = inner.split_at(name_end);
     let mut attrs = split_attributes(attrs);
@@ -73,9 +79,6 @@ fn normalize_tag(tag: &str) -> String {
     for attr in attrs {
         out.push(' ');
         out.push_str(&attr);
-    }
-    if self_closing {
-        out.push_str(" /");
     }
     out.push('>');
     out

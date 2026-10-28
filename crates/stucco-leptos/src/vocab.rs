@@ -1,6 +1,6 @@
 //! Small closed sets of presentation values shared by data components.
 //!
-//! These mirror the `Tone` and `Size` values of `stucco-ui`, which is
+//! These mirror the `Tone`, `Trend` and `Size` values of `stucco-ui`, which is
 //! not part of the WASM build, and render the same `data-*` attribute values.
 
 /// Text and status colour.
@@ -33,6 +33,27 @@ impl Tone {
             Self::Warning => "warning",
             Self::Danger => "danger",
             Self::Info => "info",
+        }
+    }
+}
+
+/// Which way a value moved.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Trend {
+    /// It went up.
+    Up,
+    /// It went down.
+    Down,
+    /// It stayed the same.
+    Flat,
+}
+
+impl Trend {
+    pub(crate) fn as_str(self) -> &'static str {
+        match self {
+            Self::Up => "up",
+            Self::Down => "down",
+            Self::Flat => "flat",
         }
     }
 }
