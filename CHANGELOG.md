@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- `stucco-leptos`: add `NavLink`, `Tabs`, `Breadcrumbs`, `Steps`, `Pagination` and
+  `CursorPagination`. They emit the same markup as the static components, work as
+  plain links before hydration, and are checked against the static renderer. The
+  Orders component gallery demonstrates them.
+
 ## 0.5.1 — 2026-10-27
 
 Backward-compatible middleware additions for full-stack Rust applications, and
