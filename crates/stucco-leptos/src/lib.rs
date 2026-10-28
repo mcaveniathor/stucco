@@ -56,6 +56,7 @@ mod href;
 mod inputs;
 mod navigation;
 mod overlay;
+mod table;
 
 pub use inputs::{
     Autocomplete, AutocompleteOption, FileInput, RepeatedField, RepeatedValue, SelectedFile,
@@ -65,6 +66,7 @@ pub use navigation::{
     StepItem, Steps, Tabs,
 };
 pub use overlay::Dialog;
+pub use table::{Cell, CellKind, HeaderCell, Row, Table, TableBody, TableHead};
 
 /// The existing Stucco appearance used by a [`SubmitButton`].
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
