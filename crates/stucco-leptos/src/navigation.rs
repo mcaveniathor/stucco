@@ -41,3 +41,41 @@ pub fn Tabs(
 ) -> impl IntoView {
     view! { <nav class="st-tabs" aria-label=label>{children()}</nav> }
 }
+
+/// The trail from the top of the site to this page.
+///
+/// Fill it with [`BreadcrumbLink`] items for the pages above this one and a final
+/// [`BreadcrumbCurrent`]. The separators are drawn by CSS, so screen readers do
+/// not read them. Place it above `PageHeader`; the header has no slot for it.
+#[component]
+pub fn Breadcrumbs(
+    /// Accessible name of the landmark; name it when a page has more than one trail.
+    #[prop(default = "Breadcrumb".to_owned(), into)]
+    label: String,
+    /// The trail's items.
+    children: Children,
+) -> impl IntoView {
+    view! { <nav class="st-breadcrumbs" aria-label=label><ol>{children()}</ol></nav> }
+}
+
+/// A page above the current one in a [`Breadcrumbs`] trail.
+#[component]
+pub fn BreadcrumbLink(
+    /// Destination URL; unsafe schemes such as `javascript:` render as `#`.
+    #[prop(into)]
+    href: String,
+    /// Link text.
+    children: Children,
+) -> impl IntoView {
+    let href = safe_href(&href);
+    view! { <li><a href=href>{children()}</a></li> }
+}
+
+/// The current page, last in a [`Breadcrumbs`] trail.
+#[component]
+pub fn BreadcrumbCurrent(
+    /// The page's name.
+    children: Children,
+) -> impl IntoView {
+    view! { <li><span aria-current="page">{children()}</span></li> }
+}

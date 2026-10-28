@@ -5,8 +5,10 @@ mod common;
 use common::assert_parity;
 use leptos::prelude::*;
 use stucco_core::to_html;
-use stucco_leptos::{NavLink, Tabs};
-use stucco_ui::navigation::{NavLink as StaticNavLink, Tabs as StaticTabs};
+use stucco_leptos::{BreadcrumbCurrent, BreadcrumbLink, Breadcrumbs, NavLink, Tabs};
+use stucco_ui::navigation::{
+    Breadcrumbs as StaticBreadcrumbs, NavLink as StaticNavLink, Tabs as StaticTabs,
+};
 
 fn render(view: impl FnOnce() -> String) -> String {
     Owner::new().with(view)
@@ -91,4 +93,59 @@ fn current_signal_initial_value_is_rendered() {
             .to_html()
     });
     assert!(html.contains(r#"aria-current="page""#), "{html}");
+}
+
+#[test]
+fn breadcrumbs_match_static_markup() {
+    let html = render(|| {
+        view! {
+            <Breadcrumbs>
+                <BreadcrumbLink href="/orders">"Orders"</BreadcrumbLink>
+                <BreadcrumbCurrent>"Order 42"</BreadcrumbCurrent>
+            </Breadcrumbs>
+        }
+        .to_html()
+    });
+    let expected = to_html(
+        &StaticBreadcrumbs::new()
+            .link("Orders", "/orders")
+            .current("Order 42"),
+    );
+    assert_parity(&html, &expected);
+    assert!(html.contains(r#"aria-label="Breadcrumb""#), "{html}");
+}
+
+#[test]
+fn breadcrumb_label_is_overridable() {
+    let html = render(|| {
+        view! { <Breadcrumbs label="Trail"><BreadcrumbCurrent>"Here"</BreadcrumbCurrent></Breadcrumbs> }
+            .to_html()
+    });
+    assert_parity(
+        &html,
+        &to_html(&StaticBreadcrumbs::new().label("Trail").current("Here")),
+    );
+}
+
+#[test]
+fn breadcrumb_link_sanitizes_href() {
+    let html = render(|| {
+        view! {
+            <Breadcrumbs>
+                <BreadcrumbLink href="javascript:alert(1)">"Bad"</BreadcrumbLink>
+            </Breadcrumbs>
+        }
+        .to_html()
+    });
+    assert!(html.contains(r##"href="#""##), "{html}");
+    assert!(!html.contains("javascript"), "{html}");
+}
+
+#[test]
+fn breadcrumbs_with_only_the_current_page_have_one_item() {
+    let html = render(|| {
+        view! { <Breadcrumbs><BreadcrumbCurrent>"Home"</BreadcrumbCurrent></Breadcrumbs> }.to_html()
+    });
+    assert_eq!(html.matches("<li>").count(), 1, "{html}");
+    assert_parity(&html, &to_html(&StaticBreadcrumbs::new().current("Home")));
 }
