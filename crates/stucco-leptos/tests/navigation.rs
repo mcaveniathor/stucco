@@ -5,9 +5,12 @@ mod common;
 use common::assert_parity;
 use leptos::prelude::*;
 use stucco_core::to_html;
-use stucco_leptos::{BreadcrumbCurrent, BreadcrumbLink, Breadcrumbs, NavLink, Tabs};
+use stucco_leptos::{
+    BreadcrumbCurrent, BreadcrumbLink, Breadcrumbs, NavLink, StepItem, Steps, Tabs,
+};
 use stucco_ui::navigation::{
-    Breadcrumbs as StaticBreadcrumbs, NavLink as StaticNavLink, Tabs as StaticTabs,
+    Breadcrumbs as StaticBreadcrumbs, NavLink as StaticNavLink, Steps as StaticSteps,
+    Tabs as StaticTabs,
 };
 
 fn render(view: impl FnOnce() -> String) -> String {
@@ -148,4 +151,99 @@ fn breadcrumbs_with_only_the_current_page_have_one_item() {
     });
     assert_eq!(html.matches("<li>").count(), 1, "{html}");
     assert_parity(&html, &to_html(&StaticBreadcrumbs::new().current("Home")));
+}
+
+fn step(label: &str, href: Option<&str>) -> StepItem {
+    StepItem {
+        label: label.to_owned(),
+        href: href.map(str::to_owned),
+    }
+}
+
+fn checkout_steps() -> Vec<StepItem> {
+    vec![
+        step("Cart", Some("/cart")),
+        step("Pay", Some("/pay")),
+        step("Done", Some("/done")),
+    ]
+}
+
+#[test]
+fn steps_match_static_markup() {
+    for current in [0, 1, 2] {
+        let html = render(|| {
+            view! { <Steps label="Checkout" steps=checkout_steps() current=current/> }.to_html()
+        });
+        let expected = to_html(
+            &StaticSteps::new("Checkout")
+                .step("Cart", "/cart")
+                .step("Pay", "/pay")
+                .step("Done", "/done")
+                .current(current),
+        );
+        assert_parity(&html, &expected);
+    }
+}
+
+#[test]
+fn steps_default_to_the_first_step() {
+    let html = render(|| view! { <Steps label="Checkout" steps=checkout_steps()/> }.to_html());
+    assert!(html.contains(r#"aria-current="step""#), "{html}");
+    assert!(html.contains(r#"data-state="current""#), "{html}");
+}
+
+#[test]
+fn a_finished_step_without_a_link_renders_text() {
+    let steps = vec![step("Cart", None), step("Pay", Some("/pay"))];
+    let html = render(|| view! { <Steps label="Checkout" steps=steps current=1/> }.to_html());
+    let expected = to_html(
+        &StaticSteps::new("Checkout")
+            .step_disabled("Cart")
+            .step("Pay", "/pay")
+            .current(1),
+    );
+    assert_parity(&html, &expected);
+    assert!(!html.contains("<a "), "{html}");
+}
+
+#[test]
+fn steps_with_no_items_render_nothing() {
+    let html = render(|| view! { <Steps label="Checkout" steps=Vec::new()/> }.to_html());
+    assert!(!html.contains("<nav"), "{html}");
+    assert_eq!(to_html(&StaticSteps::new("Checkout")), "");
+}
+
+#[test]
+fn current_past_the_end_means_the_last_step() {
+    let html =
+        render(|| view! { <Steps label="Checkout" steps=checkout_steps() current=99/> }.to_html());
+    let expected = to_html(
+        &StaticSteps::new("Checkout")
+            .step("Cart", "/cart")
+            .step("Pay", "/pay")
+            .step("Done", "/done")
+            .current(99),
+    );
+    assert_parity(&html, &expected);
+}
+
+#[test]
+fn hidden_step_text_is_translatable() {
+    let html = render(|| {
+        view! {
+            <Steps label="Paiement" steps=checkout_steps() current=1
+                completed_label=" (terminé)" not_started_label=" (à venir)"/>
+        }
+        .to_html()
+    });
+    assert!(html.contains("(terminé)"), "{html}");
+    assert!(html.contains("(à venir)"), "{html}");
+    assert!(!html.contains("(completed)"), "{html}");
+}
+
+#[test]
+fn step_hrefs_are_sanitized() {
+    let steps = vec![step("Cart", Some("javascript:alert(1)")), step("Pay", None)];
+    let html = render(|| view! { <Steps label="Checkout" steps=steps current=1/> }.to_html());
+    assert!(!html.contains("javascript"), "{html}");
 }
