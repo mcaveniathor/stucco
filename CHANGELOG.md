@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## Unreleased (stucco-leptos 0.1.0-alpha.2, prepared)
 
 - `stucco-leptos`: add `NavLink`, `Tabs`, `Breadcrumbs`, `Steps`, `Pagination` and
   `CursorPagination`. They emit the same markup as the static components, work as
