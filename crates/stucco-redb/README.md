@@ -103,7 +103,10 @@ match saved {
   only, as before.
 - A failed `update_if` or `remove_if` writes nothing and leaves the
   transaction usable: match on `is_conflict()` and carry on, or return the
-  error with `?` to roll everything back.
+  error with `?` to roll everything back. A codec error does the same. A write
+  that fails after redb has started applying it (a value over redb's size
+  limit, say) makes the transaction rollback-only: further calls error, and
+  `write` rolls back even if your closure handled the error and returned `Ok`.
 - The closure may return your own error type, which only needs
   `From<StoreError>`. A closure that only ever returns `Ok` needs
   `Ok::<_, StoreError>(..)` so the compiler can choose it.

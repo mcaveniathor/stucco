@@ -23,6 +23,8 @@ impl Store {
     ///
     /// The transaction commits when `work` returns `Ok`. If it returns `Err`
     /// or panics, nothing is written (a panic is resumed after the rollback).
+    /// It also rolls back, returning an error, when a write failed partway
+    /// (see [`WriteTx`]) even if `work` handled that error and returned `Ok`.
     /// `E` may be your own error type; it only needs `From<StoreError>`, and a
     /// closure that only ever returns `Ok` needs `Ok::<_, StoreError>(..)` so
     /// the compiler can pick `E`. Calling `write` (or any single-table write)
@@ -49,6 +51,10 @@ impl Store {
         // redb skips its own abort while unwinding and flags the file for
         // repair, so roll back explicitly before resuming a panic.
         match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| work(&mut tx))) {
+            Ok(Ok(_)) if tx.is_poisoned() => {
+                tx.abort();
+                Err(StoreError::invalid("transaction rolled back: a write failed partway").into())
+            }
             Ok(Ok(value)) => {
                 tx.commit()?;
                 Ok(value)

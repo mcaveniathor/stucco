@@ -77,7 +77,7 @@ impl<K, V, KC: KeyCodec<K>, VC: Codec<V>> IndexTable<K, V, KC, VC> {
         let parts = self.parts();
         let tx = self.table.store.db.begin_write().map_err(StoreError::new)?;
         for (key, value) in rows {
-            put_row(&tx, &parts, key, value)?;
+            put_row(&tx, &parts, key, value, &mut false)?;
         }
         tx.commit().map_err(StoreError::new)
     }
@@ -85,7 +85,7 @@ impl<K, V, KC: KeyCodec<K>, VC: Codec<V>> IndexTable<K, V, KC, VC> {
     pub fn remove(&self, key: &K) -> Result<bool, StoreError> {
         let parts = self.parts();
         let tx = self.table.store.db.begin_write().map_err(StoreError::new)?;
-        let existed = remove_row(&tx, &parts, key)?;
+        let existed = remove_row(&tx, &parts, key, &mut false)?;
         tx.commit().map_err(StoreError::new)?;
         Ok(existed)
     }
