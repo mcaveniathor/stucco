@@ -35,7 +35,7 @@ loading or failure is presented.
 | Boundary | Responsibility |
 | --- | --- |
 | Leptos and `cargo-leptos` | Components, signals, resources, actions, routing, SSR/hydration and the standard build/development workflow. Use their APIs directly. |
-| `stucco-leptos` | Idiomatic Leptos components sharing Stucco's design and accessibility conventions. Separate `ssr` and `hydrate` feature builds. Independent preview: `0.1.0-alpha.1` published on crates.io, `0.1.0-alpha.2` (navigation, tables, data displays and feedback) prepared. |
+| `stucco-leptos` | Idiomatic Leptos components sharing Stucco's design and accessibility conventions. Separate `ssr` and `hydrate` feature builds. Independent `0.1.0-alpha.2` preview (navigation, tables, data displays and feedback added to the form components) published on crates.io. |
 | `stucco-theme` and existing CSS | Shared visual tokens and styles. Avoid a second design system or a copy of each stylesheet. |
 | `stucco-core` and `stucco-ui` | Preserve existing HTML rendering and builder APIs. Share pure logic and visual assets where useful; do not convert arbitrary HTML strings into reactive components. |
 | `stucco-tower` | Preserve existing middleware, request context, CSRF, flash and native response helpers. Add integration hooks only for demonstrated needs. |
@@ -377,8 +377,8 @@ English/Arabic RTL gallery were visually inspected across the three browsers.
 ## Step 5 Publish components and maintain the reference
 
 Follow-up: `0.1.0-alpha.2` adds Leptos navigation, table, data-display and
-feedback components that render the static components' markup; it is prepared
-and unpublished.
+feedback components that render the static components' markup; it is published
+on crates.io.
 
 **Release preparation implemented; publication pending.** `stucco-leptos` now has
 an independent **0.1.0-alpha.1** preview version, explicit package contents and
