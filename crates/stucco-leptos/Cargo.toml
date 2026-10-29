@@ -1,7 +1,7 @@
 [package]
 name = "stucco-leptos"
 description = "Reactive Leptos components using Stucco's existing styles and accessibility conventions."
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 edition.workspace = true
 rust-version = "1.88"
 license.workspace = true

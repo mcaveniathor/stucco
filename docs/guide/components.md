@@ -83,6 +83,13 @@ impl Render for Disclosure<'_> {
 
 For one-off markup, `render_fn(|cx| ...)` wraps a closure as a component.
 
+## In Leptos
+
+The static builders above render HTML on the server. For Leptos applications the
+separately versioned [`stucco-leptos`](https://github.com/mcaveniathor/stucco/tree/main/crates/stucco-leptos) preview
+offers navigation, table, data-display and feedback components that emit the same
+markup and share the same stylesheet, so a page looks the same either way.
+
 ## Application shell
 
 `AppShell` lays out a page with a header, navigation, the main content and a footer. It has two kinds of navigation:
