@@ -47,6 +47,7 @@ mod revision;
 mod scan;
 mod store;
 mod table;
+mod transaction;
 mod write;
 #[cfg(feature = "tokio")]
 pub use async_table::AsyncTable;
@@ -59,3 +60,4 @@ pub use revision::{InvalidRevision, Revision};
 pub use scan::ScanRequest;
 pub use store::Store;
 pub use table::Table;
+pub use transaction::{Handle, ReadTx, WriteTx};
