@@ -62,6 +62,59 @@ Cursor scans return an owned page with an unknown total. Predicates may still
 visit many records. Numbered mode deliberately materializes all matching records,
 so use it for small collections. Cursors are locators, not authorization tokens.
 
+## Transactions
+
+`Store::write` runs a closure against one redb write transaction that can touch
+any number of tables and indexes. It commits when the closure returns `Ok`;
+an `Err` or a panic writes nothing. `Store::read` gives one consistent snapshot
+across tables.
+
+```rust,no_run
+use stucco_redb::{PostcardCodec, Revision, Store, StoreError, U64Key};
+#[derive(serde::Serialize, serde::Deserialize)]
+struct Account { orders: u32 }
+
+let store = Store::open("shop.redb")?;
+let orders = store
+    .table::<u64, String, _, _>("orders", U64Key, PostcardCodec::default())?
+    .index("customer", |name| name.as_bytes().to_vec())?;
+let audit = store.table::<u64, String, _, _>("audit", U64Key, PostcardCodec::default())?;
+let accounts = store.table::<u64, Account, _, _>("accounts", U64Key, PostcardCodec::default())?;
+
+// The account's revision came back from the form that is being submitted.
+let submitted: Revision = "AAAAAAAAAAAAAAAAAAAAAA".parse().expect("valid");
+let saved = store.write(|tx| {
+    let (id, _) = tx.create(&orders, |id| format!("customer of order {id}"))?;
+    tx.put(&audit, &id, &"created".to_string())?;
+    tx.update_if(&accounts, &7, &submitted, |account| Account { orders: account.orders + 1 })?;
+    Ok::<_, StoreError>(id)
+});
+match saved {
+    Ok(_id) => {}                              // all three tables changed
+    Err(e) if e.is_conflict() => {}            // account changed or missing: nothing was written
+    Err(e) => return Err(e),
+}
+# Ok::<(), StoreError>(())
+```
+
+- `WriteTx` has `get`, `get_with_revision`, `put`, `remove`, `update_if`,
+  `remove_if` and (on `u64` tables) `create`, for any `Table` or `IndexTable`.
+  An `IndexTable` keeps its index in step; a plain `Table` writes the record
+  only, as before.
+- A failed `update_if` or `remove_if` writes nothing and leaves the
+  transaction usable: match on `is_conflict()` and carry on, or return the
+  error with `?` to roll everything back.
+- The closure may return your own error type, which only needs
+  `From<StoreError>`. A closure that only ever returns `Ok` needs
+  `Ok::<_, StoreError>(..)` so the compiler can choose it.
+- Do not call `Store::write` or a single-table write from inside the closure
+  on the same thread: redb allows one writer, so it would wait forever.
+- `AsyncStore::new(store)` (or `AsyncTable::store()`) is the async form. A
+  transaction runs whole on the blocking pool under one permit, so the write
+  lock is never held across an `.await`, and the permits are shared with every
+  `AsyncTable` made from it. Wrap the future in `tokio::time::timeout` for a
+  deadline; a call dropped while waiting for a permit runs nothing.
+
 Minimum Rust: **1.90**. The API is experimental.
 See [the orders example](https://github.com/mcaveniathor/stucco/tree/main/examples/orders)
 for persistence, query mapping, and server-rendered controls.
