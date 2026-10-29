@@ -1,7 +1,7 @@
 //! Multi-table transactions: [`Store::write`](crate::Store::write) and
 //! [`Store::read`](crate::Store::read) hand a closure one redb transaction.
 use crate::index::compound;
-use crate::{Codec, IndexTable, KeyCodec, StoreError, Table};
+use crate::{Codec, IndexTable, KeyCodec, Revision, StoreError, Table};
 use redb::ReadableTable;
 use std::sync::Arc;
 
@@ -162,6 +162,85 @@ pub(crate) fn remove_row<K: 'static, V: 'static>(
     Ok(true)
 }
 
+/// Reads one record with the revision of its stored bytes.
+pub(crate) fn get_row_with_revision<K: 'static, V: 'static>(
+    data: &impl ReadableTable<&'static [u8], &'static [u8]>,
+    parts: &Parts<'_, K, V>,
+    key: &K,
+) -> Result<Option<(V, Revision)>, StoreError> {
+    let key = parts.keys.encode(key)?;
+    let Some(stored) = data.get(key.as_slice()).map_err(StoreError::new)? else {
+        return Ok(None);
+    };
+    let stored = stored.value();
+    Ok(Some((parts.values.decode(stored)?, Revision::of(stored))))
+}
+
+/// Checks the revision, then writes `change`'s result (or removes the record
+/// on `None`) with its index. Everything fallible runs before the first write,
+/// so a failure leaves the transaction exactly as it was.
+pub(crate) fn conditional_row<K: 'static, V: 'static>(
+    tx: &redb::WriteTransaction,
+    parts: &Parts<'_, K, V>,
+    key: &K,
+    expected: &Revision,
+    change: impl FnOnce(V) -> Option<V>,
+) -> Result<Option<Revision>, StoreError> {
+    let key = parts.keys.encode(key)?;
+    let mut data = tx.open_table(bytes(parts.table)).map_err(StoreError::new)?;
+    let current = data
+        .get(key.as_slice())
+        .map_err(StoreError::new)?
+        .map(|stored| stored.value().to_vec());
+    let Some(current) = current else {
+        return Err(StoreError::conflict(None));
+    };
+    let actual = Revision::of(&current);
+    if actual != *expected {
+        return Err(StoreError::conflict(Some(actual)));
+    }
+    let old = parts.values.decode(&current)?;
+    let previous = parts
+        .index
+        .as_ref()
+        .map(|index| compound(&(index.projection)(&old), &key));
+    let written = match change(old) {
+        Some(new) => {
+            let encoded = parts.values.encode(&new)?;
+            let order = parts
+                .index
+                .as_ref()
+                .map(|index| compound(&(index.projection)(&new), &key));
+            Some((encoded, order))
+        }
+        None => None,
+    };
+    let mut order_table = parts
+        .index
+        .as_ref()
+        .map(|index| tx.open_table(bytes(index.name)).map_err(StoreError::new))
+        .transpose()?;
+    if let (Some(table), Some(previous)) = (&mut order_table, &previous) {
+        table.remove(previous.as_slice()).map_err(StoreError::new)?;
+    }
+    match written {
+        Some((encoded, order)) => {
+            data.insert(key.as_slice(), encoded.as_slice())
+                .map_err(StoreError::new)?;
+            if let (Some(table), Some(order)) = (&mut order_table, &order) {
+                table
+                    .insert(order.as_slice(), key.as_slice())
+                    .map_err(StoreError::new)?;
+            }
+            Ok(Some(Revision::of(&encoded)))
+        }
+        None => {
+            data.remove(key.as_slice()).map_err(StoreError::new)?;
+            Ok(None)
+        }
+    }
+}
+
 /// A write transaction spanning any number of tables of one [`Store`](crate::Store).
 ///
 /// Created by [`Store::write`](crate::Store::write); everything done through
@@ -221,6 +300,52 @@ impl WriteTx {
         same_store(&self.db, &parts)?;
         remove_row(&self.tx, &parts, key)
     }
+
+    /// Reads a value and its revision, including this transaction's own writes.
+    pub fn get_with_revision<K: 'static, V: 'static, H: Handle<K, V>>(
+        &self,
+        table: &H,
+        key: &K,
+    ) -> Result<Option<(V, Revision)>, StoreError> {
+        let parts = table.parts();
+        same_store(&self.db, &parts)?;
+        let data = self
+            .tx
+            .open_table(bytes(parts.table))
+            .map_err(StoreError::new)?;
+        get_row_with_revision(&data, &parts, key)
+    }
+
+    /// Replaces the value with `change(current)` if its revision is still
+    /// `expected`, and returns the new revision. Otherwise nothing is written
+    /// and the error is a conflict (see [`IndexTable::update_if`]); the
+    /// transaction stays usable, so you can handle the conflict or return it
+    /// to abort everything.
+    pub fn update_if<K: 'static, V: 'static, H: Handle<K, V>>(
+        &mut self,
+        table: &H,
+        key: &K,
+        expected: &Revision,
+        change: impl FnOnce(V) -> V,
+    ) -> Result<Revision, StoreError> {
+        let parts = table.parts();
+        same_store(&self.db, &parts)?;
+        conditional_row(&self.tx, &parts, key, expected, |old| Some(change(old)))
+            .map(|revision| revision.expect("update writes a value"))
+    }
+
+    /// Removes the record if its revision is still `expected`; otherwise a
+    /// conflict as for [`update_if`](Self::update_if).
+    pub fn remove_if<K: 'static, V: 'static, H: Handle<K, V>>(
+        &mut self,
+        table: &H,
+        key: &K,
+        expected: &Revision,
+    ) -> Result<(), StoreError> {
+        let parts = table.parts();
+        same_store(&self.db, &parts)?;
+        conditional_row(&self.tx, &parts, key, expected, |_| None).map(|_| ())
+    }
 }
 
 /// A read-only snapshot spanning any number of tables of one [`Store`](crate::Store).
@@ -249,5 +374,20 @@ impl ReadTx {
             .open_table(bytes(parts.table))
             .map_err(StoreError::new)?;
         get_row(&data, &parts, key)
+    }
+
+    /// Reads a value and its revision from the snapshot.
+    pub fn get_with_revision<K: 'static, V: 'static, H: Handle<K, V>>(
+        &self,
+        table: &H,
+        key: &K,
+    ) -> Result<Option<(V, Revision)>, StoreError> {
+        let parts = table.parts();
+        same_store(&self.db, &parts)?;
+        let data = self
+            .tx
+            .open_table(bytes(parts.table))
+            .map_err(StoreError::new)?;
+        get_row_with_revision(&data, &parts, key)
     }
 }

@@ -241,3 +241,144 @@ fn concurrent_writers_serialize() {
     }
     assert_eq!(counter.get(&0).unwrap(), Some(200));
 }
+
+use stucco_redb::Revision;
+
+fn stale_revision(orders: &Orders) -> Revision {
+    orders.put(&1, &"Ada".into()).unwrap();
+    let (_, stale) = orders.get_with_revision(&1).unwrap().unwrap();
+    orders.put(&1, &"Grace".into()).unwrap();
+    stale
+}
+
+#[test]
+fn update_if_in_a_transaction_updates_record_and_index() -> Result<(), StoreError> {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, orders, _) = open(&dir);
+    orders.put(&1, &"Ada".into())?;
+    let next = store.write(|tx| {
+        let (_, revision) = tx.get_with_revision(&orders, &1)?.unwrap();
+        tx.update_if(&orders, &1, &revision, |_| "Grace".to_string())
+    })?;
+    assert_eq!(next, orders.revision_of(&"Grace".into())?);
+    assert_eq!(indexed(&orders), ["Grace"]);
+    Ok(())
+}
+
+#[test]
+fn returned_conflict_aborts_the_whole_transaction() -> Result<(), StoreError> {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, orders, audit) = open(&dir);
+    let stale = stale_revision(&orders);
+    let error = store
+        .write(|tx| {
+            tx.put(&audit, &1, &"touched".to_string())?;
+            tx.update_if(&orders, &1, &stale, |_| "Zed".to_string())
+        })
+        .unwrap_err();
+    assert!(error.is_conflict());
+    assert_eq!(
+        error.conflict_revision(),
+        Some(Some(orders.revision_of(&"Grace".into())?))
+    );
+    assert_eq!(audit.get(&1)?, None);
+    assert_eq!(indexed(&orders), ["Grace"]);
+    Ok(())
+}
+
+#[test]
+fn handled_conflict_leaves_the_transaction_usable() -> Result<(), StoreError> {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, orders, audit) = open(&dir);
+    let stale = stale_revision(&orders);
+    store.write(
+        |tx| match tx.update_if(&orders, &1, &stale, |_| "Zed".to_string()) {
+            Err(error) if error.is_conflict() => tx.put(&audit, &1, &"conflict".to_string()),
+            other => other.map(|_| ()),
+        },
+    )?;
+    assert_eq!(audit.get(&1)?, Some("conflict".into()));
+    assert_eq!(indexed(&orders), ["Grace"]);
+    Ok(())
+}
+
+#[test]
+fn update_if_on_a_missing_record_reports_none() {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, orders, _) = open(&dir);
+    let any: Revision = "AAAAAAAAAAAAAAAAAAAAAA".parse().unwrap();
+    let error = store
+        .write(|tx| tx.update_if(&orders, &9, &any, |v: String| v))
+        .unwrap_err();
+    assert!(error.is_conflict());
+    assert_eq!(error.conflict_revision(), Some(None));
+}
+
+#[test]
+fn remove_if_checks_revision_and_clears_the_index() -> Result<(), StoreError> {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, orders, _) = open(&dir);
+    let stale = stale_revision(&orders);
+    let error = store
+        .write(|tx| tx.remove_if(&orders, &1, &stale))
+        .unwrap_err();
+    assert!(error.is_conflict());
+    assert_eq!(indexed(&orders), ["Grace"]);
+    let current = orders.revision_of(&"Grace".into())?;
+    store.write(|tx| tx.remove_if(&orders, &1, &current))?;
+    assert_eq!(orders.get(&1)?, None);
+    assert!(orders.all(true)?.is_empty());
+    Ok(())
+}
+
+#[test]
+fn same_key_edited_repeatedly_keeps_one_index_entry() -> Result<(), StoreError> {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, orders, _) = open(&dir);
+    store.write(|tx| {
+        tx.put(&orders, &1, &"Ada".to_string())?;
+        tx.put(&orders, &1, &"Grace".to_string())?;
+        let (_, revision) = tx.get_with_revision(&orders, &1)?.unwrap();
+        tx.update_if(&orders, &1, &revision, |_| "Zed".to_string())?;
+        tx.put(&orders, &1, &"Zed2".to_string())
+    })?;
+    assert_eq!(indexed(&orders), ["Zed2"]);
+    store.write(|tx| tx.remove(&orders, &1).map(|_| ()))?;
+    assert!(orders.all(true)?.is_empty());
+    Ok(())
+}
+
+#[test]
+fn get_with_revision_inside_matches_revision_of() -> Result<(), StoreError> {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, orders, _) = open(&dir);
+    let expected = orders.revision_of(&"Ada".into())?;
+    store.write(|tx| {
+        tx.put(&orders, &1, &"Ada".to_string())?;
+        let (value, revision) = tx.get_with_revision(&orders, &1)?.unwrap();
+        assert_eq!((value.as_str(), revision), ("Ada", expected));
+        Ok::<_, StoreError>(())
+    })?;
+    store.read(|tx| {
+        let (_, revision) = tx.get_with_revision(&orders, &1)?.unwrap();
+        assert_eq!(revision, expected);
+        assert!(tx.get_with_revision(&orders, &2)?.is_none());
+        Ok::<_, StoreError>(())
+    })
+}
+
+#[test]
+fn plain_table_handles_support_revision_checks() -> Result<(), StoreError> {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, _, audit) = open(&dir);
+    audit.put(&1, &"one".into())?;
+    let (_, revision) = store.read(|tx| tx.get_with_revision(&audit, &1))?.unwrap();
+    store.write(|tx| tx.update_if(&audit, &1, &revision, |_| "two".to_string()))?;
+    assert_eq!(audit.get(&1)?, Some("two".into()));
+    let error = store
+        .write(|tx| tx.remove_if(&audit, &1, &revision))
+        .unwrap_err();
+    assert!(error.is_conflict());
+    assert_eq!(audit.get(&1)?, Some("two".into()));
+    Ok(())
+}
