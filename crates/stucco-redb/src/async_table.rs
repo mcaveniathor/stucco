@@ -1,4 +1,4 @@
-use crate::{Codec, IndexTable, KeyCodec, PostcardCodec, Revision, StoreError, U64Key};
+use crate::{AsyncStore, Codec, IndexTable, KeyCodec, PostcardCodec, Revision, StoreError, U64Key};
 use std::sync::Arc;
 use tokio::sync::Semaphore;
 
@@ -38,6 +38,16 @@ impl<K, V, KC, VC> AsyncTable<K, V, KC, VC> {
             table,
             permits: Arc::new(Semaphore::new(4)),
         }
+    }
+
+    pub(crate) fn with_permits(table: IndexTable<K, V, KC, VC>, permits: Arc<Semaphore>) -> Self {
+        Self { table, permits }
+    }
+
+    /// An [`AsyncStore`] sharing this table's permits, for transactions that
+    /// span several tables.
+    pub fn store(&self) -> AsyncStore {
+        AsyncStore::with_permits(self.table.table.store.clone(), self.permits.clone())
     }
 
     /// Sets the limit before sharing the table. Zero means one.

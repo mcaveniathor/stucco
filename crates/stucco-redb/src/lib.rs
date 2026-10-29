@@ -37,6 +37,8 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 #[cfg(feature = "tokio")]
+mod async_store;
+#[cfg(feature = "tokio")]
 mod async_table;
 mod codec;
 #[cfg(feature = "tokio")]
@@ -49,6 +51,8 @@ mod store;
 mod table;
 mod transaction;
 mod write;
+#[cfg(feature = "tokio")]
+pub use async_store::AsyncStore;
 #[cfg(feature = "tokio")]
 pub use async_table::AsyncTable;
 pub use codec::{Codec, KeyCodec, PostcardCodec, U64Key, Utf8Key};
