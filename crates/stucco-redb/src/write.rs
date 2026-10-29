@@ -1,7 +1,7 @@
 //! Revision-checked writes and id allocation.
-use crate::index::compound;
+use crate::transaction::{Sealed, conditional_row, create_row, get_row_with_revision};
 use crate::{Codec, IndexTable, KeyCodec, Revision, StoreError, U64Key};
-use redb::{ReadableDatabase, ReadableTable};
+use redb::ReadableDatabase;
 
 fn bytes(name: &str) -> redb::TableDefinition<'_, &'static [u8], &'static [u8]> {
     redb::TableDefinition::new(name)
@@ -10,19 +10,12 @@ fn bytes(name: &str) -> redb::TableDefinition<'_, &'static [u8], &'static [u8]> 
 impl<K, V, KC: KeyCodec<K>, VC: Codec<V>> IndexTable<K, V, KC, VC> {
     /// Reads a value and its revision from one snapshot.
     pub fn get_with_revision(&self, key: &K) -> Result<Option<(V, Revision)>, StoreError> {
-        let key = self.table.keys.encode(key)?;
+        let parts = self.parts();
         let tx = self.table.store.db.begin_read().map_err(StoreError::new)?;
         let data = tx
             .open_table(bytes(&self.table.name))
             .map_err(StoreError::new)?;
-        let Some(bytes) = data.get(key.as_slice()).map_err(StoreError::new)? else {
-            return Ok(None);
-        };
-        let bytes = bytes.value();
-        Ok(Some((
-            self.table.values.decode(bytes)?,
-            Revision::of(bytes),
-        )))
+        get_row_with_revision(&data, &parts, key)
     }
 
     /// The revision `value` has once stored. No I/O: use it for rows that
@@ -62,47 +55,9 @@ impl<K, V, KC: KeyCodec<K>, VC: Codec<V>> IndexTable<K, V, KC, VC> {
         expected: &Revision,
         change: impl FnOnce(V) -> Option<V>,
     ) -> Result<Option<Revision>, StoreError> {
-        let key = self.table.keys.encode(key)?;
+        let parts = self.parts();
         let tx = self.table.store.db.begin_write().map_err(StoreError::new)?;
-        let revision = {
-            let mut data = tx
-                .open_table(bytes(&self.table.name))
-                .map_err(StoreError::new)?;
-            let mut index = tx.open_table(bytes(&self.name)).map_err(StoreError::new)?;
-            let current = data
-                .get(key.as_slice())
-                .map_err(StoreError::new)?
-                .map(|v| v.value().to_vec());
-            let Some(current) = current else {
-                return Err(StoreError::conflict(None));
-            };
-            let actual = Revision::of(&current);
-            if actual != *expected {
-                return Err(StoreError::conflict(Some(actual)));
-            }
-            let old = self.table.values.decode(&current)?;
-            index
-                .remove(compound(&(self.projection)(&old), &key).as_slice())
-                .map_err(StoreError::new)?;
-            match change(old) {
-                Some(new) => {
-                    let encoded = self.table.values.encode(&new)?;
-                    data.insert(key.as_slice(), encoded.as_slice())
-                        .map_err(StoreError::new)?;
-                    index
-                        .insert(
-                            compound(&(self.projection)(&new), &key).as_slice(),
-                            key.as_slice(),
-                        )
-                        .map_err(StoreError::new)?;
-                    Some(Revision::of(&encoded))
-                }
-                None => {
-                    data.remove(key.as_slice()).map_err(StoreError::new)?;
-                    None
-                }
-            }
-        };
+        let revision = conditional_row(&tx, &parts, key, expected, change, &mut false)?;
         tx.commit().map_err(StoreError::new)?;
         Ok(revision)
     }
@@ -116,34 +71,9 @@ impl<V, VC: Codec<V>> IndexTable<u64, V, U64Key, VC> {
     /// one unless the two have byte-identical values, in which case the edit
     /// was based on exactly the data stored and goes ahead.
     pub fn create(&self, build: impl FnOnce(u64) -> V) -> Result<(u64, Revision), StoreError> {
+        let parts = self.parts();
         let tx = self.table.store.db.begin_write().map_err(StoreError::new)?;
-        let created = {
-            let mut data = tx
-                .open_table(bytes(&self.table.name))
-                .map_err(StoreError::new)?;
-            let mut index = tx.open_table(bytes(&self.name)).map_err(StoreError::new)?;
-            let last = data
-                .last()
-                .map_err(StoreError::new)?
-                .map(|(k, _)| U64Key.decode(k.value()))
-                .transpose()?
-                .unwrap_or(0);
-            let id = last
-                .checked_add(1)
-                .ok_or_else(|| StoreError::invalid("no ids left"))?;
-            let value = build(id);
-            let key = U64Key.encode(&id)?;
-            let encoded = self.table.values.encode(&value)?;
-            data.insert(key.as_slice(), encoded.as_slice())
-                .map_err(StoreError::new)?;
-            index
-                .insert(
-                    compound(&(self.projection)(&value), &key).as_slice(),
-                    key.as_slice(),
-                )
-                .map_err(StoreError::new)?;
-            (id, Revision::of(&encoded))
-        };
+        let created = create_row(&tx, &parts, build, &mut false)?;
         tx.commit().map_err(StoreError::new)?;
         Ok(created)
     }

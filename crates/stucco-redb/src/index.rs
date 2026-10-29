@@ -1,3 +1,4 @@
+use crate::transaction::{Sealed, put_row, remove_row};
 use crate::{Codec, KeyCodec, PostcardCodec, StoreError, Table, U64Key};
 use redb::{ReadableDatabase, ReadableTable};
 use std::sync::Arc;
@@ -73,62 +74,18 @@ impl<K, V, KC: KeyCodec<K>, VC: Codec<V>> IndexTable<K, V, KC, VC> {
         K: 'a,
         V: 'a,
     {
+        let parts = self.parts();
         let tx = self.table.store.db.begin_write().map_err(StoreError::new)?;
-        {
-            let mut data = tx
-                .open_table(redb::TableDefinition::<&[u8], &[u8]>::new(&self.table.name))
-                .map_err(StoreError::new)?;
-            let mut index = tx
-                .open_table(redb::TableDefinition::<&[u8], &[u8]>::new(&self.name))
-                .map_err(StoreError::new)?;
-            for (key, value) in rows {
-                let key = self.table.keys.encode(key)?;
-                let encoded = self.table.values.encode(value)?;
-                let old = data
-                    .get(key.as_slice())
-                    .map_err(StoreError::new)?
-                    .map(|v| self.table.values.decode(v.value()))
-                    .transpose()?;
-                if let Some(old) = old {
-                    let previous = compound(&(self.projection)(&old), &key);
-                    index.remove(previous.as_slice()).map_err(StoreError::new)?;
-                }
-                let order = compound(&(self.projection)(value), &key);
-                data.insert(key.as_slice(), encoded.as_slice())
-                    .map_err(StoreError::new)?;
-                index
-                    .insert(order.as_slice(), key.as_slice())
-                    .map_err(StoreError::new)?;
-            }
+        for (key, value) in rows {
+            put_row(&tx, &parts, key, value, &mut false)?;
         }
         tx.commit().map_err(StoreError::new)
     }
     /// Deletes both record and index entry in one transaction.
     pub fn remove(&self, key: &K) -> Result<bool, StoreError> {
-        let key = self.table.keys.encode(key)?;
+        let parts = self.parts();
         let tx = self.table.store.db.begin_write().map_err(StoreError::new)?;
-        let existed = {
-            let mut data = tx
-                .open_table(redb::TableDefinition::<&[u8], &[u8]>::new(&self.table.name))
-                .map_err(StoreError::new)?;
-            let mut index = tx
-                .open_table(redb::TableDefinition::<&[u8], &[u8]>::new(&self.name))
-                .map_err(StoreError::new)?;
-            let old = data
-                .get(key.as_slice())
-                .map_err(StoreError::new)?
-                .map(|v| self.table.values.decode(v.value()))
-                .transpose()?;
-            if let Some(old) = old {
-                index
-                    .remove(compound(&(self.projection)(&old), &key).as_slice())
-                    .map_err(StoreError::new)?;
-                data.remove(key.as_slice()).map_err(StoreError::new)?;
-                true
-            } else {
-                false
-            }
-        };
+        let existed = remove_row(&tx, &parts, key, &mut false)?;
         tx.commit().map_err(StoreError::new)?;
         Ok(existed)
     }
