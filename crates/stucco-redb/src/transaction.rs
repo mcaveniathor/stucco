@@ -10,11 +10,11 @@ mod sealed {
     use std::sync::Arc;
 
     /// What a transaction needs to know about a table handle.
-    pub struct Parts<'a, K, V> {
+    pub struct Parts<'a, V, KC, VC> {
         pub(crate) db: &'a Arc<redb::Database>,
         pub(crate) table: &'a str,
-        pub(crate) keys: &'a dyn Codec<K>,
-        pub(crate) values: &'a dyn Codec<V>,
+        pub(crate) keys: &'a KC,
+        pub(crate) values: &'a VC,
         pub(crate) index: Option<IndexParts<'a, V>>,
     }
 
@@ -25,10 +25,12 @@ mod sealed {
     }
 
     pub trait Sealed<K, V> {
-        fn parts(&self) -> Parts<'_, K, V>;
+        type Keys: Codec<K>;
+        type Values: Codec<V>;
+        fn parts(&self) -> Parts<'_, V, Self::Keys, Self::Values>;
     }
 }
-use sealed::{Parts, Sealed};
+pub(crate) use sealed::{Parts, Sealed};
 
 /// A [`Table`] or [`IndexTable`] that a transaction can read and write.
 ///
@@ -36,8 +38,10 @@ use sealed::{Parts, Sealed};
 /// the record only. This trait is sealed.
 pub trait Handle<K, V>: sealed::Sealed<K, V> {}
 
-impl<K: 'static, V: 'static, KC: KeyCodec<K>, VC: Codec<V>> Sealed<K, V> for Table<K, V, KC, VC> {
-    fn parts(&self) -> Parts<'_, K, V> {
+impl<K, V, KC: KeyCodec<K>, VC: Codec<V>> Sealed<K, V> for Table<K, V, KC, VC> {
+    type Keys = KC;
+    type Values = VC;
+    fn parts(&self) -> Parts<'_, V, KC, VC> {
         Parts {
             db: &self.store.db,
             table: &self.name,
@@ -47,12 +51,12 @@ impl<K: 'static, V: 'static, KC: KeyCodec<K>, VC: Codec<V>> Sealed<K, V> for Tab
         }
     }
 }
-impl<K: 'static, V: 'static, KC: KeyCodec<K>, VC: Codec<V>> Handle<K, V> for Table<K, V, KC, VC> {}
+impl<K, V, KC: KeyCodec<K>, VC: Codec<V>> Handle<K, V> for Table<K, V, KC, VC> {}
 
-impl<K: 'static, V: 'static, KC: KeyCodec<K>, VC: Codec<V>> Sealed<K, V>
-    for IndexTable<K, V, KC, VC>
-{
-    fn parts(&self) -> Parts<'_, K, V> {
+impl<K, V, KC: KeyCodec<K>, VC: Codec<V>> Sealed<K, V> for IndexTable<K, V, KC, VC> {
+    type Keys = KC;
+    type Values = VC;
+    fn parts(&self) -> Parts<'_, V, KC, VC> {
         Parts {
             db: &self.table.store.db,
             table: &self.table.name,
@@ -65,16 +69,16 @@ impl<K: 'static, V: 'static, KC: KeyCodec<K>, VC: Codec<V>> Sealed<K, V>
         }
     }
 }
-impl<K: 'static, V: 'static, KC: KeyCodec<K>, VC: Codec<V>> Handle<K, V>
-    for IndexTable<K, V, KC, VC>
-{
-}
+impl<K, V, KC: KeyCodec<K>, VC: Codec<V>> Handle<K, V> for IndexTable<K, V, KC, VC> {}
 
 fn bytes(name: &str) -> redb::TableDefinition<'_, &'static [u8], &'static [u8]> {
     redb::TableDefinition::new(name)
 }
 
-fn same_store<K, V>(db: &Arc<redb::Database>, parts: &Parts<'_, K, V>) -> Result<(), StoreError> {
+fn same_store<V, KC, VC>(
+    db: &Arc<redb::Database>,
+    parts: &Parts<'_, V, KC, VC>,
+) -> Result<(), StoreError> {
     if Arc::ptr_eq(db, parts.db) {
         Ok(())
     } else {
@@ -83,9 +87,9 @@ fn same_store<K, V>(db: &Arc<redb::Database>, parts: &Parts<'_, K, V>) -> Result
 }
 
 /// Reads and decodes one record from an already opened record table.
-pub(crate) fn get_row<K: 'static, V: 'static>(
+pub(crate) fn get_row<K, V, KC: Codec<K>, VC: Codec<V>>(
     data: &impl ReadableTable<&'static [u8], &'static [u8]>,
-    parts: &Parts<'_, K, V>,
+    parts: &Parts<'_, V, KC, VC>,
     key: &K,
 ) -> Result<Option<V>, StoreError> {
     let key = parts.keys.encode(key)?;
@@ -96,9 +100,9 @@ pub(crate) fn get_row<K: 'static, V: 'static>(
 }
 
 /// Inserts or replaces a record, keeping its index (if any) in step.
-pub(crate) fn put_row<K: 'static, V: 'static>(
+pub(crate) fn put_row<K, V, KC: Codec<K>, VC: Codec<V>>(
     tx: &redb::WriteTransaction,
-    parts: &Parts<'_, K, V>,
+    parts: &Parts<'_, V, KC, VC>,
     key: &K,
     value: &V,
 ) -> Result<Revision, StoreError> {
@@ -134,9 +138,9 @@ pub(crate) fn put_row<K: 'static, V: 'static>(
 }
 
 /// Removes a record and its index entry; returns whether it existed.
-pub(crate) fn remove_row<K: 'static, V: 'static>(
+pub(crate) fn remove_row<K, V, KC: Codec<K>, VC: Codec<V>>(
     tx: &redb::WriteTransaction,
-    parts: &Parts<'_, K, V>,
+    parts: &Parts<'_, V, KC, VC>,
     key: &K,
 ) -> Result<bool, StoreError> {
     let key = parts.keys.encode(key)?;
@@ -164,9 +168,9 @@ pub(crate) fn remove_row<K: 'static, V: 'static>(
 }
 
 /// Reads one record with the revision of its stored bytes.
-pub(crate) fn get_row_with_revision<K: 'static, V: 'static>(
+pub(crate) fn get_row_with_revision<K, V, KC: Codec<K>, VC: Codec<V>>(
     data: &impl ReadableTable<&'static [u8], &'static [u8]>,
-    parts: &Parts<'_, K, V>,
+    parts: &Parts<'_, V, KC, VC>,
     key: &K,
 ) -> Result<Option<(V, Revision)>, StoreError> {
     let key = parts.keys.encode(key)?;
@@ -180,9 +184,9 @@ pub(crate) fn get_row_with_revision<K: 'static, V: 'static>(
 /// Checks the revision, then writes `change`'s result (or removes the record
 /// on `None`) with its index. Everything fallible runs before the first write,
 /// so a failure leaves the transaction exactly as it was.
-pub(crate) fn conditional_row<K: 'static, V: 'static>(
+pub(crate) fn conditional_row<K, V, KC: Codec<K>, VC: Codec<V>>(
     tx: &redb::WriteTransaction,
-    parts: &Parts<'_, K, V>,
+    parts: &Parts<'_, V, KC, VC>,
     key: &K,
     expected: &Revision,
     change: impl FnOnce(V) -> Option<V>,
@@ -243,9 +247,9 @@ pub(crate) fn conditional_row<K: 'static, V: 'static>(
 }
 
 /// Stores `build(id)` under one more than the highest key (1 when empty).
-pub(crate) fn create_row<V: 'static>(
+pub(crate) fn create_row<V, KC: Codec<u64>, VC: Codec<V>>(
     tx: &redb::WriteTransaction,
-    parts: &Parts<'_, u64, V>,
+    parts: &Parts<'_, V, KC, VC>,
     build: impl FnOnce(u64) -> V,
 ) -> Result<(u64, Revision), StoreError> {
     let last = {
@@ -266,8 +270,8 @@ pub(crate) fn create_row<V: 'static>(
 /// A `u64`-keyed [`Table`] or [`IndexTable`] that can allocate ids with
 /// [`WriteTx::create`]. This trait is sealed.
 pub trait Creatable<V>: Handle<u64, V> {}
-impl<V: 'static, VC: Codec<V>> Creatable<V> for Table<u64, V, U64Key, VC> {}
-impl<V: 'static, VC: Codec<V>> Creatable<V> for IndexTable<u64, V, U64Key, VC> {}
+impl<V, VC: Codec<V>> Creatable<V> for Table<u64, V, U64Key, VC> {}
+impl<V, VC: Codec<V>> Creatable<V> for IndexTable<u64, V, U64Key, VC> {}
 
 /// A write transaction spanning any number of tables of one [`Store`](crate::Store).
 ///
@@ -292,11 +296,7 @@ impl WriteTx {
     }
 
     /// Reads a value, including this transaction's own earlier writes.
-    pub fn get<K: 'static, V: 'static, H: Handle<K, V>>(
-        &self,
-        table: &H,
-        key: &K,
-    ) -> Result<Option<V>, StoreError> {
+    pub fn get<K, V, H: Handle<K, V>>(&self, table: &H, key: &K) -> Result<Option<V>, StoreError> {
         let parts = table.parts();
         same_store(&self.db, &parts)?;
         let data = self
@@ -307,7 +307,7 @@ impl WriteTx {
     }
 
     /// Inserts or replaces a value, updating the table's index if it has one.
-    pub fn put<K: 'static, V: 'static, H: Handle<K, V>>(
+    pub fn put<K, V, H: Handle<K, V>>(
         &mut self,
         table: &H,
         key: &K,
@@ -319,7 +319,7 @@ impl WriteTx {
     }
 
     /// Removes a value and its index entry; returns whether it existed.
-    pub fn remove<K: 'static, V: 'static, H: Handle<K, V>>(
+    pub fn remove<K, V, H: Handle<K, V>>(
         &mut self,
         table: &H,
         key: &K,
@@ -330,7 +330,7 @@ impl WriteTx {
     }
 
     /// Reads a value and its revision, including this transaction's own writes.
-    pub fn get_with_revision<K: 'static, V: 'static, H: Handle<K, V>>(
+    pub fn get_with_revision<K, V, H: Handle<K, V>>(
         &self,
         table: &H,
         key: &K,
@@ -349,7 +349,7 @@ impl WriteTx {
     /// and the error is a conflict (see [`IndexTable::update_if`]); the
     /// transaction stays usable, so you can handle the conflict or return it
     /// to abort everything.
-    pub fn update_if<K: 'static, V: 'static, H: Handle<K, V>>(
+    pub fn update_if<K, V, H: Handle<K, V>>(
         &mut self,
         table: &H,
         key: &K,
@@ -364,7 +364,7 @@ impl WriteTx {
 
     /// Removes the record if its revision is still `expected`; otherwise a
     /// conflict as for [`update_if`](Self::update_if).
-    pub fn remove_if<K: 'static, V: 'static, H: Handle<K, V>>(
+    pub fn remove_if<K, V, H: Handle<K, V>>(
         &mut self,
         table: &H,
         key: &K,
@@ -379,7 +379,7 @@ impl WriteTx {
     /// 1 when empty), allocated inside this transaction, and returns the id
     /// with the value's revision. See [`IndexTable::create`] for how ids are
     /// reused after deleting the highest record.
-    pub fn create<V: 'static, H: Creatable<V>>(
+    pub fn create<V, H: Creatable<V>>(
         &mut self,
         table: &H,
         build: impl FnOnce(u64) -> V,
@@ -404,11 +404,7 @@ impl ReadTx {
     }
 
     /// Reads a value from the snapshot.
-    pub fn get<K: 'static, V: 'static, H: Handle<K, V>>(
-        &self,
-        table: &H,
-        key: &K,
-    ) -> Result<Option<V>, StoreError> {
+    pub fn get<K, V, H: Handle<K, V>>(&self, table: &H, key: &K) -> Result<Option<V>, StoreError> {
         let parts = table.parts();
         same_store(&self.db, &parts)?;
         let data = self
@@ -419,7 +415,7 @@ impl ReadTx {
     }
 
     /// Reads a value and its revision from the snapshot.
-    pub fn get_with_revision<K: 'static, V: 'static, H: Handle<K, V>>(
+    pub fn get_with_revision<K, V, H: Handle<K, V>>(
         &self,
         table: &H,
         key: &K,
