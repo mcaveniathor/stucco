@@ -431,3 +431,74 @@ fn rolled_back_create_does_not_consume_its_id() -> Result<(), StoreError> {
     assert_eq!(id, 1);
     Ok(())
 }
+
+/// Encodes "huge" as a value over redb's 3 GiB limit. The zeroed pages are
+/// never touched, so this costs address space, not memory.
+struct Huge;
+impl Codec<String> for Huge {
+    fn encode(&self, value: &String) -> Result<Vec<u8>, StoreError> {
+        if value == "huge" {
+            Ok(vec![0u8; (3usize << 30) + 1])
+        } else {
+            Ok(value.as_bytes().to_vec())
+        }
+    }
+    fn decode(&self, bytes: &[u8]) -> Result<String, StoreError> {
+        String::from_utf8(bytes.to_vec()).map_err(StoreError::new)
+    }
+}
+
+fn big_table(store: &Store) -> IndexTable<u64, String, U64Key, Huge> {
+    let big = store
+        .table::<u64, String, _, _>("big", U64Key, Huge)
+        .unwrap()
+        .index("name", |v: &String| v.as_bytes().to_vec())
+        .unwrap();
+    big.put(&1, &"Ada".into()).unwrap();
+    big
+}
+
+#[test]
+fn a_write_that_fails_partway_makes_the_transaction_rollback_only() {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, _, _) = open(&dir);
+    let big = big_table(&store);
+    let result = store.write(|tx| {
+        // redb refuses the value after the old index entry was removed.
+        assert!(tx.put(&big, &1, &"huge".to_string()).is_err());
+        Ok::<_, StoreError>(()) // handled, but the write failed partway
+    });
+    assert!(result.is_err(), "a half-applied write must not commit");
+    assert_eq!(big.get(&1).unwrap(), Some("Ada".into()));
+    let rows = big.all(true).unwrap();
+    assert_eq!(rows.len(), 1, "the index entry must survive");
+}
+
+#[test]
+fn a_rollback_only_transaction_rejects_further_operations() {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, _, audit) = open(&dir);
+    let big = big_table(&store);
+    let result = store.write(|tx| {
+        assert!(tx.put(&big, &1, &"huge".to_string()).is_err());
+        assert!(tx.put(&audit, &1, &"later".to_string()).is_err());
+        assert!(tx.get(&audit, &1).is_err());
+        assert!(tx.remove(&big, &1).is_err());
+        Ok::<_, StoreError>(())
+    });
+    assert!(result.is_err());
+    assert_eq!(audit.get(&1).unwrap(), None);
+}
+
+#[test]
+fn a_handled_codec_failure_does_not_poison_the_transaction() -> Result<(), StoreError> {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, orders, _) = open(&dir);
+    let strict = store.table::<u64, String, _, _>("strict", U64Key, Rejecting)?;
+    store.write(|tx| {
+        assert!(tx.put(&strict, &1, &"bad".to_string()).is_err());
+        tx.put(&orders, &1, &"Ada".to_string())
+    })?;
+    assert_eq!(orders.get(&1)?, Some("Ada".into()));
+    Ok(())
+}

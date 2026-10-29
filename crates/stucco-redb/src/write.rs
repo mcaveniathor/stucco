@@ -57,7 +57,7 @@ impl<K, V, KC: KeyCodec<K>, VC: Codec<V>> IndexTable<K, V, KC, VC> {
     ) -> Result<Option<Revision>, StoreError> {
         let parts = self.parts();
         let tx = self.table.store.db.begin_write().map_err(StoreError::new)?;
-        let revision = conditional_row(&tx, &parts, key, expected, change)?;
+        let revision = conditional_row(&tx, &parts, key, expected, change, &mut false)?;
         tx.commit().map_err(StoreError::new)?;
         Ok(revision)
     }
@@ -73,7 +73,7 @@ impl<V, VC: Codec<V>> IndexTable<u64, V, U64Key, VC> {
     pub fn create(&self, build: impl FnOnce(u64) -> V) -> Result<(u64, Revision), StoreError> {
         let parts = self.parts();
         let tx = self.table.store.db.begin_write().map_err(StoreError::new)?;
-        let created = create_row(&tx, &parts, build)?;
+        let created = create_row(&tx, &parts, build, &mut false)?;
         tx.commit().map_err(StoreError::new)?;
         Ok(created)
     }
