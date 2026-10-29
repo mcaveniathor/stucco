@@ -3,6 +3,8 @@
 use leptos::prelude::*;
 use leptos_meta::Title;
 use leptos_router::hooks::use_query_map;
+
+use crate::gallery_sections::{DataSection, FeedbackSection, NavigationSection, TablesSection};
 use stucco_leptos::{
     Autocomplete, AutocompleteOption, Dialog, FileInput, PageHeader, RepeatedField, RepeatedValue,
     SelectedFile, StatusMessage, SubmitButton,
@@ -14,11 +16,12 @@ struct GalleryState {
     rtl: bool,
     details: bool,
     submitted: bool,
+    page: u64,
     city: String,
     recipients: Vec<String>,
 }
 
-fn text(arabic: bool, english: &'static str, arabic_text: &'static str) -> &'static str {
+pub(crate) fn text(arabic: bool, english: &'static str, arabic_text: &'static str) -> &'static str {
     if arabic { arabic_text } else { english }
 }
 
@@ -35,6 +38,10 @@ pub(crate) fn ComponentGallery() -> impl IntoView {
             rtl: query.get("dir").map_or(arabic, |dir| dir == "rtl"),
             details: query.get("details").is_some_and(|value| value == "open"),
             submitted: query.get("preview").is_some_and(|value| value == "1"),
+            page: query
+                .get("page")
+                .and_then(|page| page.parse::<u64>().ok())
+                .map_or(3, |page| page.clamp(1, 10)),
             city: query.get("city").unwrap_or_else(|| "Paris".to_owned()),
             recipients: query.get_all("recipient").map_or_else(
                 || vec!["Ada".to_owned(), "Grace".to_owned()],
@@ -195,6 +202,10 @@ fn GalleryExamples(state: GalleryState) -> impl IntoView {
                     }}
                 </div>
             </section>
+            <NavigationSection arabic=ar lang=lang dir=dir page=state.page hydrated=hydrated/>
+            <TablesSection arabic=ar/>
+            <DataSection arabic=ar hydrated=hydrated/>
+            <FeedbackSection arabic=ar hydrated=hydrated/>
         </article>
     }
 }

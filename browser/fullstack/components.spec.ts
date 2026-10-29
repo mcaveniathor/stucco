@@ -209,3 +209,99 @@ test("gallery supports localized labels, RTL and accessible light/dark narrow la
   await page.screenshot({ path });
   await test.info().attach("components-dialog-ar-rtl-narrow-dark", { path, contentType: "image/png" });
 });
+
+test.describe("navigation section without JavaScript", () => {
+  test.use({ javaScriptEnabled: false });
+
+  test("tabs, steps and pagination are links that keep the gallery language", async ({ page }) => {
+    await open(page, "/components?lang=en&dir=ltr&page=3", false);
+    const section = page.locator("#gallery-navigation");
+    await expect(section.getByRole("navigation", { name: "Gallery sections", exact: true }).getByRole("link", { name: "Overview" }))
+      .toHaveAttribute("aria-current", "page");
+    await expect(section.getByRole("button", { name: "Next step", exact: true })).toBeDisabled();
+    const pages = section.getByRole("navigation", { name: "Gallery pages", exact: true });
+    await expect(pages.getByRole("link", { name: "Page 3", exact: true })).toHaveAttribute("aria-current", "page");
+    await pages.getByRole("link", { name: "Page 4", exact: true }).click();
+    await expect(page).toHaveURL(/page=4/);
+    await expect(section.getByRole("navigation", { name: "Gallery pages", exact: true }).getByRole("link", { name: "Page 4", exact: true }))
+      .toHaveAttribute("aria-current", "page");
+    await section.getByRole("link", { name: "Previous", exact: true }).click();
+    await expect(page).toHaveURL(/page=3/);
+  });
+});
+
+test("navigation components update when their signals change after hydration", async ({ page }) => {
+  const errors = await open(page, "/components?lang=en&dir=ltr");
+  const section = page.locator("#gallery-navigation");
+  const tabs = section.getByRole("navigation", { name: "Gallery sections", exact: true });
+  await expect(tabs.getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
+  await section.getByRole("button", { name: "Toggle current tab", exact: true }).click();
+  await expect(tabs.getByRole("link", { name: "Reports" })).toHaveAttribute("aria-current", "page");
+  await expect(tabs.getByRole("link", { name: "Overview" })).not.toHaveAttribute("aria-current", "page");
+  const steps = section.getByRole("navigation", { name: "Checkout progress", exact: true });
+  await expect(steps.locator("[aria-current='step']")).toHaveText("Cart");
+  await section.getByRole("button", { name: "Next step", exact: true }).click();
+  await expect(steps.locator("[aria-current='step']")).toHaveText("Payment");
+  expect(errors).toEqual([]);
+});
+
+test("gallery table keeps table semantics and becomes labelled cards when narrow", async ({ page }) => {
+  const errors = await open(page, "/components?lang=en&dir=ltr");
+  const table = page.locator("#gallery-tables");
+  const region = table.getByRole("region", { name: "Recent orders", exact: true });
+  await expect(region).toHaveAttribute("tabindex", "0");
+  await expect(table.getByRole("columnheader", { name: "Customer" })).toHaveAttribute("aria-sort", "ascending");
+  await expect(table.getByRole("row")).toHaveCount(4);
+  for (const [width, labelsVisible] of [[1280, false], [360, true]] as const) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(table.locator(".st-table-card-label").first()).toBeVisible({ visible: labelsVisible });
+    expect((await audit(page)).violations).toEqual([]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+  await expect(table.getByRole("cell", { name: "$128.00" })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("data displays update their text when signals change after hydration", async ({ page }) => {
+  const errors = await open(page, "/components?lang=en&dir=ltr");
+  const data = page.locator("#gallery-data");
+  await expect(data.getByRole("region", { name: "Order 1042", exact: true })).toBeVisible();
+  await expect(data.locator(".st-stat-value")).toHaveText("128");
+  const points = () => data.locator("polyline").getAttribute("points");
+  const before = await points();
+  await data.getByRole("button", { name: "Add an order", exact: true }).click();
+  await expect(data.locator(".st-stat-value")).toHaveText("129");
+  await expect(data.locator(".st-stat-delta")).toContainText("13%");
+  expect(await points()).not.toBe(before);
+  await expect(data.getByRole("list", { name: "Order history", exact: true }).locator("time")).toHaveCount(2);
+  expect(errors).toEqual([]);
+});
+
+test("data displays are accessible in wide and narrow, light and dark, LTR and RTL", async ({ page }) => {
+  for (const [lang, dir] of [["en", "ltr"], ["ar", "rtl"]] as const) {
+    const errors = await open(page, `/components?lang=${lang}&dir=${dir}`);
+    for (const [width, colorScheme] of [[1280, "light"], [360, "dark"]] as const) {
+      await page.setViewportSize({ width, height: 1000 });
+      await page.emulateMedia({ colorScheme, reducedMotion: "reduce" });
+      expect((await audit(page)).violations).toEqual([]);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    }
+    expect(errors).toEqual([]);
+  }
+});
+
+test("feedback components expose their state and update with their signals", async ({ page }) => {
+  const errors = await open(page, "/components?lang=en&dir=ltr");
+  const feedback = page.locator("#gallery-feedback");
+  const progress = feedback.getByRole("progressbar", { name: "Import", exact: true });
+  await expect(progress).toHaveAttribute("value", "40");
+  await expect(feedback.locator(".st-progress-value")).toHaveText("40%");
+  await expect(feedback.getByRole("progressbar", { name: "Sync", exact: true })).not.toHaveAttribute("value");
+  await feedback.getByRole("button", { name: "Advance 20%", exact: true }).click();
+  await expect(progress).toHaveAttribute("value", "60");
+  await expect(feedback.getByRole("meter", { name: "Disk usage", exact: true })).toHaveAttribute("value", "60");
+  await expect(feedback.getByText("Success:")).toBeAttached();
+  await expect(feedback.getByRole("heading", { name: "No exports yet", exact: true })).toBeVisible();
+  expect((await audit(page)).violations).toEqual([]);
+  expect(errors).toEqual([]);
+});

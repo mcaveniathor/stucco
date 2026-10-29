@@ -35,8 +35,9 @@ and background CSV exports. A component gallery demonstrates native fallbacks,
 keyboard interactions and localized RTL layouts. The
 application requires Rust 1.90; the component crate retains Rust 1.88. The
 component and application workflows pass local Rust and cross-browser checks.
-The separate `0.1.0-alpha.1` component preview is prepared for release; it has not
-been published. See the [deployment guide](examples/orders-fullstack/DEPLOYING.md)
+The separate `0.1.0-alpha.2` component preview, which adds navigation, tables,
+data displays and feedback components, is prepared for release; `0.1.0-alpha.1`
+is the version published so far. See the [deployment guide](examples/orders-fullstack/DEPLOYING.md)
 for the application bundle and its supported single-server deployment.
 
 ## Render a page
@@ -259,7 +260,7 @@ its default database is `target/orders.redb`.
 The [Leptos components and full-stack reference plan](docs/roadmap-fullstack.md)
 describes Stucco's design-system integration with Leptos and the maintained Rust
 application example. The checkout-based Orders example, built on the published
-`stucco-leptos` 0.1.0-alpha.1 preview, includes routed Orders CRUD, search
+`stucco-leptos` preview (0.1.0-alpha.2 in this checkout; alpha.1 is published), includes routed Orders CRUD, search
 and pagination, native forms, WASM interaction, and tenant-scoped accounts backed
 by default redb storage. It also includes database-backed attachments, background
 CSV exports, and a localized component gallery. SQLite remains an optional server

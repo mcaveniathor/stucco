@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased (stucco-leptos 0.1.0-alpha.2, prepared)
+
+- `stucco-leptos`: add `NavLink`, `Tabs`, `Breadcrumbs`, `Steps`, `Pagination` and
+  `CursorPagination`. They emit the same markup as the static components, work as
+  plain links before hydration, and are checked against the static renderer. The
+  Orders component gallery demonstrates them.
+- `stucco-leptos`: add `Table`, `TableHead`, `TableBody`, `Row`, `Cell` and
+  `HeaderCell` with the static table's responsive card layout.
+- `stucco-leptos`: add `Badge`, `Avatar`, `DescriptionList`, `Stat`, `Card`, `Panel`,
+  `Timeline` and `Sparkline`, with `Tone`, `Trend` and `Size` values matching the
+  static components.
+- `stucco-leptos`: add `Progress`, `Meter`, `Callout` (with `CalloutActions`) and
+  `EmptyState`.
+
 ## 0.5.1 — 2026-10-27
 
 Backward-compatible middleware additions for full-stack Rust applications, and

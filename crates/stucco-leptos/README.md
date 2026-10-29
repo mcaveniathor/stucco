@@ -1,17 +1,22 @@
 # stucco-leptos
 
 A preview of reactive Leptos components using Stucco's existing
-styles and accessibility conventions. It provides a small set of form and page
-components using Leptos directly; it does not hydrate the static `Render` builders.
-This preview does not yet cover the full Stucco component catalogue. Its separate
-prerelease version is **0.1.0-alpha.1**, published on crates.io; the existing
-Stucco crates are at 0.5.1.
+styles and accessibility conventions. It provides form, page, navigation, table,
+data-display and feedback components using Leptos directly; it does not hydrate
+the static `Render` builders. This preview does not yet cover the full Stucco
+component catalogue. Its separate prerelease version is **0.1.0-alpha.2**, prepared
+for release; **0.1.0-alpha.1** is the version published on crates.io so far. The
+existing Stucco crates are at 0.5.1.
 
 | Area | Available in this preview | Still missing |
 | --- | --- | --- |
 | Form controls | `TextField`, `Autocomplete`, `RepeatedField`, `FileInput`, `SubmitButton` | Selects, date inputs and other specialized controls |
-| Form feedback | `ErrorSummary`, `StatusMessage` | Other feedback and notification components |
-| Page composition | `PageHeader` with description and actions, `Dialog` | Navigation, data displays and the remaining static component catalogue |
+| Form feedback | `ErrorSummary`, `StatusMessage` | Notification components |
+| Status feedback | `Progress`, `Meter`, `Callout`, `EmptyState` | `LiveRegion`, `FlashMessages`, `ReadinessPanel` |
+| Page composition | `PageHeader` with description and actions, `Dialog` | The remaining static component catalogue |
+| Navigation | `NavLink`, `Tabs`, `Breadcrumbs`, `Steps`, `Pagination`, `CursorPagination` | |
+| Tables | `Table`, `TableHead`, `TableBody`, `Row`, `Cell`, `HeaderCell` | `DataTable`, filters, search and sorting controls |
+| Data displays | `Badge`, `Avatar`, `DescriptionList`, `Stat`, `Card`, `Panel`, `Timeline`, `Sparkline` | Result counts, icons on badges |
 
 The integration pins Leptos **0.8.22** and requires Rust **1.88**; its native SSR
 and WASM dependency graphs are checked on that compiler.
@@ -24,7 +29,7 @@ Add these dependencies and feature forwards to the application's `Cargo.toml`:
 ```toml
 [dependencies]
 leptos = { version = "=0.8.22", default-features = false }
-stucco-leptos = { version = "=0.1.0-alpha.1", default-features = false }
+stucco-leptos = { version = "=0.1.0-alpha.2", default-features = false }
 stucco-theme = { version = "=0.5.1", optional = true }
 
 [features]
@@ -241,6 +246,156 @@ made before hydration. After a server response replaces the form, browsers requi
 the user to select the file again. A form reset does not emit a native `change`
 event; an application resetting its form must also clear its displayed metadata.
 Reserve `{id}-hint` and `{id}-error`.
+
+## Navigation
+
+Navigation components render the same markup as their static `stucco-ui`
+counterparts, so the shared stylesheet already styles them. They are ordinary
+links before and after hydration; hydration only makes their signal props
+reactive. The application decides which link is current, usually from its router
+or request path, and owns every destination. Unsafe URL schemes such as
+`javascript:` render as `#`. `leptos_router` is not required; its link
+interception works on these anchors.
+
+```rust
+use leptos::prelude::*;
+use stucco_leptos::{BreadcrumbCurrent, BreadcrumbLink, Breadcrumbs, NavLink, Tabs};
+
+#[component]
+fn OrderNav(tab: Signal<String>) -> impl IntoView {
+    view! {
+        <Breadcrumbs>
+            <BreadcrumbLink href="/orders">"Orders"</BreadcrumbLink>
+            <BreadcrumbCurrent>"Order 42"</BreadcrumbCurrent>
+        </Breadcrumbs>
+        <Tabs label="Order sections">
+            <NavLink label="Details" href="?tab=details"
+                current=Signal::derive(move || tab.get() == "details")/>
+            <NavLink label="History" href="?tab=history"
+                current=Signal::derive(move || tab.get() == "history")/>
+        </Tabs>
+    }
+}
+```
+
+- `Breadcrumbs` takes `BreadcrumbLink` items and a final `BreadcrumbCurrent`;
+  its `label` defaults to "Breadcrumb". Place it above `PageHeader`.
+- `Steps` takes `steps: Vec<StepItem>` and a `current` index. Finished steps
+  link back when they have an `href`. The hidden "(completed)" and
+  "(not started)" text is translatable with `completed_label` and
+  `not_started_label`.
+- `Pagination` takes `page`, `total_pages` and an `href` callback that builds
+  each page's URL, keeping the rest of the query. It shows the first and last
+  pages and two either side of the current one, and renders nothing for a single
+  page. `page_label` formats each link's accessible name.
+- `CursorPagination` takes optional `previous_href` and `next_href` and renders
+  nothing when both are absent.
+
+## Tables
+
+`Table` renders the static table's markup: a keyboard-focusable scroll region
+around a captioned `<table>`. Compose it from `TableHead` and `TableBody` children
+holding `Row`s of `Cell`s and `HeaderCell`s. Cells take any view, and rows can come
+from `<For>` or an iterator.
+
+```rust
+use leptos::prelude::*;
+use stucco_leptos::{Cell, CellKind, HeaderCell, Row, Table, TableBody, TableHead};
+
+#[component]
+fn Orders(orders: Vec<(String, String)>) -> impl IntoView {
+    view! {
+        <Table caption="Orders" cards=true>
+            <TableHead><Row>
+                <HeaderCell aria_sort="ascending"><a href="?sort=customer">"Customer"</a></HeaderCell>
+                <HeaderCell kind=CellKind::Number>"Total"</HeaderCell>
+            </Row></TableHead>
+            <TableBody>
+                {orders.into_iter().map(|(customer, total)| view! {
+                    <Row>
+                        <HeaderCell label="Customer">{customer}</HeaderCell>
+                        <Cell kind=CellKind::Number label="Total">{total}</Cell>
+                    </Row>
+                }).collect_view()}
+            </TableBody>
+        </Table>
+    }
+}
+```
+
+- `cards` presents rows as labelled cards below 48rem of container width. Give
+  each body cell a `label` naming its column; a cell without one gets an empty
+  caption, and labels are ignored when `cards` is off. The label is decoration
+  (assistive technology hears the column heading), and explicit ARIA roles keep the
+  table semantics when CSS changes the display.
+- Sortable columns are ordinary links in a `HeaderCell` with `aria_sort` set to
+  `"ascending"`, `"descending"` or `"none"`. The application sorts and builds the URLs.
+- `DataTable` and its filter and search components are not included.
+
+## Status and details
+
+The data components present a record's status, people, fields and metrics with
+the static components' markup. They render fully on the server, and signal props
+update them after hydration.
+
+```rust
+use leptos::prelude::*;
+use stucco_leptos::{
+    Avatar, Badge, DescriptionItem, DescriptionList, Panel, Stat, StatChange, Tone, Trend,
+};
+
+#[component]
+fn OrderSummary(orders: Signal<String>) -> impl IntoView {
+    view! {
+        <Panel id="order-1042" title="Order 1042">
+            <DescriptionList>
+                <DescriptionItem term="Customer">
+                    <Avatar name="Ada Lovelace" decorative=true/>" Ada Lovelace"
+                </DescriptionItem>
+                <DescriptionItem term="Status">
+                    <Badge tone=Tone::Success>"Paid"</Badge>
+                </DescriptionItem>
+            </DescriptionList>
+        </Panel>
+        <Stat label="Orders" value=orders
+            change=Some(StatChange { text: "12%".into(), trend: Trend::Up })
+            change_tone=Tone::Success context="vs last week"/>
+    }
+}
+```
+
+- `Badge` takes a `tone`; choose a label that says what the status means.
+  Badges have no icon in this preview.
+- `Avatar` shows initials with an optional `image` over them, and takes a `size`.
+  The name labels it; use `decorative` when the name is written beside it.
+- `DescriptionList` and `DescriptionItem` render a `<dl>`; details accept any view.
+- `Stat` takes `label`, `value` and `change` as signals. A change stays neutral
+  until you set `change_tone`. Translate the hidden direction text with `up_label`,
+  `down_label` and `flat_label`.
+- `Card` and `Panel` take `header`, `footer` and, for `Panel`, `description` and
+  `actions` as closures returning views. `Panel` needs a page-unique `id` and
+  reserves `{id}-title` for its heading; `level` sets the heading level.
+- `Timeline` holds `TimelineItem`s with a machine-readable `datetime` and display
+  `time`. With no children, or `empty=true`, it shows `empty_label`; pass
+  `empty=entries.is_empty()` when the entries come from a list.
+- `Sparkline` takes a `summary` and `values` signal; non-finite samples are ignored.
+  `no_data_label` and `values_label` translate its text.
+
+## Progress, meters and callouts
+
+- `Progress` needs a page-unique `id` (its label uses it) and a `label`. A `value`
+  shows determinate progress, clamped between 0 and `max` (default 100); leave it
+  out for an indeterminate task. `show_value` also writes the percentage as text.
+- `Meter` needs an `id`, `label`, `value`, `min` and `max`, and takes optional
+  `low`, `high`, `optimum` and a `value_text` description, which can be a signal so
+  it follows the value. `{id}-text` is reserved.
+  Out-of-range values and degenerate bounds are corrected the way the static meter
+  corrects them.
+- `Callout` takes a `tone`, an optional `title` and content. Place actions in a
+  `<CalloutActions slot>` child. A visually hidden prefix names the tone ("Note:",
+  "Success:", "Warning:", "Important:"); translate them with `note_label`,
+  `success_label`, `warning_label` and `important_label`.
+- `EmptyState` takes a `title` and optional `description` and `actions` closures.
 
 ## Styles and validation
 

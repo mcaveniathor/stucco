@@ -52,13 +52,30 @@
 
 use leptos::prelude::*;
 
+mod data;
+mod feedback;
+mod href;
 mod inputs;
+mod navigation;
 mod overlay;
+mod table;
+mod vocab;
 
+pub use data::{
+    Avatar, Badge, Card, DescriptionItem, DescriptionList, Panel, Sparkline, Stat, StatChange,
+    Timeline, TimelineItem,
+};
+pub use feedback::{Callout, CalloutActions, EmptyState, Meter, Progress};
 pub use inputs::{
     Autocomplete, AutocompleteOption, FileInput, RepeatedField, RepeatedValue, SelectedFile,
 };
+pub use navigation::{
+    BreadcrumbCurrent, BreadcrumbLink, Breadcrumbs, CursorPagination, NavLink, Pagination,
+    StepItem, Steps, Tabs,
+};
 pub use overlay::Dialog;
+pub use table::{Cell, CellKind, HeaderCell, Row, Table, TableBody, TableHead};
+pub use vocab::{Size, Tone, Trend};
 
 /// The existing Stucco appearance used by a [`SubmitButton`].
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
