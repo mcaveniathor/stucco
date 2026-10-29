@@ -242,3 +242,70 @@ async fn dropping_a_queued_transaction_runs_nothing_and_keeps_the_budget() {
     .expect("a dropped queued call must not leak its permit")
     .unwrap();
 }
+
+fn dropped_transaction_queued_in_a_saturated_blocking_pool_runs_nothing(read: bool) {
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .max_blocking_threads(1)
+        .build()
+        .unwrap();
+    runtime.block_on(async move {
+        let dir = tempfile::tempdir().unwrap();
+        let (store, _, _) = open(&dir);
+        let store = AsyncStore::new(store);
+        let gate = Gate::default();
+        let (entered, mut events) = unbounded_channel();
+        let occupied = {
+            let gate = gate.clone();
+            tokio::task::spawn_blocking(move || {
+                entered.send(()).unwrap();
+                gate.wait();
+            })
+        };
+        started(&mut events).await;
+        let ran = Arc::new(AtomicBool::new(false));
+        let queued = {
+            let (store, ran) = (store.clone(), ran.clone());
+            tokio::spawn(async move {
+                if read {
+                    store
+                        .read(move |_| {
+                            ran.store(true, Ordering::SeqCst);
+                            Ok::<_, StoreError>(())
+                        })
+                        .await
+                } else {
+                    store
+                        .write(move |_| {
+                            ran.store(true, Ordering::SeqCst);
+                            Ok::<_, StoreError>(())
+                        })
+                        .await
+                }
+            })
+        };
+        // The call now holds its permit and sits in the blocking queue.
+        tokio::time::sleep(Duration::from_millis(100)).await;
+        queued.abort();
+        assert!(queued.await.unwrap_err().is_cancelled());
+        gate.open();
+        occupied.await.unwrap();
+        // The blocking queue is FIFO: once this finishes, anything queued
+        // earlier has had its chance to run.
+        store.write(|_| Ok::<_, StoreError>(())).await.unwrap();
+        assert!(
+            !ran.load(Ordering::SeqCst),
+            "a dropped call must not run once it reaches the front of the queue"
+        );
+    });
+}
+
+#[test]
+fn dropped_write_queued_in_a_saturated_blocking_pool_runs_nothing() {
+    dropped_transaction_queued_in_a_saturated_blocking_pool_runs_nothing(false);
+}
+
+#[test]
+fn dropped_read_queued_in_a_saturated_blocking_pool_runs_nothing() {
+    dropped_transaction_queued_in_a_saturated_blocking_pool_runs_nothing(true);
+}
