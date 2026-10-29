@@ -4,9 +4,8 @@ A preview of reactive Leptos components using Stucco's existing
 styles and accessibility conventions. It provides form, page, navigation, table,
 data-display and feedback components using Leptos directly; it does not hydrate
 the static `Render` builders. This preview does not yet cover the full Stucco
-component catalogue. Its separate prerelease version is **0.1.0-alpha.2**, prepared
-for release; **0.1.0-alpha.1** is the version published on crates.io so far. The
-existing Stucco crates are at 0.5.2.
+component catalogue. Its separate prerelease version is **0.1.0-alpha.2**, published
+on crates.io; the existing Stucco crates are at 0.5.2.
 
 | Area | Available in this preview | Still missing |
 | --- | --- | --- |
