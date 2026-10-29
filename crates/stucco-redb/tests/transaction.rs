@@ -382,3 +382,52 @@ fn plain_table_handles_support_revision_checks() -> Result<(), StoreError> {
     assert_eq!(audit.get(&1)?, Some("two".into()));
     Ok(())
 }
+
+#[test]
+fn create_allocates_consecutive_ids_in_one_transaction() -> Result<(), StoreError> {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, orders, _) = open(&dir);
+    let ids = store.write(|tx| {
+        let (first, _) = tx.create(&orders, |id| format!("order {id}"))?;
+        let (second, _) = tx.create(&orders, |id| format!("order {id}"))?;
+        Ok::<_, StoreError>((first, second))
+    })?;
+    assert_eq!(ids, (1, 2));
+    orders.put(&5, &"five".into())?;
+    let (next, _) = store.write(|tx| tx.create(&orders, |id| format!("order {id}")))?;
+    assert_eq!(next, 6);
+    Ok(())
+}
+
+#[test]
+fn created_rows_are_indexed_and_revisioned() -> Result<(), StoreError> {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, orders, _) = open(&dir);
+    let (id, revision) = store.write(|tx| tx.create(&orders, |id| format!("order {id}")))?;
+    assert_eq!(orders.get_with_revision(&id)?.unwrap().1, revision);
+    assert_eq!(indexed(&orders), ["order 1"]);
+    Ok(())
+}
+
+#[test]
+fn create_works_on_a_plain_table() -> Result<(), StoreError> {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, _, audit) = open(&dir);
+    let (id, _) = store.write(|tx| tx.create(&audit, |id| format!("audit {id}")))?;
+    assert_eq!((id, audit.get(&1)?), (1, Some("audit 1".into())));
+    Ok(())
+}
+
+#[test]
+fn rolled_back_create_does_not_consume_its_id() -> Result<(), StoreError> {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, orders, _) = open(&dir);
+    let result = store.write(|tx| {
+        tx.create(&orders, |id| format!("order {id}"))?;
+        Err::<(), _>(boom())
+    });
+    assert!(result.is_err());
+    let (id, _) = store.write(|tx| tx.create(&orders, |id| format!("order {id}")))?;
+    assert_eq!(id, 1);
+    Ok(())
+}
