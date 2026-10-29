@@ -31,6 +31,44 @@
 //! Revisions (hashes of stored bytes) make edits conditional:
 //! get_with_revision, update_if and remove_if return a conflict when the
 //! record changed in between.
+//!
+//! Transactions span tables: `Store::write` runs a closure against a `WriteTx`
+//! and commits when it returns `Ok`; an `Err` or a panic writes nothing.
+//! `Store::read` gives one snapshot across tables. `WriteTx` offers `get`,
+//! `get_with_revision`, `put`, `remove`, `update_if`, `remove_if` and `create`
+//! for any `Table` or `IndexTable`; an `IndexTable` keeps its index in step.
+//! With the tokio feature, `AsyncStore` runs the same closures on the blocking
+//! pool, one permit per transaction, sharing its budget with `AsyncTable`.
+//!
+//! ```no_run
+//! # fn main() -> Result<(), stucco_redb::StoreError> {
+//! use stucco_redb::{PostcardCodec, Revision, Store, StoreError, U64Key};
+//! #[derive(serde::Serialize, serde::Deserialize)]
+//! struct Account { orders: u32 }
+//!
+//! let store = Store::open("shop.redb")?;
+//! let orders = store
+//!     .table::<u64, String, _, _>("orders", U64Key, PostcardCodec::default())?
+//!     .index("customer", |name| name.as_bytes().to_vec())?;
+//! let audit = store.table::<u64, String, _, _>("audit", U64Key, PostcardCodec::default())?;
+//! let accounts = store.table::<u64, Account, _, _>("accounts", U64Key, PostcardCodec::default())?;
+//!
+//! // The account's revision came back from the form that is being submitted.
+//! let submitted: Revision = "AAAAAAAAAAAAAAAAAAAAAA".parse().expect("valid");
+//! let saved = store.write(|tx| {
+//!     let (id, _) = tx.create(&orders, |id| format!("customer of order {id}"))?;
+//!     tx.put(&audit, &id, &"created".to_string())?;
+//!     tx.update_if(&accounts, &7, &submitted, |account| Account { orders: account.orders + 1 })?;
+//!     Ok::<_, StoreError>(id)
+//! });
+//! match saved {
+//!     Ok(_id) => {}                              // all three tables changed
+//!     Err(e) if e.is_conflict() => {}            // account changed or missing: nothing was written
+//!     Err(e) => return Err(e),
+//! }
+//! # Ok(()) }
+//! ```
+//!
 //! Cursors are query-scoped locators, not authorization tokens. The table and
 //! indexes are not automatically migrated when changing codecs/schema.
 #![cfg_attr(docsrs, feature(doc_cfg))]
