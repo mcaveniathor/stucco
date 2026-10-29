@@ -369,8 +369,7 @@ the application.
 
 `stucco_leptos::stylesheet` generates CSS from the existing theme and component
 assets. No legacy behavior scripts are mounted inside the Leptos tree. The component
-crate's independent `0.1.0-alpha.2` preview is prepared for release; `0.1.0-alpha.1`
-is published on crates.io.
+crate's independent `0.1.0-alpha.2` preview is published on crates.io.
 Its package consumes published Stucco styling crates; this application uses
 the workspace's `stucco-tower` multipart/session support, released in 0.5.1.
 
