@@ -14,6 +14,28 @@
 - `stucco-leptos`: add `Progress`, `Meter`, `Callout` (with `CalloutActions`) and
   `EmptyState`.
 
+## 0.5.2 — 2026-10-28
+
+Multi-table transactions for `stucco-redb`. The release is backward compatible:
+existing `stucco-redb` APIs and behaviour are unchanged, and the other crates
+are republished at the new version without code changes.
+
+- `stucco-redb`: add `Store::write` and `Store::read`, which run a closure against
+  one redb transaction spanning any number of tables and indexes. A write commits
+  when the closure returns `Ok` and rolls back on `Err` or a panic; reads share one
+  snapshot. The closure's error type only needs `From<StoreError>`.
+- `stucco-redb`: add `WriteTx` and `ReadTx` with `get`, `get_with_revision`, `put`,
+  `remove`, `update_if`, `remove_if` and (on `u64` tables) `create`, for any `Table`
+  or `IndexTable`. An `IndexTable` keeps its index in step, and revision checks work
+  inside the transaction. A conflict or codec error writes nothing and leaves the
+  transaction usable; a write that fails after redb started applying it makes the
+  transaction rollback-only, so a record and its index can never commit out of step.
+  Handles from another `Store` are rejected.
+- `stucco-redb`: add `AsyncStore` (tokio feature) for the same transactions on the
+  blocking pool, one permit per transaction. `AsyncStore::table` and
+  `AsyncTable::store` share one concurrency budget with `AsyncTable`, and a call
+  dropped before the pool starts it runs nothing.
+
 ## 0.5.1 — 2026-10-27
 
 Backward-compatible middleware additions for full-stack Rust applications, and
