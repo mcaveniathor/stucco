@@ -60,4 +60,4 @@ pub use revision::{InvalidRevision, Revision};
 pub use scan::ScanRequest;
 pub use store::Store;
 pub use table::Table;
-pub use transaction::{Handle, ReadTx, WriteTx};
+pub use transaction::{Creatable, Handle, ReadTx, WriteTx};

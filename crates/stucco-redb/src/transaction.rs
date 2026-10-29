@@ -1,7 +1,7 @@
 //! Multi-table transactions: [`Store::write`](crate::Store::write) and
 //! [`Store::read`](crate::Store::read) hand a closure one redb transaction.
 use crate::index::compound;
-use crate::{Codec, IndexTable, KeyCodec, Revision, StoreError, Table};
+use crate::{Codec, IndexTable, KeyCodec, Revision, StoreError, Table, U64Key};
 use redb::ReadableTable;
 use std::sync::Arc;
 
@@ -101,14 +101,15 @@ pub(crate) fn put_row<K: 'static, V: 'static>(
     parts: &Parts<'_, K, V>,
     key: &K,
     value: &V,
-) -> Result<(), StoreError> {
+) -> Result<Revision, StoreError> {
     let key = parts.keys.encode(key)?;
     let encoded = parts.values.encode(value)?;
+    let revision = Revision::of(&encoded);
     let mut data = tx.open_table(bytes(parts.table)).map_err(StoreError::new)?;
     let Some(index) = &parts.index else {
         data.insert(key.as_slice(), encoded.as_slice())
             .map_err(StoreError::new)?;
-        return Ok(());
+        return Ok(revision);
     };
     let mut order = tx.open_table(bytes(index.name)).map_err(StoreError::new)?;
     let old = data
@@ -129,7 +130,7 @@ pub(crate) fn put_row<K: 'static, V: 'static>(
             key.as_slice(),
         )
         .map_err(StoreError::new)?;
-    Ok(())
+    Ok(revision)
 }
 
 /// Removes a record and its index entry; returns whether it existed.
@@ -241,6 +242,33 @@ pub(crate) fn conditional_row<K: 'static, V: 'static>(
     }
 }
 
+/// Stores `build(id)` under one more than the highest key (1 when empty).
+pub(crate) fn create_row<V: 'static>(
+    tx: &redb::WriteTransaction,
+    parts: &Parts<'_, u64, V>,
+    build: impl FnOnce(u64) -> V,
+) -> Result<(u64, Revision), StoreError> {
+    let last = {
+        let data = tx.open_table(bytes(parts.table)).map_err(StoreError::new)?;
+        data.last()
+            .map_err(StoreError::new)?
+            .map(|(key, _)| U64Key.decode(key.value()))
+            .transpose()?
+            .unwrap_or(0)
+    };
+    let id = last
+        .checked_add(1)
+        .ok_or_else(|| StoreError::invalid("no ids left"))?;
+    let revision = put_row(tx, parts, &id, &build(id))?;
+    Ok((id, revision))
+}
+
+/// A `u64`-keyed [`Table`] or [`IndexTable`] that can allocate ids with
+/// [`WriteTx::create`]. This trait is sealed.
+pub trait Creatable<V>: Handle<u64, V> {}
+impl<V: 'static, VC: Codec<V>> Creatable<V> for Table<u64, V, U64Key, VC> {}
+impl<V: 'static, VC: Codec<V>> Creatable<V> for IndexTable<u64, V, U64Key, VC> {}
+
 /// A write transaction spanning any number of tables of one [`Store`](crate::Store).
 ///
 /// Created by [`Store::write`](crate::Store::write); everything done through
@@ -287,7 +315,7 @@ impl WriteTx {
     ) -> Result<(), StoreError> {
         let parts = table.parts();
         same_store(&self.db, &parts)?;
-        put_row(&self.tx, &parts, key, value)
+        put_row(&self.tx, &parts, key, value).map(|_| ())
     }
 
     /// Removes a value and its index entry; returns whether it existed.
@@ -345,6 +373,20 @@ impl WriteTx {
         let parts = table.parts();
         same_store(&self.db, &parts)?;
         conditional_row(&self.tx, &parts, key, expected, |_| None).map(|_| ())
+    }
+
+    /// Stores `build(id)` under the next id (one more than the highest key, or
+    /// 1 when empty), allocated inside this transaction, and returns the id
+    /// with the value's revision. See [`IndexTable::create`] for how ids are
+    /// reused after deleting the highest record.
+    pub fn create<V: 'static, H: Creatable<V>>(
+        &mut self,
+        table: &H,
+        build: impl FnOnce(u64) -> V,
+    ) -> Result<(u64, Revision), StoreError> {
+        let parts = table.parts();
+        same_store(&self.db, &parts)?;
+        create_row(&self.tx, &parts, build)
     }
 }
 
