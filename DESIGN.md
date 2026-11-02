@@ -101,7 +101,7 @@ stucco renders interfaces on the server from semantic HTML and themeable CSS. Ev
 
 ## Colors
 
-Components use semantic roles only. Each role resolves to a step of a twelve-step scale generated in OKLCH from a preset's hue and chroma, so a role keeps its meaning across all fourteen presets and both schemes.
+Components use semantic roles only. Each role resolves to a step of a twelve-step scale generated in OKLCH from a preset's hue and chroma, so a role keeps its meaning across all presets and both schemes.
 
 - **Backgrounds** layer from `bg` (the page) to `surface` (cards, panels, inputs, the app header and sidebar) to `surface-raised` (table headers, tags, input adornments, overlays). `hover` is the neutral fill for hovered secondary, ghost and navigation controls.
 - **Text** is `text`, or `text-muted` for labels, hints, captions, result counts and footers.

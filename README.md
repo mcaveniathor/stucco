@@ -110,7 +110,9 @@ also answers fragment requests.
 
 ## Themes
 
-Fourteen presets cover common looks, each in light and dark. For anything
+Nineteen presets cover common looks, each in light and dark, including five
+architectural styles: Bauhaus, Brutalist, Deco, Mediterranean and Prairie.
+See the [preset guide](docs/guide/theming.md#presets) for their visual traits. For anything
 else, build a `Theme`, or derive a whole one from a seed:
 
 ```rust

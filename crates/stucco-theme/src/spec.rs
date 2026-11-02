@@ -94,6 +94,11 @@ pub const OPTIONS: &[OptionInfo] = &[
             choice("sol", "Sol"),
             choice("terminal", "Terminal"),
             choice("contrast", "Contrast"),
+            choice("bauhaus", "Bauhaus"),
+            choice("brutalist", "Brutalist"),
+            choice("deco", "Deco"),
+            choice("mediterranean", "Mediterranean"),
+            choice("prairie", "Prairie"),
         ],
     },
     OptionInfo {
@@ -1197,6 +1202,27 @@ mod tests {
     use super::*;
     use crate::Scope;
     use crate::seed::fnv1a;
+
+    #[test]
+    fn every_preset_is_available_as_a_base_and_palette() {
+        let palette = OptionInfo::find("palette").unwrap();
+        assert_eq!(palette.choices.len(), Preset::ALL.len());
+        for preset in Preset::ALL {
+            let query = format!("preset={}", preset.name());
+            let spec: ThemeSpec = query.parse().unwrap();
+            assert_eq!(spec.to_query(), query);
+            assert_eq!(ThemeSpec::parse_lossy(&query), spec);
+            assert_eq!(spec.theme(), Theme::preset(preset));
+            assert!(spec.rust().contains(&format!("Preset::{preset:?}")));
+            assert!(palette.choice(preset.name()).is_some());
+            let query = format!("palette={}", preset.name());
+            let spec: ThemeSpec = query.parse().unwrap();
+            assert_eq!(
+                spec.theme(),
+                Theme::preset(Preset::Slate).palette_preset(preset)
+            );
+        }
+    }
 
     #[test]
     fn lossy_queries_parse_and_normalise() {

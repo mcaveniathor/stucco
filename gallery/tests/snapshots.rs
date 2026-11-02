@@ -11,7 +11,10 @@ fn palette_page_shows_every_preset_in_both_schemes() {
             p.name()
         );
     }
-    assert_eq!(html.matches("data-theme=\"dark\"").count(), 14);
+    assert_eq!(
+        html.matches("data-theme=\"dark\"").count(),
+        stucco::theme::Preset::ALL.len()
+    );
     insta::assert_snapshot!(html);
 }
 

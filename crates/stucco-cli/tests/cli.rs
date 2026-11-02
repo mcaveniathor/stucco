@@ -129,7 +129,8 @@ fn mistakes_fail_with_a_message() {
 fn lists_presets_and_options() {
     let presets = stdout(&["presets"]);
     assert!(presets.starts_with("slate\n"));
-    assert_eq!(presets.lines().count(), 14);
+    let expected: Vec<_> = stucco_theme::Preset::ALL.iter().map(|p| p.name()).collect();
+    assert_eq!(presets.lines().collect::<Vec<_>>(), expected);
     let options = stdout(&["options"]);
     let line = |key: &str| {
         options

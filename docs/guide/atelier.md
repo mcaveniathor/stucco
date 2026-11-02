@@ -7,7 +7,7 @@ same composition as the landing preview, in both schemes.
 
 ## Compose the theme
 
-This is a composition of existing options, separate from the fourteen stable
+This is a composition of existing options, separate from the built-in
 presets and the deterministic seeded generator:
 
 ```rust
