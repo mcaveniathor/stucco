@@ -42,6 +42,6 @@ test.describe("without JavaScript", () => {
 
   test("the palette page renders every preset", async ({ page }) => {
     await page.goto("/palette.html");
-    await expect(page.locator("section.g-preset")).toHaveCount(14);
+    await expect(page.locator("section.g-preset")).toHaveCount(19);
   });
 });

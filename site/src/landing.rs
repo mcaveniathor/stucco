@@ -21,7 +21,7 @@ const FEATURES: [(&str, &str); 6] = [
     ),
     (
         "Themes from a single seed",
-        "Fourteen presets, a theme builder, and Theme::seeded(n) for a complete, contrast-checked \
+        "Nineteen presets, a theme builder, and Theme::seeded(n) for a complete, contrast-checked \
          theme from one number. Every option can be seeded on its own.",
     ),
     (

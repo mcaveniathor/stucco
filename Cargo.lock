@@ -922,7 +922,7 @@ dependencies = [
 
 [[package]]
 name = "gallery"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "insta",
  "stucco",
@@ -1074,7 +1074,7 @@ checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
 name = "hello"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "axum",
  "stucco",
@@ -1884,7 +1884,7 @@ checksum = "8c04f5d74368e4d0dfe06c45c8627c81bd7c317d52762d118fb9b3076f6420fd"
 
 [[package]]
 name = "orders"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "axum",
  "form_urlencoded",
@@ -1903,7 +1903,7 @@ dependencies = [
 
 [[package]]
 name = "orders-fullstack"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "any_spawner",
  "apalis",
@@ -1926,7 +1926,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "stucco-leptos",
- "stucco-theme",
+ "stucco-theme 0.5.2",
  "stucco-tower",
  "tempfile",
  "time",
@@ -2725,7 +2725,7 @@ checksum = "bbbb5d9659141646ae647b42fe094daf6c6192d1620870b449d9557f748b2daa"
 
 [[package]]
 name = "site"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "gallery",
  "pulldown-cmark",
@@ -2735,9 +2735,9 @@ dependencies = [
 
 [[package]]
 name = "site-wasm"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
- "stucco-theme",
+ "stucco-theme 0.6.0",
 ]
 
 [[package]]
@@ -3010,30 +3010,41 @@ checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
 
 [[package]]
 name = "stucco"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
- "stucco-core",
+ "stucco-core 0.6.0",
  "stucco-macros",
- "stucco-theme",
+ "stucco-theme 0.6.0",
  "stucco-tower",
- "stucco-ui",
+ "stucco-ui 0.6.0",
 ]
 
 [[package]]
 name = "stucco-cli"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "clap",
- "stucco-theme",
+ "stucco-theme 0.6.0",
 ]
 
 [[package]]
 name = "stucco-core"
 version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0c0d464d60dd8cd5a202e721d4ff252fc698ec62f843da496fc2df8a9ff25e0e"
 dependencies = [
  "form_urlencoded",
  "inventory",
- "stucco-theme",
+ "stucco-theme 0.5.2",
+]
+
+[[package]]
+name = "stucco-core"
+version = "0.6.0"
+dependencies = [
+ "form_urlencoded",
+ "inventory",
+ "stucco-theme 0.6.0",
 ]
 
 [[package]]
@@ -3041,15 +3052,15 @@ name = "stucco-leptos"
 version = "0.1.0-alpha.2"
 dependencies = [
  "leptos",
- "stucco-core",
- "stucco-theme",
- "stucco-ui",
+ "stucco-core 0.5.2",
+ "stucco-theme 0.5.2",
+ "stucco-ui 0.5.2",
  "web-sys",
 ]
 
 [[package]]
 name = "stucco-macros"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3058,13 +3069,13 @@ dependencies = [
 
 [[package]]
 name = "stucco-redb"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "base64",
  "postcard",
  "redb",
  "serde",
- "stucco-core",
+ "stucco-core 0.6.0",
  "stucco-tower",
  "tempfile",
  "tokio",
@@ -3073,7 +3084,7 @@ dependencies = [
 
 [[package]]
 name = "stucco-showcase"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "stucco",
 ]
@@ -3081,10 +3092,16 @@ dependencies = [
 [[package]]
 name = "stucco-theme"
 version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "298505cf30f8db3fabf7b0c569d46ce6f1d59b396f5d90d49efc5d6d713c9ee9"
+
+[[package]]
+name = "stucco-theme"
+version = "0.6.0"
 
 [[package]]
 name = "stucco-tower"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "axum",
  "base64",
@@ -3099,8 +3116,8 @@ dependencies = [
  "multer",
  "pin-project",
  "sha2",
- "stucco-core",
- "stucco-theme",
+ "stucco-core 0.6.0",
+ "stucco-theme 0.6.0",
  "tokio",
  "tower",
  "tower-http 0.7.1",
@@ -3111,10 +3128,20 @@ dependencies = [
 [[package]]
 name = "stucco-ui"
 version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df47a0ed17e567c64bd269d7219069295f4403c741eb11c4a92e2968961cbfd6"
 dependencies = [
  "form_urlencoded",
- "stucco-core",
- "stucco-theme",
+ "stucco-core 0.5.2",
+]
+
+[[package]]
+name = "stucco-ui"
+version = "0.6.0"
+dependencies = [
+ "form_urlencoded",
+ "stucco-core 0.6.0",
+ "stucco-theme 0.6.0",
 ]
 
 [[package]]

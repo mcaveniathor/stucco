@@ -4,7 +4,21 @@ Start from a preset, build your own theme, or derive one from a seed. Every them
 
 ## Presets
 
-Fourteen presets cover common looks, each with light and dark schemes: Slate (the default), Graphite, Stone, Sand, Sepia, Pine, Fjord, Ocean, Iris, Rose, Ember, Sol, Terminal and Contrast.
+Nineteen presets cover common looks, each with light and dark schemes. The original palettes are Slate (the default), Graphite, Stone, Sand, Sepia, Pine, Fjord, Ocean, Iris, Rose, Ember, Sol, Terminal and Contrast.
+
+Five architectural presets also coordinate typography, layout, surface texture and component details. They interpret architectural features as interface choices using system fonts and the same contrast checks as every other theme:
+
+These presets are new in the upcoming 0.6.0 release. When upgrading from 0.5, update exhaustive `Preset` matches for the five new variants and any explicitly sized `Preset::ALL` arrays from 14 to 19 entries. Existing preset recipes and seed mappings keep their behaviour.
+
+| Preset | Architectural inspiration | Interface traits |
+| --- | --- | --- |
+| `Bauhaus` | Geometric forms and functional composition | Primary blue on neutral grey, heavy sans headings, square corners, a grid header and solid navigation |
+| `Brutalist` | Exposed concrete and emphatic structure | Monochrome, coarse plaster grain, monospace headings, heavy rules, square corners and offset buttons |
+| `Deco` | Art Deco geometry and decorative craftsmanship | Warm gold, serif headings, capital labels, beveled corners and layered shadows |
+| `Mediterranean` | Sun-warmed plaster and hand-finished surfaces | Terracotta, troweled relief, softly uneven corners, serif headings and airy text |
+| `Prairie` | Natural materials and strong horizontal lines | Leafy green on oak-tinted neutrals, fine plaster, ruled panels, square corners and a top navigation bar |
+
+Select a complete preset with `Theme::preset(Preset::Mediterranean)` or `stucco theme --preset mediterranean`. All nineteen appear in the [theme playground](../playground.html) and [palette gallery](../gallery/palette.html). To use only a preset's colours while keeping your existing typography and styling, call `.palette_preset(Preset::Mediterranean)` instead.
 
 ```rust
 use stucco::{Bundle, theme::Preset};

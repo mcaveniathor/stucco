@@ -15,9 +15,11 @@ categories = ["web-programming"]
 
 [dependencies]
 leptos = { version = "=0.8.22", default-features = false }
-stucco-core = { workspace = true, optional = true }
-stucco-theme = { workspace = true, optional = true }
-stucco-ui = { workspace = true, features = ["app", "data", "feedback", "forms", "overlay"], optional = true }
+# This independently published preview stays on its released style API while
+# the stable workspace prepares the breaking 0.6 release.
+stucco-core = { version = "=0.5.2", optional = true }
+stucco-theme = { version = "=0.5.2", optional = true }
+stucco-ui = { version = "=0.5.2", features = ["app", "data", "feedback", "forms", "overlay"], optional = true }
 web-sys = { version = "=0.3.106", features = ["File", "FileList"], optional = true }
 
 [features]

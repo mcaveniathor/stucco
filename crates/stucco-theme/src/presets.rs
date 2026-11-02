@@ -1,6 +1,11 @@
-//! The 14 built-in presets, each validated in CI in both schemes.
+//! Built-in presets, each validated in CI in both schemes.
 
-use crate::{BuiltTheme, Color, Fonts, Radius, Theme};
+use crate::{
+    BuiltTheme, ButtonDepth, Color, CornerStyle, Elevation, Finish, Fonts, HeaderStyle,
+    HeadingFont, HeadingWeight, LabelStyle, Leading, LineWeight, LinkStyle, Motion, NavStyle,
+    PanelStyle, Pattern, Radius, Relief, ShadowStyle, ShellLayout, TableStyle, TagStyle, Theme,
+    TypeScale,
+};
 
 /// A built-in theme. Unmodified presets convert to [`BuiltTheme`]
 /// infallibly; modified ones go through [`Theme::build`].
@@ -34,11 +39,21 @@ pub enum Preset {
     Terminal,
     /// Black and white with a strong blue accent; AAA text contrast.
     Contrast,
+    /// Bauhaus geometry: primary blue, a grid and bold, square forms.
+    Bauhaus,
+    /// Brutalist concrete: monochrome, heavy rules and exposed structure.
+    Brutalist,
+    /// Art Deco: warm gold, serif display type and beveled details.
+    Deco,
+    /// Mediterranean plaster: terracotta, soft corners and troweled relief.
+    Mediterranean,
+    /// Prairie architecture: oak tones, leafy green and horizontal rules.
+    Prairie,
 }
 
 impl Preset {
     /// Every preset.
-    pub const ALL: [Preset; 14] = [
+    pub const ALL: [Preset; 19] = [
         Preset::Slate,
         Preset::Graphite,
         Preset::Stone,
@@ -53,6 +68,11 @@ impl Preset {
         Preset::Sol,
         Preset::Terminal,
         Preset::Contrast,
+        Preset::Bauhaus,
+        Preset::Brutalist,
+        Preset::Deco,
+        Preset::Mediterranean,
+        Preset::Prairie,
     ];
 
     /// Lowercase name, used for named themes.
@@ -72,6 +92,11 @@ impl Preset {
             Preset::Sol => "sol",
             Preset::Terminal => "terminal",
             Preset::Contrast => "contrast",
+            Preset::Bauhaus => "bauhaus",
+            Preset::Brutalist => "brutalist",
+            Preset::Deco => "deco",
+            Preset::Mediterranean => "mediterranean",
+            Preset::Prairie => "prairie",
         }
     }
 }
@@ -111,6 +136,74 @@ impl Theme {
                 .high_contrast()
                 .min_contrast(7.0)
                 .text_lightness(0.10, 1.0),
+            Preset::Bauhaus => base(250.0, 0.15, 0.0, 0.0)
+                .radius(Radius::Sharp)
+                .elevation(Elevation::Flat)
+                .heading_weight(HeadingWeight::Heavy)
+                .type_scale(TypeScale::new(16.0, 1.25))
+                .line_weight(LineWeight::Heavy)
+                .label_style(LabelStyle::Caps)
+                .nav_style(NavStyle::Solid)
+                .shell_layout(ShellLayout::Topbar)
+                .pattern(Pattern::Grid)
+                .tag_style(TagStyle::Square)
+                .motion(Motion::Snappy),
+            Preset::Brutalist => base(0.0, 0.0, 60.0, 0.004)
+                .accent_from_neutral()
+                .radius(Radius::Sharp)
+                .elevation(Elevation::Flat)
+                .heading_font(HeadingFont::Mono)
+                .heading_weight(HeadingWeight::Heavy)
+                .line_weight(LineWeight::Heavy)
+                .panel_style(PanelStyle::Ruled)
+                .header_style(HeaderStyle::Plain)
+                .nav_style(NavStyle::Bar)
+                .button_depth(ButtonDepth::Offset)
+                .link_style(LinkStyle::Bold)
+                .finish(Finish::Knockdown)
+                .tag_style(TagStyle::Square)
+                .motion(Motion::Snappy),
+            Preset::Deco => base(90.0, 0.13, 85.0, 0.018)
+                .radius(Radius::Soft)
+                .corner_style(CornerStyle::Bevel)
+                .heading_font(HeadingFont::Serif)
+                .heading_weight(HeadingWeight::Regular)
+                .type_scale(TypeScale::new(16.0, 1.25))
+                .label_style(LabelStyle::Caps)
+                .panel_style(PanelStyle::Headed)
+                .elevation(Elevation::Raised)
+                .shadow_style(ShadowStyle::Layered)
+                .button_depth(ButtonDepth::Raised)
+                .nav_style(NavStyle::Bar)
+                .pattern(Pattern::Grid)
+                .motion(Motion::Gentle),
+            Preset::Mediterranean => base(40.0, 0.14, 75.0, 0.024)
+                .radius(Radius::Round)
+                .corner_style(CornerStyle::Hand)
+                .heading_font(HeadingFont::Serif)
+                .heading_weight(HeadingWeight::Regular)
+                .leading(Leading::Airy)
+                .finish(Finish::Float)
+                .relief(Relief::Trowel)
+                .header_style(HeaderStyle::Plain)
+                .shell_layout(ShellLayout::Topbar)
+                .table_style(TableStyle::Open)
+                .button_depth(ButtonDepth::Raised)
+                .motion(Motion::Gentle),
+            Preset::Prairie => base(160.0, 0.11, 75.0, 0.020)
+                .radius(Radius::Sharp)
+                .elevation(Elevation::Flat)
+                .heading_font(HeadingFont::Serif)
+                .heading_weight(HeadingWeight::Regular)
+                .leading(Leading::Airy)
+                .header_style(HeaderStyle::Tinted)
+                .shell_layout(ShellLayout::Topbar)
+                .panel_style(PanelStyle::Ruled)
+                .nav_style(NavStyle::Bar)
+                .label_style(LabelStyle::Caps)
+                .finish(Finish::Sand)
+                .relief(Relief::Trowel)
+                .motion(Motion::Gentle),
         }
     }
 }
@@ -193,7 +286,12 @@ mod tests {
     #[test]
     fn names_are_lowercase_and_unique() {
         let names: std::collections::HashSet<_> = Preset::ALL.iter().map(|p| p.name()).collect();
-        assert_eq!(names.len(), 14);
+        assert_eq!(names.len(), Preset::ALL.len());
+        assert!(
+            names
+                .iter()
+                .all(|name| name.bytes().all(|b| b.is_ascii_lowercase()))
+        );
         assert_eq!(Preset::Terminal.name(), "terminal");
     }
 }

@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+Five architectural presets for the upcoming 0.6.0 release. This is a breaking
+release from 0.5 because the public preset enum and catalog grow.
+
+- Add Bauhaus, Brutalist, Deco, Mediterranean and Prairie presets, each with
+  coordinated colours, typography and component styling in light and dark.
+  Expose them through the Rust API, CLI, playground and palette gallery.
+- Breaking: `Preset` adds five variants and `Preset::ALL` grows from 14 to 19
+  entries. Update exhaustive matches to handle the new variants and explicitly
+  sized arrays to the new length, or iterate the catalog without a fixed size.
+  The workspace and its internal dependencies advance to 0.6.0. Existing
+  presets, directions and version 1 seed mappings retain their behaviour.
+- Keep the independently versioned Leptos 0.1.0-alpha.2 preview on published
+  0.5.2 style dependencies. Its package consumer and the full-stack example
+  use that same theme type while the stable workspace prepares 0.6.0.
+
 ## stucco-leptos 0.1.0-alpha.2 — 2026-10-28
 
 - `stucco-leptos`: add `NavLink`, `Tabs`, `Breadcrumbs`, `Steps`, `Pagination` and
