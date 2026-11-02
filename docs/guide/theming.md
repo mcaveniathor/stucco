@@ -4,7 +4,7 @@ Start from a preset, build your own theme, or derive one from a seed. Every them
 
 ## Presets
 
-Nineteen presets cover common looks, each with light and dark schemes. The original palettes are Slate (the default), Graphite, Stone, Sand, Sepia, Pine, Fjord, Ocean, Iris, Rose, Ember, Sol, Terminal and Contrast.
+Twenty-one presets cover common looks, each with light and dark schemes. The original palettes are Slate (the default), Graphite, Stone, Sand, Sepia, Pine, Fjord, Ocean, Iris, Rose, Ember, Sol, Terminal and Contrast.
 
 Five architectural presets also coordinate typography, layout, surface texture and component details. They interpret architectural features as interface choices using system fonts and the same contrast checks as every other theme:
 
@@ -18,7 +18,7 @@ These presets are new in the 0.6.0 release. When upgrading from 0.5, update exha
 | `Mediterranean` | Sun-warmed plaster and hand-finished surfaces | Terracotta, troweled relief, softly uneven corners, serif headings and airy text |
 | `Prairie` | Natural materials and strong horizontal lines | Leafy green on oak-tinted neutrals, fine plaster, ruled panels, square corners and a top navigation bar |
 
-Select a complete preset with `Theme::preset(Preset::Mediterranean)` or `stucco theme --preset mediterranean`. All nineteen appear in the [theme playground](../playground.html) and [palette gallery](../gallery/palette.html). To use only a preset's colours while keeping your existing typography and styling, call `.palette_preset(Preset::Mediterranean)` instead.
+Select a complete preset with `Theme::preset(Preset::Mediterranean)` or `stucco theme --preset mediterranean`. All twenty-one appear in the [theme playground](../playground.html) and [palette gallery](../gallery/palette.html). To use only a preset's colours while keeping your existing typography and styling, call `.palette_preset(Preset::Mediterranean)` instead.
 
 ```rust
 use stucco::{Bundle, theme::Preset};
