@@ -230,9 +230,9 @@ def verify(args: argparse.Namespace, work: Path) -> None:
     if archive_crate is not None:
         preview_dependency += ", path = " + json.dumps(str(archive_crate))
     leptos_version = crate_manifest["dependencies"]["leptos"]["version"]
-    sibling = read_toml(ROOT / "Cargo.toml")["workspace"]["dependencies"]
+    sibling = crate_manifest["dependencies"]
     sibling_dependencies = "\n".join(
-        f'{name} = {{ version = "={sibling[name]["version"]}", optional = true }}'
+        f'{name} = {{ version = "{sibling[name]["version"]}", optional = true }}'
         for name in ("stucco-core", "stucco-theme", "stucco-ui")
     )
     (consumer / "Cargo.toml").write_text(f'''[package]

@@ -8,6 +8,8 @@ Nineteen presets cover common looks, each with light and dark schemes. The origi
 
 Five architectural presets also coordinate typography, layout, surface texture and component details. They interpret architectural features as interface choices using system fonts and the same contrast checks as every other theme:
 
+These presets are new in the upcoming 0.6.0 release. When upgrading from 0.5, update exhaustive `Preset` matches for the five new variants and any explicitly sized `Preset::ALL` arrays from 14 to 19 entries. Existing preset recipes and seed mappings keep their behaviour.
+
 | Preset | Architectural inspiration | Interface traits |
 | --- | --- | --- |
 | `Bauhaus` | Geometric forms and functional composition | Primary blue on neutral grey, heavy sans headings, square corners, a grid header and solid navigation |

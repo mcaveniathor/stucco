@@ -91,7 +91,9 @@ version or publish the Orders application.
    API changes require an explicit new preview version.
 2. Check that every registry dependency is already published. The preview's
    style dependencies currently use published `stucco-core`, `stucco-theme`
-   and `stucco-ui` 0.5.2; its Leptos dependency is pinned to 0.8.22. The
+   and `stucco-ui` 0.5.2, pinned directly in the preview manifest rather than
+   inherited from the stable workspace preparing 0.6.0. Its Leptos dependency
+   is pinned to 0.8.22. The
    archive consumer must pass against those registry dependencies, even
    when the checkout's copies have additional changes.
 3. Merge the reviewed release preparation to `main`. Require CI, including

@@ -5,7 +5,8 @@ styles and accessibility conventions. It provides form, page, navigation, table,
 data-display and feedback components using Leptos directly; it does not hydrate
 the static `Render` builders. This preview does not yet cover the full Stucco
 component catalogue. Its separate prerelease version is **0.1.0-alpha.2**, published
-on crates.io; the existing Stucco crates are at 0.5.2.
+on crates.io. This preview keeps its style dependencies pinned to published
+Stucco 0.5.2 while the stable workspace prepares 0.6.0.
 
 | Area | Available in this preview | Still missing |
 | --- | --- | --- |
@@ -37,10 +38,10 @@ ssr = ["leptos/ssr", "stucco-leptos/ssr", "dep:stucco-theme"]
 hydrate = ["leptos/hydrate", "stucco-leptos/hydrate"]
 ```
 
-To follow unreleased changes from a Stucco checkout instead, add
-`path = "../stucco/crates/stucco-leptos"` and
-`path = "../stucco/crates/stucco-theme"` to those two dependencies, keeping the
-exact versions.
+To follow unreleased preview changes from a Stucco checkout instead, add
+`path = "../stucco/crates/stucco-leptos"` to the preview dependency, keeping
+the exact version. Keep `stucco-theme` on the registry version above so it
+matches the preview's theme type; the checkout's 0.6 theme is a different API.
 
 The theme dependency is only needed by server code calling `stylesheet`.
 `stucco-leptos` has no default features:

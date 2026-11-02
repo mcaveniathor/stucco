@@ -225,7 +225,9 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - uses: taiki-e/install-action@cargo-hack
       - run: cargo hack check -p stucco --each-feature --no-dev-deps
-      - run: cargo hack test -p stucco-ui --each-feature
+      # The independent Leptos preview also resolves registry stucco-ui 0.5.2.
+      # Select the workspace manifest so the package name is unambiguous.
+      - run: cargo hack test --manifest-path crates/stucco-ui/Cargo.toml --each-feature
       - run: cargo hack check -p stucco-tower -p stucco-redb --each-feature --no-dev-deps
       - run: cargo test -p stucco-tower --features csrf,multipart --locked
       - run: cargo test -p stucco-redb --no-default-features
