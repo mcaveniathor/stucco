@@ -345,3 +345,15 @@ fn worker_refuses_missing_or_mismatched_protocol_version() {
         assert!(output.stdout.is_empty());
     }
 }
+
+#[tokio::test]
+async fn completed_reply_does_not_require_pipe_eof_after_worker_exit() {
+    // Simulate a host fork briefly inheriting the worker's pipe descriptor.
+    // The production decoder cannot spawn descendants.
+    let (_dir, p, _) =
+        fixture("cat >/dev/null; sleep 1 & printf '\\001\\000\\000\\000\\040\\000\\000\\000\\020'");
+    let validator = IsolatedValidator::new(limits(), p).unwrap();
+    let info = validator.validate(png().into()).await.unwrap();
+    assert_eq!((info.width, info.height), (32, 16));
+    validator.close_and_drain().await;
+}

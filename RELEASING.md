@@ -48,6 +48,19 @@ trusted publisher. Trusted publishing can't create a crate.
    all-feature publish dry run, Rust 1.85, 1.88 and 1.90, semver, features,
    packaged Leptos consumers and browser tests.
 
+## First uploads in 0.6.0
+
+After the release PR passes CI and merges, publish the new crates from that merged
+commit using normal Cargo authentication, before pushing the version tag:
+
+```sh
+cargo publish -p stucco-blob -p stucco-image --locked --all-features
+```
+
+The v0.6.0 workflow verifies those exact registry versions and excludes them from
+its upload batch. Configure their trusted publishers before the next release;
+later tags include both crates normally. Do not put API tokens in workflow files.
+
 ## Publish
 
 Tag the merged commit on `main` and push the tag:

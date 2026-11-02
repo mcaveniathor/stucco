@@ -407,7 +407,8 @@ fn supervise(
             return Err(Error::Worker);
         }
         if let Some(status) = child.0.try_wait().map_err(|_| Error::Worker)? {
-            // Final bounded drain after exit (the supplied worker cannot fork).
+            // The reaped worker can write no more. A concurrent host fork may
+            // briefly retain a pipe descriptor, so lack of EOF is not failure.
             loop {
                 match stdout.read(&mut output[received..]) {
                     Ok(0) => break,
@@ -417,6 +418,7 @@ fn supervise(
                             return Err(Error::Worker);
                         }
                     }
+                    Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => break,
                     Err(_) => return Err(Error::Worker),
                 }
             }
