@@ -26,6 +26,8 @@ pub const HEADER_TARGET: &str = "Stucco-Target";
 pub const HEADER_LOCATION: &str = "Stucco-Location";
 /// Form field carrying the CSRF token.
 pub const CSRF_FIELD: &str = "_csrf";
+/// Form field carrying a single-submit token.
+pub const SUBMIT_FIELD: &str = "_submit";
 /// Request header carrying the CSRF token.
 pub const HEADER_CSRF: &str = "Stucco-Csrf";
 

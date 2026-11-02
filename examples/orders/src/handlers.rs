@@ -6,6 +6,7 @@ use axum::extract::rejection::PathRejection;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
+use std::time::{SystemTime, UNIX_EPOCH};
 use stucco::FormState;
 use stucco::forms::HiddenInput;
 use stucco::prelude::*;
@@ -101,12 +102,34 @@ pub(crate) fn row_actions(order: &Order, revision: Revision, csrf: &str) -> impl
     (menu, dialog)
 }
 
-pub(crate) async fn new_order(cx: PageCx) -> Document {
-    let state = FormState::new();
-    cx.title("New order — stucco").app(shell(form_page(
-        "New order",
-        order_form("/orders".into(), &state, &csrf(&cx), None, "Create order"),
-    )))
+/// What a new-order form's single-submit tokens are bound to.
+const NEW_ORDER: &str = "orders:new";
+
+pub(crate) fn unix_now() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |elapsed| elapsed.as_secs())
+}
+
+/// The new-order page, with a token of its own for this rendering.
+fn new_order_page(cx: &PageCx, app: &AppState, state: &FormState, status: StatusCode) -> Response {
+    let Ok(token) = app.forms.issue(NEW_ORDER) else {
+        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+    };
+    let form = order_form("/orders".into(), state, &csrf(cx), None, "Create order")
+        .single_submit(token.as_str());
+    cx.title("New order — stucco")
+        .app(shell(
+            Stack::new()
+                .child(FlashMessages::new(cx.context().get::<Flash>().cloned()))
+                .child(form_page("New order", form)),
+        ))
+        .status(status)
+        .into_response()
+}
+
+pub(crate) async fn new_order(State(app): State<AppState>, cx: PageCx) -> Response {
+    new_order_page(&cx, &app, &FormState::new(), StatusCode::OK)
 }
 
 fn form_page<'a>(title: &str, form: impl Render + 'a) -> impl Render + 'a {
@@ -116,25 +139,41 @@ fn form_page<'a>(title: &str, form: impl Render + 'a) -> impl Render + 'a {
 }
 
 pub(crate) async fn create(
-    State(state): State<AppState>,
+    State(app): State<AppState>,
     cx: PageCx,
     Submission(form): Submission,
 ) -> Response {
+    let Ok(key) = app.forms.verify(NEW_ORDER, form.submit_token()) else {
+        return SeeOther::new("/orders/new")
+            .flash(Flash::new(
+                FlashLevel::Warning,
+                "That form expired. Enter the order again.",
+            ))
+            .into_response();
+    };
     let input = match validate(form) {
         Ok(input) => input,
         Err(state) => {
-            return cx
-                .title("New order — stucco")
-                .app(shell(form_page(
-                    "New order",
-                    order_form("/orders".into(), &state, &csrf(&cx), None, "Create order"),
-                )))
-                .status(StatusCode::UNPROCESSABLE_ENTITY)
-                .into_response();
+            return new_order_page(&cx, &app, &state, StatusCode::UNPROCESSABLE_ENTITY);
         }
     };
-    match state.orders().create(move |id| input.into_order(id)).await {
-        Ok((id, _)) => SeeOther::new("/orders")
+    // The record commits with the order, so a double tap gets the first order
+    // back and a failed save leaves the form free to try again.
+    let (table, submits) = (app.table.clone(), app.submits.clone());
+    let created = app
+        .orders()
+        .store()
+        .write(move |tx| {
+            if let Some(first) = submits.replay(tx, key.id(), unix_now())? {
+                return Ok::<_, StoreError>(first);
+            }
+            let (id, _) = tx.create(&table, |id| input.into_order(id))?;
+            submits.record(tx, key.id(), key.expires_at(), id)?;
+            Ok(id)
+        })
+        .await;
+    match created {
+        Ok(id) => SeeOther::new("/orders")
             .flash(Flash::new(
                 FlashLevel::Success,
                 format!("Order {id} created."),

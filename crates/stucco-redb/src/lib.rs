@@ -71,6 +71,10 @@
 //! # Ok(()) }
 //! ```
 //!
+//! The optional `submit-ledger` feature adds `SubmitLedger`, which records form
+//! submissions in the transaction that applies them, so a repeat takes effect
+//! once and can answer with the first outcome.
+//!
 //! Cursors are query-scoped locators, not authorization tokens. The table and
 //! indexes are not automatically migrated when changing codecs/schema.
 #![cfg_attr(docsrs, feature(doc_cfg))]
@@ -88,6 +92,8 @@ mod index;
 mod revision;
 mod scan;
 mod store;
+#[cfg(feature = "submit-ledger")]
+mod submit_ledger;
 mod table;
 mod transaction;
 mod write;
@@ -103,5 +109,7 @@ pub use index::IndexTable;
 pub use revision::{InvalidRevision, Revision};
 pub use scan::ScanRequest;
 pub use store::Store;
+#[cfg(feature = "submit-ledger")]
+pub use submit_ledger::SubmitLedger;
 pub use table::Table;
 pub use transaction::{Creatable, Handle, ReadTx, WriteTx};

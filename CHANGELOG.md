@@ -19,6 +19,18 @@ release from 0.5 because the public preset enum and catalog grow.
 - `stucco-redb`: add `ReadTx::index_range`, which reads a limited number of
   records from a byte range of a secondary index in either direction, so one
   tenant's rows can be read without filtering every record.
+- `stucco-tower`: add `SingleSubmit`, `SubmitToken`, `SubmitKey` and
+  `SubmitRejection` behind the optional `single-submit` feature (also on the
+  `stucco` facade). Each rendered form gets a signed, expiring token bound to a
+  scope, so a double tap takes effect once. No cookie, session or JavaScript is
+  needed.
+- `stucco-core`: add `behavior::SUBMIT_FIELD` and `FormState::submit_token`.
+  `FormState::from_urlencoded` keeps a `_submit` field out of the form's values.
+  Breaking only for an application that used a field named `_submit` itself.
+- `stucco-ui`: add `Form::single_submit`.
+- `stucco-redb`: add `SubmitLedger` behind the optional `submit-ledger` feature.
+  It records a keyed outcome in the transaction that applies a form's effect.
+- `orders` example: new orders use single-submit tokens.
 
 ## stucco-leptos 0.1.0-alpha.2 — 2026-10-28
 

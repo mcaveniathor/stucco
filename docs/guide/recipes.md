@@ -103,6 +103,10 @@ async fn create(page: PageCx, Submission(form): Submission) -> Response {
 
 See [Forms](forms.html) for every check and control.
 
+## Make a double tap submit once
+
+Issue a `SingleSubmit` token with each rendered form, and record its key in the transaction that applies the form's effect. See [Single-submit forms](forms.html#single-submit-forms) for the whole flow. The `orders` example does this for new orders.
+
 ## Show a searchable, filterable table
 
 Derive the columns from your row type, implement `CollectionSource` for your storage, and load a page per request. The query string carries the search, filters, sort and page, so every view has a URL:

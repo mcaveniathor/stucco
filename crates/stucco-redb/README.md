@@ -62,6 +62,15 @@ Cursor scans return an owned page with an unknown total. Predicates may still
 visit many records. Numbered mode deliberately materializes all matching records,
 so use it for small collections. Cursors are locators, not authorization tokens.
 
+## Single-submit forms
+
+With the `submit-ledger` feature, `SubmitLedger` records a keyed outcome in the
+transaction that applies a form's effect, so a double tap takes effect once and
+the repeat can answer as the first did. Pair it with `SingleSubmit` from
+`stucco-tower`, which issues the keys; the
+[forms guide](https://github.com/mcaveniathor/stucco/blob/main/docs/guide/forms.md)
+shows the whole flow. Run `purge_expired` on a timer.
+
 ## Transactions
 
 `Store::write` runs a closure against one redb write transaction that can touch

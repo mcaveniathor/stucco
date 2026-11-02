@@ -19,6 +19,7 @@ pub struct Form<'a> {
     post: bool,
     action: Href,
     csrf: Option<String>,
+    submit: Option<String>,
     multipart: bool,
     children: Vec<Slot<'a>>,
 }
@@ -33,6 +34,7 @@ impl<'a> Form<'a> {
             post,
             action: action.into(),
             csrf: None,
+            submit: None,
             multipart: false,
             children: Vec::new(),
         }
@@ -54,6 +56,16 @@ impl<'a> Form<'a> {
         debug_assert!(self.post, "CSRF tokens belong on POST forms only");
         if self.post {
             self.csrf = Some(token.to_owned());
+        }
+        self
+    }
+
+    /// Adds a single-submit token field (`_submit`), issued for this rendering
+    /// of the form. POST forms only, like [`csrf`](Self::csrf).
+    pub fn single_submit(mut self, token: &str) -> Self {
+        debug_assert!(self.post, "single-submit tokens belong on POST forms only");
+        if self.post {
+            self.submit = Some(token.to_owned());
         }
         self
     }
@@ -93,6 +105,11 @@ impl Render for Form<'_> {
         }
         let el = el
             .child(self.csrf.as_deref().map(CsrfToken::new))
+            .child(
+                self.submit
+                    .as_deref()
+                    .map(|token| HiddenInput::new(behavior::SUBMIT_FIELD, token)),
+            )
             .children(self.children.iter());
         apply(el, &self.attrs, Self::RESERVED).render(cx);
     }

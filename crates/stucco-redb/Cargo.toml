@@ -24,6 +24,7 @@ tokio = { workspace = true, optional = true, features = ["rt", "sync"] }
 [features]
 default = ["tokio"]
 tokio = ["dep:tokio", "dep:stucco-tower"]
+submit-ledger = []
 [dev-dependencies]
 tempfile = "3"
 tokio = { workspace = true, features = ["macros", "rt", "sync", "time"] }

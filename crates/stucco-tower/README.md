@@ -57,6 +57,12 @@ next request's `Flash` from its context and render it with `FlashMessages`.
 Both layers use Secure, HttpOnly, host-only cookies and private, non-cacheable
 responses. Install them before mounting assets so assets do not consume messages.
 
+The optional `single-submit` feature adds `SingleSubmit`, which issues a signed
+idempotency token with each rendered form and verifies it when the form comes
+back, bound to a scope you choose. Verifying holds no state: the application
+records `SubmitKey::id()` in the transaction that applies the form's effect, as
+`stucco_redb::SubmitLedger` does for redb.
+
 `SecretKey::from_env()` reads 64 hex digits from `STUCCO_SECRET_KEY`; missing
 keys are errors in release builds, or generate an ephemeral development key
 with a tracing warning in debug builds. Share one stable key across replicas.

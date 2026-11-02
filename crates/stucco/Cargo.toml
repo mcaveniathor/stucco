@@ -36,6 +36,8 @@ icons = ["stucco-ui/icons"]
 # Serve pages from axum handlers: `Router::stucco`, `PageCx` and `Document`
 # in the prelude, and `stucco::server` for the rest of `stucco-tower`.
 axum = ["dep:stucco-tower"]
+# `stucco::server::SingleSubmit`: a double tap on a form takes effect once.
+single-submit = ["axum", "stucco-tower/single-submit"]
 # `#[derive(Columns)]` for data table rows.
 derive = ["collections", "dep:stucco-macros"]
 

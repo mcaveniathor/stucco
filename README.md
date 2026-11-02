@@ -240,9 +240,12 @@ to select only the families you need.
 
 `stucco-tower` enables `axum`, `tower-http` and `csrf` by default. The `csrf`
 feature provides opt-in CSRF and signed flash-cookie layers; see the
-[forms guide](docs/guide/forms.md) for setup and key configuration.
+[forms guide](docs/guide/forms.md) for setup and key configuration. The optional
+`single-submit` feature, in `stucco-tower` and the `stucco` facade, adds an
+idempotency token for each rendered form.
 `stucco-redb` enables its `tokio` collection adapter by default; disable defaults
-for synchronous storage alone.
+for synchronous storage alone. Its optional `submit-ledger` feature records
+one-time submissions in the transaction that applies them.
 
 ## Try the examples
 
