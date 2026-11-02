@@ -32,6 +32,7 @@ impl BlobKey {
     }
 
     /// Whether `self` is `prefix` or sits below it.
+    #[cfg(any(feature = "s3", test))]
     pub(crate) fn has_prefix(&self, prefix: &BlobKey) -> bool {
         self.0
             .strip_prefix(prefix.as_str())
@@ -64,6 +65,12 @@ impl fmt::Display for InvalidKey {
 }
 
 impl std::error::Error for InvalidKey {}
+
+impl std::borrow::Borrow<str> for BlobKey {
+    fn borrow(&self) -> &str {
+        self.as_str()
+    }
+}
 
 #[cfg(test)]
 mod tests {

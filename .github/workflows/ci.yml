@@ -69,13 +69,14 @@ jobs:
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo test --workspace
+      - run: cargo test -p stucco-redb -p stucco-blob -p stucco-image --all-features --locked
   semver:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: obi1kenobi/cargo-semver-checks-action@v2
         with:
-          exclude: gallery,hello,orders,orders-fullstack,stucco-leptos,site,site-wasm
+          exclude: gallery,hello,orders,orders-fullstack,stucco-leptos,stucco-blob,stucco-image,site,site-wasm
   msrv:
     runs-on: ubuntu-latest
     steps:

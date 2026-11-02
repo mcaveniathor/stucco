@@ -339,6 +339,46 @@ fn range_rows<'r, V, KC, VC: Codec<V>>(
     Ok(rows)
 }
 
+fn equal_rows<V, KC, VC: Codec<V>>(
+    data: &impl ReadableTable<&'static [u8], &'static [u8]>,
+    order: &impl ReadableTable<&'static [u8], &'static [u8]>,
+    parts: &Parts<'_, V, KC, VC>,
+    field: &[u8],
+    after: Option<&[u8]>,
+    direction: Direction,
+    limit: usize,
+) -> Result<Vec<V>, StoreError> {
+    let start = escaped(field);
+    let end = [start.as_slice(), &[0, 1]].concat();
+    let anchor = after.map(|key| compound(field, key));
+    let (lower, upper) = match (direction, anchor) {
+        (Direction::Asc, Some(anchor)) => (Bound::Excluded(anchor), Bound::Excluded(end)),
+        (Direction::Desc, Some(anchor)) => (Bound::Included(start), Bound::Excluded(anchor)),
+        _ => (Bound::Included(start), Bound::Excluded(end)),
+    };
+    let mut entries = order
+        .range::<&[u8]>((
+            lower.as_ref().map(Vec::as_slice),
+            upper.as_ref().map(Vec::as_slice),
+        ))
+        .map_err(StoreError::new)?;
+    let mut rows = Vec::new();
+    while rows.len() < limit {
+        let entry = match direction {
+            Direction::Asc => entries.next(),
+            Direction::Desc => entries.next_back(),
+        };
+        let Some(entry) = entry else { break };
+        let (_, key) = entry.map_err(StoreError::new)?;
+        let value = data
+            .get(key.value())
+            .map_err(StoreError::new)?
+            .ok_or_else(|| StoreError::invalid("index points to missing record"))?;
+        rows.push(parts.values.decode(value.value())?);
+    }
+    Ok(rows)
+}
+
 /// A `u64`-keyed [`Table`] or [`IndexTable`] that can allocate ids with
 /// [`WriteTx::create`]. This trait is sealed.
 pub trait Creatable<V>: Handle<u64, V> {}
@@ -484,6 +524,48 @@ impl WriteTx {
         range_rows(&data, &order, &parts, range, direction, limit)
     }
 
+    /// Reads at most `limit` rows whose secondary indexed value equals `field`.
+    /// Rows follow encoded primary-key order within that value. `after` is an
+    /// exclusive primary-key position in the requested direction; it need not
+    /// still exist. Zero limit returns no rows. Only this exact indexed value
+    /// is visited, including when fields or keys contain zero bytes.
+    /// Uses this transaction's snapshot (and its own writes for WriteTx).
+    pub fn index_equal_after<K, V, KC: KeyCodec<K>, VC: Codec<V>>(
+        &self,
+        index: &IndexTable<K, V, KC, VC>,
+        field: &[u8],
+        after: Option<&K>,
+        direction: Direction,
+        limit: usize,
+    ) -> Result<Vec<V>, StoreError> {
+        self.live()?;
+        let parts = index.parts();
+        same_store(&self.db, &parts)?;
+        if limit == 0 {
+            return Ok(Vec::new());
+        }
+        let anchor = after.map(|key| parts.keys.encode(key)).transpose()?;
+        let name = parts
+            .index
+            .as_ref()
+            .expect("an IndexTable always has an index")
+            .name;
+        let data = self
+            .tx
+            .open_table(bytes(parts.table))
+            .map_err(StoreError::new)?;
+        let order = self.tx.open_table(bytes(name)).map_err(StoreError::new)?;
+        equal_rows(
+            &data,
+            &order,
+            &parts,
+            field,
+            anchor.as_deref(),
+            direction,
+            limit,
+        )
+    }
+
     /// Replaces the value with `change(current)` if its revision is still
     /// `expected`, and returns the new revision. Otherwise nothing is written
     /// and the error is a conflict (see [`IndexTable::update_if`]); the
@@ -619,5 +701,46 @@ impl ReadTx {
             .map_err(StoreError::new)?;
         let order = self.tx.open_table(bytes(name)).map_err(StoreError::new)?;
         range_rows(&data, &order, &parts, range, direction, limit)
+    }
+
+    /// Reads at most `limit` rows whose secondary indexed value equals `field`.
+    /// Rows follow encoded primary-key order within that value. `after` is an
+    /// exclusive primary-key position in the requested direction; it need not
+    /// still exist. Zero limit returns no rows. Only this exact indexed value
+    /// is visited, including when fields or keys contain zero bytes.
+    /// Uses this transaction's snapshot (and its own writes for WriteTx).
+    pub fn index_equal_after<K, V, KC: KeyCodec<K>, VC: Codec<V>>(
+        &self,
+        index: &IndexTable<K, V, KC, VC>,
+        field: &[u8],
+        after: Option<&K>,
+        direction: Direction,
+        limit: usize,
+    ) -> Result<Vec<V>, StoreError> {
+        let parts = index.parts();
+        same_store(&self.db, &parts)?;
+        if limit == 0 {
+            return Ok(Vec::new());
+        }
+        let anchor = after.map(|key| parts.keys.encode(key)).transpose()?;
+        let name = parts
+            .index
+            .as_ref()
+            .expect("an IndexTable always has an index")
+            .name;
+        let data = self
+            .tx
+            .open_table(bytes(parts.table))
+            .map_err(StoreError::new)?;
+        let order = self.tx.open_table(bytes(name)).map_err(StoreError::new)?;
+        equal_rows(
+            &data,
+            &order,
+            &parts,
+            field,
+            anchor.as_deref(),
+            direction,
+            limit,
+        )
     }
 }

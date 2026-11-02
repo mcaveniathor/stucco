@@ -112,7 +112,7 @@ also answers fragment requests.
 
 ## Themes
 
-Nineteen presets cover common looks, each in light and dark, including five
+Twenty-one presets cover common looks, each in light and dark, including five
 architectural styles: Bauhaus, Brutalist, Deco, Mediterranean and Prairie.
 See the [preset guide](docs/guide/theming.md#presets) for their visual traits. For anything
 else, build a `Theme`, or derive a whole one from a seed:
@@ -203,7 +203,9 @@ The [orders example](https://github.com/mcaveniathor/stucco/tree/main/examples/o
 persists 67 seeded records and demonstrates the complete flow. Its default
 cursor mode leaves the total unknown. Numbered mode deliberately scans the whole
 collection and is intended for small datasets. Authentication, authorization,
-schema migrations, and mutation endpoints belong to the application.
+mutation policy and record codecs belong to the application. Optional `stucco-redb`
+`migrations` and `jobs` features provide transactional coordination; see
+[durable work](docs/guide/durable-work.md).
 
 ## Crates and compiler support
 
@@ -215,6 +217,8 @@ schema migrations, and mutation endpoints belong to the application.
 | `stucco-ui` | Component implementations | 1.85 |
 | `stucco-tower` | Tower services, Axum responses, and collection sources | 1.85 |
 | `stucco-redb` | Optional redb 4.3 storage adapter | 1.90 |
+| `stucco-blob` | Private filesystem and S3-compatible blob storage | 1.85 |
+| `stucco-image` | Bounded static image validation and isolated worker | 1.85 |
 | `stucco-cli` | The `stucco` command for generating themes | 1.85 |
 | `stucco-macros` | `#[derive(Columns)]`, through `stucco`'s `derive` feature | 1.85 |
 
@@ -294,3 +298,36 @@ Licensed under MIT or Apache-2.0, at your option. The optional Lucide icon
 catalog is covered by the ISC notice distributed as
 [`LICENSE-LUCIDE`](https://github.com/mcaveniathor/stucco/blob/main/crates/stucco-ui/LICENSE-LUCIDE).
 Regenerate it with `cd tools && npm install && npm run icons`.
+
+### Casa themes
+
+`Preset::CasaMexicana` pairs turquoise with warm plaster, rounded controls,
+soft floated texture and a wave-pattern header. `Preset::PatioEspanol` pairs
+cobalt tile blue with ivory limewash, serif headings and ruled panels.
+These are home-material inspirations, not reproductions of regional folk art.
+Both include light/dark modes, validated text and control contrast, and existing
+reduced-motion/high-contrast behavior; no image assets or remote fonts are needed.
+See the first two sections of the gallery's `themes.html` for side-by-side previews.
+
+```rust
+use stucco::prelude::*;
+let bundle = Bundle::new(Preset::CasaMexicana)
+    .with_theme("patio-espanol", Preset::PatioEspanol);
+// Preserve a household's seeded typography/layout while choosing a casa palette:
+let household = Theme::seeded_str("Our home")
+    .palette_preset(Preset::PatioEspanol).build()?;
+# Ok::<(), stucco::theme::ContrastReport>(())
+```
+
+### Private blob safety
+
+The optional `stucco-blob` crate offers explicit `get_bounded`/`put_bounded` byte
+budgets across memory, filesystem and S3 backends. Its filesystem backend has
+exclusive single-process ownership, private-root checks and safe batched recovery
+of abandoned staging files. Listings have explicit scan constraints. See the
+[blob guide](crates/stucco-blob/README.md) for configuration, breaking changes and
+the application-owned auth/expiry/quota/reconciliation boundary. Live S3 tests
+require an explicitly configured disposable service; unit tests are not that check.
+
+Optional [`stucco-image`](crates/stucco-image/README.md) validates restricted PNG
+and baseline JPEG with an explicitly configured Linux x86_64 worker.

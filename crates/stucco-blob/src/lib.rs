@@ -13,17 +13,23 @@
 //!
 //! Nothing here is publicly readable. Serve blobs from a handler that checks
 //! authorization on every request. There are deliberately no signed URLs: one
-//! stays valid until it expires, even after the file is deleted.
+//! can remain authorized until it expires despite changed application access rules.
 //!
 //! ```
 //! use stucco_blob::{BlobKey, BlobStore, FilesystemStore};
 //! # #[tokio::main(flavor = "current_thread")]
 //! # async fn main() -> Result<(), stucco_blob::BlobError> {
-//! # let dir = tempfile::tempdir().unwrap();
+//! # let mut builder = tempfile::Builder::new();
+//! # #[cfg(unix)] {
+//! # use std::os::unix::fs::PermissionsExt;
+//! # builder.permissions(std::fs::Permissions::from_mode(0o700));
+//! # }
+//! # let dir = builder.tempdir().unwrap();
 //! let store = FilesystemStore::open(dir.path())?;
+//! while store.recover_staging(100).await? != 0 {}
 //! let key = BlobKey::new("tenants/7/files/12/original")?;
-//! store.put(&key, "hello".into()).await?;
-//! assert_eq!(store.get(&key).await?.as_deref(), Some(b"hello".as_slice()));
+//! store.put_bounded(&key, "hello".into(), 1024).await?;
+//! assert_eq!(store.get_bounded(&key, 1024).await?.as_deref(), Some(b"hello".as_slice()));
 //! store.delete(&key).await?;
 //! store.delete(&key).await?; // Deleting again is not an error.
 //! # Ok(()) }
@@ -57,7 +63,32 @@ pub trait BlobStore: Send + Sync + 'static {
     /// Stores `bytes` under `key`, replacing any earlier blob.
     fn put<'a>(&'a self, key: &'a BlobKey, bytes: Bytes) -> BlobFuture<'a, ()>;
     /// The blob under `key`, if there is one.
-    fn get<'a>(&'a self, key: &'a BlobKey) -> BlobFuture<'a, Option<Bytes>>;
+    fn get<'a>(&'a self, key: &'a BlobKey) -> BlobFuture<'a, Option<Bytes>> {
+        self.get_bounded(key, usize::MAX)
+    }
+    /// Reads at most `max_bytes`, refusing an oversized object before allocating
+    /// its declared size. Implementations also enforce the limit during reads.
+    /// Applications should prefer this over unbounded `get` for uploaded data.
+    fn get_bounded<'a>(
+        &'a self,
+        key: &'a BlobKey,
+        max_bytes: usize,
+    ) -> BlobFuture<'a, Option<Bytes>>;
+    /// Refuses oversized bytes before any write. This cannot undo allocation of
+    /// the supplied buffer: enforce HTTP/body limits before collecting uploads.
+    fn put_bounded<'a>(
+        &'a self,
+        key: &'a BlobKey,
+        bytes: Bytes,
+        max_bytes: usize,
+    ) -> BlobFuture<'a, ()> {
+        Box::pin(async move {
+            if bytes.len() > max_bytes {
+                return Err(BlobError::new("blob exceeds byte limit"));
+            }
+            self.put(key, bytes).await
+        })
+    }
     /// Removes the blob under `key`. A missing blob is not an error.
     fn delete<'a>(&'a self, key: &'a BlobKey) -> BlobFuture<'a, ()>;
     /// Up to `limit` keys starting with `prefix` and sorting after `after`, in
@@ -104,4 +135,21 @@ impl From<InvalidKey> for BlobError {
     fn from(error: InvalidKey) -> Self {
         Self::new(error)
     }
+}
+
+// Keep the retained payload allocation within the explicit byte budget, including
+// growth after a stale metadata size. Transport/stack buffers are separate.
+pub(crate) fn append_bounded(
+    target: &mut Vec<u8>,
+    bytes: &[u8],
+    max: usize,
+) -> Result<(), BlobError> {
+    if bytes.len() > max.saturating_sub(target.len()) {
+        return Err(BlobError::new("blob exceeds byte limit"));
+    }
+    target
+        .try_reserve_exact(bytes.len())
+        .map_err(BlobError::new)?;
+    target.extend_from_slice(bytes);
+    Ok(())
 }

@@ -15,8 +15,9 @@ categories = ["web-programming", "filesystem"]
 
 [dependencies]
 bytes.workspace = true
-tokio = { workspace = true, features = ["rt"] }
+tokio = { workspace = true, features = ["rt", "sync"] }
 getrandom = "0.3"
+fs2 = "0.4"
 object_store = { version = "0.14", default-features = false, features = ["aws"], optional = true }
 futures-util = { version = "0.3", default-features = false, features = ["std"], optional = true }
 
@@ -27,7 +28,7 @@ s3 = ["dep:object_store", "dep:futures-util"]
 
 [dev-dependencies]
 tempfile = "3"
-tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
 
 [package.metadata.docs.rs]
 all-features = true
