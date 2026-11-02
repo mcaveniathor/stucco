@@ -246,6 +246,8 @@ idempotency token for each rendered form.
 `stucco-redb` enables its `tokio` collection adapter by default; disable defaults
 for synchronous storage alone. Its optional `submit-ledger` feature records
 one-time submissions in the transaction that applies them.
+The separate `stucco-blob` crate stores private uploads on a filesystem or in any
+S3-compatible bucket.
 
 ## Try the examples
 

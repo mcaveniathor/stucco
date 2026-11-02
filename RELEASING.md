@@ -1,7 +1,8 @@
 # Releasing stucco
 
-The stable workspace release publishes eight crates: stucco-theme, stucco-core,
-stucco-macros, stucco-ui, stucco-tower, stucco, stucco-redb and stucco-cli.
+The stable workspace release publishes nine crates: stucco-theme, stucco-core,
+stucco-macros, stucco-ui, stucco-tower, stucco, stucco-redb, stucco-blob and
+stucco-cli.
 The gallery, the site and the examples have `publish = false` or are
 excluded. Publishing a version is permanent: a version can be yanked, never
 replaced.
@@ -20,7 +21,7 @@ The Release workflow publishes with crates.io
 exchanges its GitHub OIDC identity for a crates.io token that expires after
 30 minutes. No registry token is stored in the repository.
 
-Each published crate, the stable eight and `stucco-leptos`, has one trusted
+Each published crate, the stable nine and `stucco-leptos`, has one trusted
 publisher on crates.io (the crate's Settings → Trusted Publishing):
 
 | Field | Value |

@@ -1,0 +1,33 @@
+[package]
+name = "stucco-blob"
+description = "Private blob storage for stucco applications: filesystem and S3-compatible backends behind one interface."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+include.workspace = true
+readme = "README.md"
+documentation = "https://docs.rs/stucco-blob"
+keywords = ["storage", "s3", "uploads"]
+categories = ["web-programming", "filesystem"]
+
+[dependencies]
+bytes.workspace = true
+tokio = { workspace = true, features = ["rt"] }
+getrandom = "0.3"
+object_store = { version = "0.14", default-features = false, features = ["aws"], optional = true }
+futures-util = { version = "0.3", default-features = false, features = ["std"], optional = true }
+
+[features]
+default = []
+# `S3Store`, for any S3-compatible service.
+s3 = ["dep:object_store", "dep:futures-util"]
+
+[dev-dependencies]
+tempfile = "3"
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+
+[package.metadata.docs.rs]
+all-features = true

@@ -16,8 +16,8 @@ release from 0.5 because the public preset enum and catalog grow.
 - Keep the independently versioned Leptos 0.1.0-alpha.2 preview on published
   0.5.2 style dependencies. Its package consumer and the full-stack example
   use that same theme type while the stable workspace prepares 0.6.0.
-- `stucco-redb`: add `ReadTx::index_range`, which reads a limited number of
-  records from a byte range of a secondary index in either direction, so one
+- `stucco-redb`: add `ReadTx::index_range` and `WriteTx::index_range`, which read a
+  limited number of records from a byte range of a secondary index in either direction, so one
   tenant's rows can be read without filtering every record.
 - `stucco-tower`: add `SingleSubmit`, `SubmitToken`, `SubmitKey` and
   `SubmitRejection` behind the optional `single-submit` feature (also on the
@@ -31,6 +31,9 @@ release from 0.5 because the public preset enum and catalog grow.
 - `stucco-redb`: add `SubmitLedger` behind the optional `submit-ledger` feature.
   It records a keyed outcome in the transaction that applies a form's effect.
 - `orders` example: new orders use single-submit tokens.
+- Add `stucco-blob`, a new optional crate for private blob storage. `BlobStore` has
+  `FilesystemStore`, `MemoryStore` and, with the `s3` feature, `S3Store` for any
+  S3-compatible service, all held to one contract test.
 
 ## stucco-leptos 0.1.0-alpha.2 — 2026-10-28
 
