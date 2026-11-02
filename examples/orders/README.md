@@ -26,6 +26,10 @@ Amounts are stored in integer cents. The Total column displays and filters
 in dollars; `Col::display` formats the value without changing how it sorts or
 filters.
 
+A new-order form carries a single-submit token: `SingleSubmit` signs one for
+each rendering, and `SubmitLedger` records it in the transaction that creates
+the order, so a double tap creates one order and both responses name it.
+
 Orders can be created (`/orders/new`), edited (`/orders/{id}/edit`) and
 deleted (`/orders/{id}/delete`, or the row's Actions menu). Every form posts
 with a CSRF token and redirects with a flash message. Edits and deletes carry

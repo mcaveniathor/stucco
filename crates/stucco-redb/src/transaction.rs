@@ -1,9 +1,13 @@
 //! Multi-table transactions: [`Store::write`](crate::Store::write) and
 //! [`Store::read`](crate::Store::read) hand a closure one redb transaction.
-use crate::index::compound;
+use crate::index::{compound, escaped};
 use crate::{Codec, IndexTable, KeyCodec, Revision, StoreError, Table, U64Key};
 use redb::ReadableTable;
-use std::sync::Arc;
+use std::{
+    ops::{Bound, RangeBounds},
+    sync::Arc,
+};
+use stucco_core::Direction;
 
 mod sealed {
     use crate::Codec;
@@ -284,6 +288,97 @@ pub(crate) fn create_row<V, KC: Codec<u64>, VC: Codec<V>>(
     Ok((id, revision))
 }
 
+/// Reads records through an already opened record table and index. See
+/// [`ReadTx::index_range`].
+fn range_rows<'r, V, KC, VC: Codec<V>>(
+    data: &impl ReadableTable<&'static [u8], &'static [u8]>,
+    order: &impl ReadableTable<&'static [u8], &'static [u8]>,
+    parts: &Parts<'_, V, KC, VC>,
+    range: impl RangeBounds<&'r [u8]>,
+    direction: Direction,
+    limit: usize,
+) -> Result<Vec<V>, StoreError> {
+    // [0, 1] sorts after a field's terminator and before an escaped zero
+    // byte, so it steps past every key whose indexed value equals `field`.
+    let past = |field: &[u8]| [escaped(field).as_slice(), &[0, 1]].concat();
+    let lower = match range.start_bound() {
+        Bound::Included(field) => Bound::Included(escaped(field)),
+        Bound::Excluded(field) => Bound::Included(past(field)),
+        Bound::Unbounded => Bound::Unbounded,
+    };
+    let upper = match range.end_bound() {
+        Bound::Included(field) => Bound::Excluded(past(field)),
+        Bound::Excluded(field) => Bound::Excluded(escaped(field)),
+        Bound::Unbounded => Bound::Unbounded,
+    };
+    if let (Bound::Included(lower), Bound::Excluded(upper)) = (&lower, &upper)
+        && lower >= upper
+    {
+        return Ok(Vec::new());
+    }
+    let mut entries = order
+        .range::<&[u8]>((
+            lower.as_ref().map(Vec::as_slice),
+            upper.as_ref().map(Vec::as_slice),
+        ))
+        .map_err(StoreError::new)?;
+    let mut rows = Vec::new();
+    while rows.len() < limit {
+        let entry = match direction {
+            Direction::Asc => entries.next(),
+            Direction::Desc => entries.next_back(),
+        };
+        let Some(entry) = entry else { break };
+        let (_, key) = entry.map_err(StoreError::new)?;
+        let value = data
+            .get(key.value())
+            .map_err(StoreError::new)?
+            .ok_or_else(|| StoreError::invalid("index points to missing record"))?;
+        rows.push(parts.values.decode(value.value())?);
+    }
+    Ok(rows)
+}
+
+fn equal_rows<V, KC, VC: Codec<V>>(
+    data: &impl ReadableTable<&'static [u8], &'static [u8]>,
+    order: &impl ReadableTable<&'static [u8], &'static [u8]>,
+    parts: &Parts<'_, V, KC, VC>,
+    field: &[u8],
+    after: Option<&[u8]>,
+    direction: Direction,
+    limit: usize,
+) -> Result<Vec<V>, StoreError> {
+    let start = escaped(field);
+    let end = [start.as_slice(), &[0, 1]].concat();
+    let anchor = after.map(|key| compound(field, key));
+    let (lower, upper) = match (direction, anchor) {
+        (Direction::Asc, Some(anchor)) => (Bound::Excluded(anchor), Bound::Excluded(end)),
+        (Direction::Desc, Some(anchor)) => (Bound::Included(start), Bound::Excluded(anchor)),
+        _ => (Bound::Included(start), Bound::Excluded(end)),
+    };
+    let mut entries = order
+        .range::<&[u8]>((
+            lower.as_ref().map(Vec::as_slice),
+            upper.as_ref().map(Vec::as_slice),
+        ))
+        .map_err(StoreError::new)?;
+    let mut rows = Vec::new();
+    while rows.len() < limit {
+        let entry = match direction {
+            Direction::Asc => entries.next(),
+            Direction::Desc => entries.next_back(),
+        };
+        let Some(entry) = entry else { break };
+        let (_, key) = entry.map_err(StoreError::new)?;
+        let value = data
+            .get(key.value())
+            .map_err(StoreError::new)?
+            .ok_or_else(|| StoreError::invalid("index points to missing record"))?;
+        rows.push(parts.values.decode(value.value())?);
+    }
+    Ok(rows)
+}
+
 /// A `u64`-keyed [`Table`] or [`IndexTable`] that can allocate ids with
 /// [`WriteTx::create`]. This trait is sealed.
 pub trait Creatable<V>: Handle<u64, V> {}
@@ -404,6 +499,73 @@ impl WriteTx {
         get_row_with_revision(&data, &parts, key)
     }
 
+    /// Reads up to `limit` records from a range of an index, including this
+    /// transaction's own writes. See [`ReadTx::index_range`].
+    pub fn index_range<'r, K, V, KC: KeyCodec<K>, VC: Codec<V>>(
+        &self,
+        index: &IndexTable<K, V, KC, VC>,
+        range: impl RangeBounds<&'r [u8]>,
+        direction: Direction,
+        limit: usize,
+    ) -> Result<Vec<V>, StoreError> {
+        self.live()?;
+        let parts = index.parts();
+        same_store(&self.db, &parts)?;
+        let name = parts
+            .index
+            .as_ref()
+            .expect("an IndexTable always has an index")
+            .name;
+        let data = self
+            .tx
+            .open_table(bytes(parts.table))
+            .map_err(StoreError::new)?;
+        let order = self.tx.open_table(bytes(name)).map_err(StoreError::new)?;
+        range_rows(&data, &order, &parts, range, direction, limit)
+    }
+
+    /// Reads at most `limit` rows whose secondary indexed value equals `field`.
+    /// Rows follow encoded primary-key order within that value. `after` is an
+    /// exclusive primary-key position in the requested direction; it need not
+    /// still exist. Zero limit returns no rows. Only this exact indexed value
+    /// is visited, including when fields or keys contain zero bytes.
+    /// Uses this transaction's snapshot (and its own writes for WriteTx).
+    pub fn index_equal_after<K, V, KC: KeyCodec<K>, VC: Codec<V>>(
+        &self,
+        index: &IndexTable<K, V, KC, VC>,
+        field: &[u8],
+        after: Option<&K>,
+        direction: Direction,
+        limit: usize,
+    ) -> Result<Vec<V>, StoreError> {
+        self.live()?;
+        let parts = index.parts();
+        same_store(&self.db, &parts)?;
+        if limit == 0 {
+            return Ok(Vec::new());
+        }
+        let anchor = after.map(|key| parts.keys.encode(key)).transpose()?;
+        let name = parts
+            .index
+            .as_ref()
+            .expect("an IndexTable always has an index")
+            .name;
+        let data = self
+            .tx
+            .open_table(bytes(parts.table))
+            .map_err(StoreError::new)?;
+        let order = self.tx.open_table(bytes(name)).map_err(StoreError::new)?;
+        equal_rows(
+            &data,
+            &order,
+            &parts,
+            field,
+            anchor.as_deref(),
+            direction,
+            limit,
+        )
+    }
+
     /// Replaces the value with `change(current)` if its revision is still
     /// `expected`, and returns the new revision. Otherwise nothing is written
     /// and the error is a conflict (see [`IndexTable::update_if`]); the
@@ -490,5 +652,95 @@ impl ReadTx {
             .open_table(bytes(parts.table))
             .map_err(StoreError::new)?;
         get_row_with_revision(&data, &parts, key)
+    }
+
+    /// Reads up to `limit` records whose indexed value falls in `range`, in
+    /// index order (ties by primary key), reversed for [`Direction::Desc`].
+    ///
+    /// Only the records returned are visited, so this is the bounded read for
+    /// "everything in this scope": project a fixed-width scope first, then
+    /// the sort value, and range over the scope's bytes. Indexed values
+    /// compare as bytes, so encode integers big-endian.
+    ///
+    /// ```no_run
+    /// use stucco_core::Direction;
+    /// use stucco_redb::{PostcardCodec, Store, StoreError, U64Key};
+    /// #[derive(serde::Serialize, serde::Deserialize)]
+    /// struct Chore { household: u64, due_day: u32 }
+    ///
+    /// let store = Store::open("home.redb")?;
+    /// let chores = store
+    ///     .table::<u64, Chore, _, _>("chores", U64Key, PostcardCodec::default())?
+    ///     .index("household_due", |c| {
+    ///         [c.household.to_be_bytes().as_slice(), &c.due_day.to_be_bytes()].concat()
+    ///     })?;
+    /// let household = 7_u64;
+    /// let (from, to) = (household.to_be_bytes(), (household + 1).to_be_bytes());
+    /// let soonest = store.read(|tx| {
+    ///     tx.index_range(&chores, from.as_slice()..to.as_slice(), Direction::Asc, 20)
+    /// })?;
+    /// # Ok::<(), StoreError>(())
+    /// ```
+    pub fn index_range<'r, K, V, KC: KeyCodec<K>, VC: Codec<V>>(
+        &self,
+        index: &IndexTable<K, V, KC, VC>,
+        range: impl RangeBounds<&'r [u8]>,
+        direction: Direction,
+        limit: usize,
+    ) -> Result<Vec<V>, StoreError> {
+        let parts = index.parts();
+        same_store(&self.db, &parts)?;
+        let name = parts
+            .index
+            .as_ref()
+            .expect("an IndexTable always has an index")
+            .name;
+        let data = self
+            .tx
+            .open_table(bytes(parts.table))
+            .map_err(StoreError::new)?;
+        let order = self.tx.open_table(bytes(name)).map_err(StoreError::new)?;
+        range_rows(&data, &order, &parts, range, direction, limit)
+    }
+
+    /// Reads at most `limit` rows whose secondary indexed value equals `field`.
+    /// Rows follow encoded primary-key order within that value. `after` is an
+    /// exclusive primary-key position in the requested direction; it need not
+    /// still exist. Zero limit returns no rows. Only this exact indexed value
+    /// is visited, including when fields or keys contain zero bytes.
+    /// Uses this transaction's snapshot (and its own writes for WriteTx).
+    pub fn index_equal_after<K, V, KC: KeyCodec<K>, VC: Codec<V>>(
+        &self,
+        index: &IndexTable<K, V, KC, VC>,
+        field: &[u8],
+        after: Option<&K>,
+        direction: Direction,
+        limit: usize,
+    ) -> Result<Vec<V>, StoreError> {
+        let parts = index.parts();
+        same_store(&self.db, &parts)?;
+        if limit == 0 {
+            return Ok(Vec::new());
+        }
+        let anchor = after.map(|key| parts.keys.encode(key)).transpose()?;
+        let name = parts
+            .index
+            .as_ref()
+            .expect("an IndexTable always has an index")
+            .name;
+        let data = self
+            .tx
+            .open_table(bytes(parts.table))
+            .map_err(StoreError::new)?;
+        let order = self.tx.open_table(bytes(name)).map_err(StoreError::new)?;
+        equal_rows(
+            &data,
+            &order,
+            &parts,
+            field,
+            anchor.as_deref(),
+            direction,
+            limit,
+        )
     }
 }

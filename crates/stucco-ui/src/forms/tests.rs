@@ -63,6 +63,20 @@ fn hidden_inputs_escape_values() {
 }
 
 #[test]
+fn single_submit_tokens_render_as_a_hidden_field() {
+    let html = to_html(&Form::post("/orders").single_submit("t"));
+    assert!(html.contains(r#"<input type="hidden" name="_submit" value="t">"#));
+    assert!(!to_html(&Form::post("/orders")).contains("_submit"));
+}
+
+#[test]
+#[cfg(debug_assertions)]
+#[should_panic(expected = "single-submit")]
+fn single_submit_tokens_on_get_forms_panic_in_debug() {
+    let _ = Form::get("/search").single_submit("t");
+}
+
+#[test]
 #[cfg(debug_assertions)]
 #[should_panic(expected = "CSRF")]
 fn csrf_tokens_on_get_forms_panic_in_debug() {

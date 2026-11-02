@@ -7,8 +7,8 @@ publish = false
 
 [dependencies]
 stucco-showcase = { path = "../showcase" }
-stucco = { workspace = true, features = ["derive", "axum"] }
-stucco-redb = { path = "../../crates/stucco-redb" }
+stucco = { workspace = true, features = ["derive", "axum", "single-submit"] }
+stucco-redb = { path = "../../crates/stucco-redb", features = ["submit-ledger"] }
 axum = { workspace = true, features = ["http1", "tokio", "query"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net"] }
 serde = { version = "1", features = ["derive"] }

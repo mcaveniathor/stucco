@@ -1,14 +1,47 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 — 2026-11-02
 
-Five architectural presets for the upcoming 0.6.0 release. This is a breaking
+Seven architectural presets and optional upload/storage primitives. This is a breaking
 release from 0.5 because the public preset enum and catalog grow.
 
+- Harden filesystem cancellation ordering and S3 debug redaction; reserve job-queue
+  index suffixes and reject mismatched image-worker protocol/crate versions.
+
+- `stucco-image`: add an opt-in restricted PNG/baseline-JPEG validator with a
+  separately installed Linux x86-64 worker, operator CPU/address-space/deadline
+  limits, bounded admission/protocol, and cancellation kill-and-reap ownership.
+  Baseline JPEG entropy is checked before full pixel reconstruction; progressive,
+  multiscan, CMYK and animated formats fail closed. Metadata is preserved (not
+  sanitized), and dimensions are encoded dimensions, not EXIF-oriented dimensions.
+  The original in-process restricted-PNG API remains available without hard limits.
+  New `Error::Deadline` variant requires updating exhaustive error matches.
+
+- `stucco-redb`: add transactional `index_equal_after` for bounded exclusive
+  primary-key pagination within an exact secondary-index value, in either
+  direction, without scanning prior rows or changing persisted index formats.
+
+- `stucco-blob`: add bounded reads/writes, backend-owned staged-file recovery,
+  exclusive filesystem ownership, private-root/path checks and constrained listing.
+  Breaking: custom BlobStore implementations must implement `get_bounded` without
+  first collecting an unbounded object. Filesystem roots must be private, cannot
+  be opened independently twice and reject symlinks; use clones. Listings fail
+  explicitly at their scan budget instead of silently scanning arbitrary trees.
+  Existing unbounded get/put remain for trusted data. No product quotas introduced.
+
+- `stucco-redb`: add opt-in `migrations` with contiguous startup transformations,
+  immutable history identities, future-version refusal and atomic rollback of
+  all pending steps. Application codecs and transforms remain explicit.
+- `stucco-redb`: add opt-in `jobs` with transactional enqueue/claim/acknowledgement,
+  expiring attempt leases, scheduled retries and a bounded due index. Terminal
+  deduplication history is retained; external effects remain at least once.
+  No facade default features changed. Includes durable-work example and guide.
+
+- Add Casa Mexicana and Patio Español presets with gallery previews.
 - Add Bauhaus, Brutalist, Deco, Mediterranean and Prairie presets, each with
   coordinated colours, typography and component styling in light and dark.
   Expose them through the Rust API, CLI, playground and palette gallery.
-- Breaking: `Preset` adds five variants and `Preset::ALL` grows from 14 to 19
+- Breaking: `Preset` adds seven variants and `Preset::ALL` grows from 14 to 21
   entries. Update exhaustive matches to handle the new variants and explicitly
   sized arrays to the new length, or iterate the catalog without a fixed size.
   The workspace and its internal dependencies advance to 0.6.0. Existing
@@ -16,6 +49,24 @@ release from 0.5 because the public preset enum and catalog grow.
 - Keep the independently versioned Leptos 0.1.0-alpha.2 preview on published
   0.5.2 style dependencies. Its package consumer and the full-stack example
   use that same theme type while the stable workspace prepares 0.6.0.
+- `stucco-redb`: add `ReadTx::index_range` and `WriteTx::index_range`, which read a
+  limited number of records from a byte range of a secondary index in either direction, so one
+  tenant's rows can be read without filtering every record.
+- `stucco-tower`: add `SingleSubmit`, `SubmitToken`, `SubmitKey` and
+  `SubmitRejection` behind the optional `single-submit` feature (also on the
+  `stucco` facade). Each rendered form gets a signed, expiring token bound to a
+  scope, so a double tap takes effect once. No cookie, session or JavaScript is
+  needed.
+- `stucco-core`: add `behavior::SUBMIT_FIELD` and `FormState::submit_token`.
+  `FormState::from_urlencoded` keeps a `_submit` field out of the form's values.
+  Breaking only for an application that used a field named `_submit` itself.
+- `stucco-ui`: add `Form::single_submit`.
+- `stucco-redb`: add `SubmitLedger` behind the optional `submit-ledger` feature.
+  It records a keyed outcome in the transaction that applies a form's effect.
+- `orders` example: new orders use single-submit tokens.
+- Add `stucco-blob`, a new optional crate for private blob storage. `BlobStore` has
+  `FilesystemStore`, `MemoryStore` and, with the `s3` feature, `S3Store` for any
+  S3-compatible service, all held to one contract test.
 
 ## stucco-leptos 0.1.0-alpha.2 — 2026-10-28
 

@@ -21,7 +21,8 @@ pub struct FormState {
     values: BTreeMap<String, Vec<String>>,
     errors: BTreeMap<String, Vec<String>>,
     form_errors: Vec<String>,
-    conflict: Option<RevisionConflict>,
+    conflict: Option<Box<RevisionConflict>>,
+    submit_tokens: Vec<String>,
 }
 
 impl FormState {
@@ -63,21 +64,22 @@ impl FormState {
         submitted: impl Into<String>,
         current: impl Into<String>,
     ) -> Self {
-        self.conflict = Some(RevisionConflict {
+        self.conflict = Some(Box::new(RevisionConflict {
             submitted: submitted.into(),
             current: current.into(),
-        });
+        }));
         self
     }
 
     /// The conflict reported by the application, if any.
     pub fn conflict(&self) -> Option<&RevisionConflict> {
-        self.conflict.as_ref()
+        self.conflict.as_deref()
     }
 
     /// Parses an `application/x-www-form-urlencoded` body, keeping repeated
     /// names in order. The CSRF field (`_csrf`) is dropped so it is never
-    /// echoed back into a re-rendered form.
+    /// echoed back into a re-rendered form. The single-submit field (`_submit`)
+    /// is kept apart from the values, for [`submit_token`](Self::submit_token).
     ///
     /// ```
     /// use stucco_core::FormState;
@@ -90,9 +92,33 @@ impl FormState {
     pub fn from_urlencoded(body: &[u8]) -> FormState {
         form_urlencoded::parse(body)
             .filter(|(name, _)| name != behavior::CSRF_FIELD)
-            .fold(FormState::new(), |state, (name, value)| {
-                state.with_value(name, value)
+            .fold(FormState::new(), |mut state, (name, value)| {
+                if name == behavior::SUBMIT_FIELD {
+                    state.submit_tokens.push(value.into_owned());
+                    state
+                } else {
+                    state.with_value(name, value)
+                }
             })
+    }
+
+    /// The submitted single-submit token, unless the field is missing or
+    /// repeated. It is never among the form's values, so a re-rendered form
+    /// cannot echo a spent token.
+    ///
+    /// ```
+    /// use stucco_core::FormState;
+    ///
+    /// let state = FormState::from_urlencoded(b"note=hi&_submit=t");
+    /// assert_eq!(state.submit_token(), Some("t"));
+    /// assert_eq!(state.value("_submit"), None);
+    /// assert_eq!(FormState::from_urlencoded(b"_submit=a&_submit=b").submit_token(), None);
+    /// ```
+    pub fn submit_token(&self) -> Option<&str> {
+        match self.submit_tokens.as_slice() {
+            [token] => Some(token),
+            _ => None,
+        }
     }
 
     /// The first submitted value for `name`.

@@ -49,11 +49,15 @@ pub enum Preset {
     Mediterranean,
     /// Prairie architecture: oak tones, leafy green and horizontal rules.
     Prairie,
+    /// Turquoise courtyard with warm plaster.
+    CasaMexicana,
+    /// Tile blue patio with ivory plaster and serif headings.
+    PatioEspanol,
 }
 
 impl Preset {
     /// Every preset.
-    pub const ALL: [Preset; 19] = [
+    pub const ALL: [Preset; 21] = [
         Preset::Slate,
         Preset::Graphite,
         Preset::Stone,
@@ -73,6 +77,8 @@ impl Preset {
         Preset::Deco,
         Preset::Mediterranean,
         Preset::Prairie,
+        Preset::CasaMexicana,
+        Preset::PatioEspanol,
     ];
 
     /// Lowercase name, used for named themes.
@@ -97,6 +103,8 @@ impl Preset {
             Preset::Deco => "deco",
             Preset::Mediterranean => "mediterranean",
             Preset::Prairie => "prairie",
+            Preset::CasaMexicana => "casa-mexicana",
+            Preset::PatioEspanol => "patio-espanol",
         }
     }
 }
@@ -125,6 +133,23 @@ impl Theme {
             Preset::Rose => base(355.0, 0.14, 350.0, 0.012).radius(Radius::Round),
             Preset::Ember => base(35.0, 0.19, 40.0, 0.008).radius(Radius::Sharp),
             Preset::Sol => base(90.0, 0.15, 85.0, 0.020),
+            Preset::CasaMexicana => base(190.0, 0.15, 55.0, 0.035)
+                .radius(Radius::Round)
+                .header_style(HeaderStyle::Tinted)
+                .heading_font(HeadingFont::Rounded)
+                .nav_style(NavStyle::Solid)
+                .panel_style(PanelStyle::Headed)
+                .finish(Finish::Float)
+                .relief(Relief::Skip)
+                .pattern(Pattern::Waves),
+            Preset::PatioEspanol => base(255.0, 0.18, 85.0, 0.025)
+                .radius(Radius::Soft)
+                .header_style(HeaderStyle::Tinted)
+                .heading_font(HeadingFont::Serif)
+                .panel_style(PanelStyle::Ruled)
+                .finish(Finish::Sand)
+                .relief(Relief::Trowel)
+                .pattern(Pattern::Grid),
             Preset::Terminal => {
                 let mono = Fonts::system();
                 let stack = mono.mono.clone();
@@ -290,7 +315,7 @@ mod tests {
         assert!(
             names
                 .iter()
-                .all(|name| name.bytes().all(|b| b.is_ascii_lowercase()))
+                .all(|name| name.bytes().all(|b| b.is_ascii_lowercase() || b == b'-'))
         );
         assert_eq!(Preset::Terminal.name(), "terminal");
     }

@@ -83,8 +83,18 @@ impl Client {
     }
 
     async fn post(&mut self, uri: &str, fields: &[(&str, &str)]) -> Reply {
+        // A new order needs the token from a rendering of its form.
+        let mut token = None;
+        if uri == "/orders" && fields.iter().all(|(name, _)| *name != "_submit") {
+            token = Some(input(&self.get("/orders/new").await.body, "_submit"));
+        }
+        self.post_raw(uri, fields, token.as_deref()).await
+    }
+
+    async fn post_raw(&mut self, uri: &str, fields: &[(&str, &str)], token: Option<&str>) -> Reply {
         let body = form_urlencoded::Serializer::new(String::new())
             .extend_pairs(fields)
+            .extend_pairs(token.map(|token| ("_submit", token)))
             .finish();
         let request = Request::post(uri)
             .header(header::COOKIE, self.cookie_header())
@@ -200,6 +210,44 @@ async fn valid_create_redirects_and_flashes() {
     assert_eq!(detail.status, 200);
     assert!(detail.body.contains("Mary Jackson"));
     assert!(detail.body.contains("$12.50"));
+}
+
+#[tokio::test]
+async fn double_submitting_a_new_order_form_creates_one_order() {
+    let mut c = Client::new();
+    let page = c.get("/orders/new").await.body;
+    let (csrf, token) = (input(&page, "_csrf"), input(&page, "_submit"));
+    let fields = order(&csrf, "Mary Jackson", "12.50");
+    for _ in 0..2 {
+        let reply = c.post_raw("/orders", &fields, Some(&token)).await;
+        assert_eq!(reply.status, StatusCode::SEE_OTHER);
+        assert!(c.get("/orders").await.body.contains("Order 68 created."));
+    }
+    let next = c.get("/orders/69").await;
+    assert_eq!(next.status, StatusCode::NOT_FOUND);
+    // A new rendering is a new order.
+    c.post("/orders", &fields).await;
+    assert_eq!(c.get("/orders/69").await.status, StatusCode::OK);
+}
+
+#[tokio::test]
+async fn a_new_order_without_a_valid_token_changes_nothing() {
+    let mut c = Client::new();
+    let page = c.get("/orders/new").await.body;
+    let csrf = input(&page, "_csrf");
+    let fields = order(&csrf, "Mary Jackson", "12.50");
+    for token in [None, Some("forged")] {
+        let reply = c.post_raw("/orders", &fields, token).await;
+        assert_eq!(reply.status, StatusCode::SEE_OTHER);
+        assert_eq!(reply.location.as_deref(), Some("/orders/new"));
+        assert!(
+            c.get("/orders/new")
+                .await
+                .body
+                .contains("That form expired.")
+        );
+    }
+    assert_eq!(c.get("/orders/68").await.status, StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]

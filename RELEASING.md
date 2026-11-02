@@ -1,7 +1,8 @@
 # Releasing stucco
 
-The stable workspace release publishes eight crates: stucco-theme, stucco-core,
-stucco-macros, stucco-ui, stucco-tower, stucco, stucco-redb and stucco-cli.
+The stable workspace release publishes ten crates: stucco-theme, stucco-core,
+stucco-macros, stucco-ui, stucco-tower, stucco, stucco-redb, stucco-blob, stucco-image and
+stucco-cli.
 The gallery, the site and the examples have `publish = false` or are
 excluded. Publishing a version is permanent: a version can be yanked, never
 replaced.
@@ -20,7 +21,7 @@ The Release workflow publishes with crates.io
 exchanges its GitHub OIDC identity for a crates.io token that expires after
 30 minutes. No registry token is stored in the repository.
 
-Each published crate, the stable eight and `stucco-leptos`, has one trusted
+Each published crate, the stable ten and `stucco-leptos`, has one trusted
 publisher on crates.io (the crate's Settings → Trusted Publishing):
 
 | Field | Value |
@@ -46,6 +47,19 @@ trusted publisher. Trusted publishing can't create a crate.
 4. Merge to `main` through a pull request, so CI runs the full checks: the
    all-feature publish dry run, Rust 1.85, 1.88 and 1.90, semver, features,
    packaged Leptos consumers and browser tests.
+
+## First uploads in 0.6.0
+
+After the release PR passes CI and merges, publish the new crates from that merged
+commit using normal Cargo authentication, before pushing the version tag:
+
+```sh
+cargo publish -p stucco-blob -p stucco-image --locked --all-features
+```
+
+The v0.6.0 workflow verifies those exact registry versions and excludes them from
+its upload batch. Configure their trusted publishers before the next release;
+later tags include both crates normally. Do not put API tokens in workflow files.
 
 ## Publish
 

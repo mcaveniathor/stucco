@@ -17,7 +17,8 @@ assert_eq!(indexed.get(&1)?, Some("Ada".into()));
 
 Write through the indexed handle after creating an index; a previously cloned
 unindexed Table does not maintain secondary indexes. Codec/schema changes
-require application-managed migration.
+require explicit migrations; the optional `migrations` feature coordinates them
+at startup while application-specific codecs and transforms stay in the app.
 
 The default `tokio` feature adds `AsyncTable`, `RedbCollection` and
 `CollectionMapping`. `AsyncTable` runs reads and writes on Tokio's blocking
@@ -61,6 +62,15 @@ the data stored, and it goes ahead).
 Cursor scans return an owned page with an unknown total. Predicates may still
 visit many records. Numbered mode deliberately materializes all matching records,
 so use it for small collections. Cursors are locators, not authorization tokens.
+
+## Single-submit forms
+
+With the `submit-ledger` feature, `SubmitLedger` records a keyed outcome in the
+transaction that applies a form's effect, so a double tap takes effect once and
+the repeat can answer as the first did. Pair it with `SingleSubmit` from
+`stucco-tower`, which issues the keys; the
+[forms guide](https://github.com/mcaveniathor/stucco/blob/main/docs/guide/forms.md)
+shows the whole flow. Run `purge_expired` on a timer.
 
 ## Transactions
 
@@ -112,14 +122,98 @@ match saved {
   `Ok::<_, StoreError>(..)` so the compiler can choose it.
 - Do not call `Store::write` or a single-table write from inside the closure
   on the same thread: redb allows one writer, so it would wait forever.
+- `ReadTx::index_range` (and the same on `WriteTx`) reads up to a limit of records whose indexed value falls
+  in a byte range, in either direction, visiting only the records it returns.
+  Project a fixed-width scope first (`tenant.to_be_bytes()`, then a sort value)
+  and range over the scope to read one tenant without filtering every row.
 - `AsyncStore::new(store)` (or `AsyncTable::store()`) is the async form. A
   transaction runs whole on the blocking pool under one permit, so the write
   lock is never held across an `.await`, and the permits are shared with every
   `AsyncTable` made from it. Wrap the future in `tokio::time::timeout` for a
   deadline; a call dropped while waiting for a permit runs nothing.
 
+## Opt-in startup migrations
+
+Enable `migrations` to use `Migrations` and `Migration`. Open typed handles first,
+then run the complete contiguous plan (versions 1, 2, …) **before serving traffic**.
+Each migration has an immutable author-supplied identity/revision or checksum.
+The runner refuses a future stored version or changed historical identity and
+runs all pending transforms plus history in one writer transaction. Failure or
+panic rolls back the entire pending batch; reopening does not repeat applied work.
+
+The runner does not infer codecs, rebuild indexes or compute source checksums.
+Keep legacy types/decoders in the application, preserve index consistency and
+change the identity whenever editing an unapplied transform. Never change an
+applied transform; append a new version. Migrating an existing application that
+already has a schema marker requires a first bridge step that checks that marker
+(including refusal of newer legacy versions), transforms/backfills as needed,
+and updates it inside the supplied transaction. Do not blindly stamp old data as
+current. Keep fixture/rollback tests for that bridge.
+
+Callbacks must use only their supplied `WriteTx` and already-opened handles.
+Opening a table or starting a nested write inside a callback deadlocks on the
+single writer. No filesystem/network I/O in callbacks. Startup migration work
+holds the writer lock and may be expensive; this runner does not promise automatic
+batching or bounded memory for application transforms.
+
+## Opt-in durable jobs
+
+Enable `jobs` to use `JobQueue<V>` with dedicated `name` and `name_due` tables.
+Enqueue inside the same `WriteTx` as the application change. A caller-chosen
+permanent key deduplicates forever, including terminal Done/Failed history;
+duplicate enqueue does not replace payload, schedule or attempt budget. Scope
+keys by tenant and operation, and do not reuse them for new work.
+
+`claim(tx, now, lease_seconds)` returns one due job or expired attempt. It examines
+at most 64 due entries, retiring exhausted attempts; `None` can therefore mean
+maintenance made progress. Poll again later with a bounded runtime. Claims count
+against the nonzero attempt budget, including workers that crash. Only a live
+matching lease can `acknowledge` or `retry`; leases expire exactly at their
+deadline. Acknowledgement and app metadata effects belong in the same transaction;
+**do not commit the app effect when acknowledgement returns false**. Propagate
+command errors with `?` rather than trying to commit a partial workflow.
+
+`retry` takes a caller-selected future schedule (no hidden backoff policy). At
+budget exhaustion it retains Failed for inspection; recovery with a fresh job
+identity must account for possible repeated external effects. Successful jobs
+retain Done. Terminal jobs are absent from the due index, so historical growth
+does not slow due lookup; archival/retention is deliberately not automatic.
+
+No worker process, scheduler, clock, authentication, cancellation or lease-renewal
+runtime is included. Use the existing AsyncStore blocking budget or run sync work
+off the async executor. Choose leases for bounded work; get a fresh attempt after
+expiry. Timestamps are supplied by a trusted server clock, not client input.
+Payloads and indexes are persisted schemas: version application payloads before
+changing them. Lease values bind to their queue and open database handle; they
+are not portable authorization credentials.
+
+**At least once, not exactly once:** do blob/network I/O outside transactions.
+Lease tokens fence database metadata, not a remote write already in flight.
+External effects must be idempotent and reconciled after crash/late completion.
+Never release quota or delete audit data merely because a job lease expired.
+
+See the runnable [durable work example](examples/durable_work.rs):
+`cargo run -p stucco-redb --features migrations,jobs --example durable_work`.
+The [durability guide](../../docs/guide/durable-work.md) explains integration and
+legacy migration boundaries. Neither feature expands facade defaults.
+
 Minimum Rust: **1.90**. The API is experimental.
 See [the orders example](https://github.com/mcaveniathor/stucco/tree/main/examples/orders)
 for persistence, query mapping, and server-rendered controls.
 
 Licensed under MIT or Apache-2.0.
+
+### Bounded pages within one indexed value
+
+`ReadTx::index_equal_after` and `WriteTx::index_equal_after` read at most `limit`
+rows from one exact secondary-index value, using an optional exclusive primary-key
+cursor. They seek directly into the existing compound index; no preceding rows or
+other index values are materialized. Ascending order returns keys greater than the
+cursor; descending order returns keys less than it. A deleted/nonexistent cursor
+remains a valid position. Zero limit decodes no records. Order follows the key
+codec's encoded order, not insertion order. Write transactions see their own writes.
+
+For a household-only index, pass the encoded household value, an optional last
+primary ID and `limit + 1` to implement a bounded next-page indicator. Authorization
+can run in the same transaction; cursor positions are not authorization. No new
+index format, migration or feature flag is required.

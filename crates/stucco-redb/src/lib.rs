@@ -37,6 +37,8 @@
 //! `Store::read` gives one snapshot across tables. `WriteTx` offers `get`,
 //! `get_with_revision`, `put`, `remove`, `update_if`, `remove_if` and `create`
 //! for any `Table` or `IndexTable`; an `IndexTable` keeps its index in step.
+//! `ReadTx::index_range` reads a bounded byte range of one index without
+//! visiting the records outside it, for example everything in one tenant.
 //! With the tokio feature, `AsyncStore` runs the same closures on the blocking
 //! pool, one permit per transaction, sharing its budget with `AsyncTable`.
 //!
@@ -69,6 +71,14 @@
 //! # Ok(()) }
 //! ```
 //!
+//! The optional `submit-ledger` feature adds `SubmitLedger`, which records form
+//! submissions in the transaction that applies them, so a repeat takes effect
+//! once and can answer with the first outcome.
+//!
+//! Optional `migrations` adds `Migrations` and `Migration` for atomic startup
+//! transformations; `jobs` adds `JobQueue` for transactional at-least-once work.
+//! They do not start a runtime or infer application schemas/authorization.
+//!
 //! Cursors are query-scoped locators, not authorization tokens. The table and
 //! indexes are not automatically migrated when changing codecs/schema.
 #![cfg_attr(docsrs, feature(doc_cfg))]
@@ -83,9 +93,15 @@ mod codec;
 mod collection;
 mod error;
 mod index;
+#[cfg(feature = "jobs")]
+mod jobs;
+#[cfg(feature = "migrations")]
+mod migrations;
 mod revision;
 mod scan;
 mod store;
+#[cfg(feature = "submit-ledger")]
+mod submit_ledger;
 mod table;
 mod transaction;
 mod write;
@@ -98,8 +114,14 @@ pub use codec::{Codec, KeyCodec, PostcardCodec, U64Key, Utf8Key};
 pub use collection::{CollectionMapping, RedbCollection};
 pub use error::StoreError;
 pub use index::IndexTable;
+#[cfg(feature = "jobs")]
+pub use jobs::{Job, JobQueue, JobState, Lease};
+#[cfg(feature = "migrations")]
+pub use migrations::{Migration, Migrations};
 pub use revision::{InvalidRevision, Revision};
 pub use scan::ScanRequest;
 pub use store::Store;
+#[cfg(feature = "submit-ledger")]
+pub use submit_ledger::SubmitLedger;
 pub use table::Table;
 pub use transaction::{Creatable, Handle, ReadTx, WriteTx};

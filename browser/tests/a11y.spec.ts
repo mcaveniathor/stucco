@@ -42,6 +42,8 @@ test.describe("without JavaScript", () => {
 
   test("the palette page renders every preset", async ({ page }) => {
     await page.goto("/palette.html");
-    await expect(page.locator("section.g-preset")).toHaveCount(19);
+    await expect(page.locator("section.g-preset")).toHaveCount(21);
+    await expect(page.locator('section.g-preset[data-st-theme="casa-mexicana"]')).toHaveCount(1);
+    await expect(page.locator('section.g-preset[data-st-theme="patio-espanol"]')).toHaveCount(1);
   });
 });

@@ -79,7 +79,13 @@ pub fn page(bundle: &Bundle) -> String {
         "Seeded themes",
         "Theme::seeded(n) derives colours, fonts, scale, radius, density and a style \
          personality from one number. The same seed always gives the same theme.",
-        seeds.into_iter().chain([mixed]),
+        [
+            section("Casa Mexicana · Mexican courtyard", panels("casa-mexicana")),
+            section("Patio Español · Spanish patio", panels("patio-espanol")),
+        ]
+        .into_iter()
+        .chain(seeds)
+        .chain([mixed]),
     )
 }
 

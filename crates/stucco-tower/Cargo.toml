@@ -38,6 +38,7 @@ futures-util = { version = "0.3", default-features = false, features = ["std"], 
 default = ["axum", "tower-http", "csrf"]
 csrf = ["dep:hmac", "dep:sha2", "dep:getrandom", "dep:base64", "dep:form_urlencoded", "dep:tracing"]
 multipart = ["csrf", "dep:multer", "dep:futures-util"]
+single-submit = ["csrf"]
 axum = ["dep:axum"]
 tower-http = ["dep:tower-http", "dep:tokio", "dep:tracing", "tower/util"]
 

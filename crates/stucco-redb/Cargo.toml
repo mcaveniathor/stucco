@@ -24,9 +24,16 @@ tokio = { workspace = true, optional = true, features = ["rt", "sync"] }
 [features]
 default = ["tokio"]
 tokio = ["dep:tokio", "dep:stucco-tower"]
+submit-ledger = []
+migrations = []
+jobs = []
 [dev-dependencies]
 tempfile = "3"
 tokio = { workspace = true, features = ["macros", "rt", "sync", "time"] }
 
 [package.metadata.docs.rs]
 all-features = true
+
+[[example]]
+name = "durable_work"
+required-features = ["migrations", "jobs"]

@@ -8,6 +8,8 @@
 //! middleware, backed by `SecretKey`. These layers also work without axum.
 //! The optional `multipart` feature enables explicitly configured, bounded
 //! multipart CSRF token extraction through `CsrfLayer::multipart(true)`.
+//! The optional `single-submit` feature adds `SingleSubmit`, an idempotency
+//! token issued with each rendered form.
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![forbid(unsafe_code)]
@@ -31,6 +33,8 @@ mod negotiate;
 mod response;
 #[cfg(feature = "csrf")]
 mod secret;
+#[cfg(feature = "single-submit")]
+mod single_submit;
 #[cfg(feature = "axum")]
 mod submission;
 
@@ -52,5 +56,7 @@ pub use negotiate::{RequestKind, respond};
 pub use response::{FragmentResponse, PageResponse, SeeOther};
 #[cfg(feature = "csrf")]
 pub use secret::{SecretKey, SecretKeyError};
+#[cfg(feature = "single-submit")]
+pub use single_submit::{SingleSubmit, SubmitKey, SubmitRejection, SubmitToken};
 #[cfg(feature = "axum")]
 pub use submission::{Submission, SubmissionRejection};

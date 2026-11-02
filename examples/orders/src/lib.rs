@@ -16,9 +16,9 @@ use std::error::Error;
 use std::path::Path;
 use stucco::Slot;
 use stucco::prelude::*;
-use stucco::server::{CsrfLayer, FlashLayer, RequestContext, SecretKey};
+use stucco::server::{CsrfLayer, FlashLayer, RequestContext, SecretKey, SingleSubmit};
 use stucco_redb::{
-    AsyncTable, IndexTable, PostcardCodec, RedbCollection, Store, StoreError, U64Key,
+    AsyncTable, IndexTable, PostcardCodec, RedbCollection, Store, StoreError, SubmitLedger, U64Key,
 };
 
 type OrdersTable = IndexTable<u64, Order>;
@@ -27,6 +27,9 @@ type OrdersSource = RedbCollection<u64, Order, U64Key, PostcardCodec<Order>, Ord
 struct AppState {
     cursor: OrdersSource,
     pages: OrdersSource,
+    table: OrdersTable,
+    forms: SingleSubmit,
+    submits: SubmitLedger<u64>,
 }
 
 impl AppState {
@@ -35,7 +38,7 @@ impl AppState {
     }
 }
 
-fn open(path: &Path) -> Result<OrdersTable, StoreError> {
+fn open(path: &Path) -> Result<(OrdersTable, SubmitLedger<u64>), StoreError> {
     // Seed a new database only: one emptied by deleting every order stays empty.
     let fresh = !path.exists();
     let store = Store::open(path)?;
@@ -51,19 +54,28 @@ fn open(path: &Path) -> Result<OrdersTable, StoreError> {
         )?;
     }
     table.rebuild()?;
-    Ok(table)
+    let submits = SubmitLedger::open(&store, "order_submits")?;
+    submits.purge_expired(handlers::unix_now(), 1000)?;
+    Ok((table, submits))
 }
 
 /// Opens persistent storage and constructs the router. `origin` is the
 /// public origin browsers use, such as `https://orders.example.com`; cookies
 /// are marked `Secure` when it is HTTPS.
 pub fn app(db_path: &Path, key: SecretKey, origin: &str) -> Result<Router, Box<dyn Error>> {
+    let (table, submits) = open(db_path)?;
     let cursor = RedbCollection::new(
-        AsyncTable::new(open(db_path)?),
+        AsyncTable::new(table.clone()),
         OrdersMapping { pages: false },
     );
     let pages = cursor.with_mapping(OrdersMapping { pages: true });
-    let state = AppState { cursor, pages };
+    let state = AppState {
+        cursor,
+        pages,
+        table,
+        forms: SingleSubmit::new(key.clone()),
+        submits,
+    };
     let secure = origin.starts_with("https://");
     Ok(Router::new()
         .route("/", get(|| async { Redirect::to("/orders") }))
@@ -198,7 +210,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("orders.redb");
         {
-            let table = open(&path).unwrap();
+            let (table, _) = open(&path).unwrap();
             let mut row = table.get(&1).unwrap().unwrap();
             row.customer = "<script>alert(1)</script>".into();
             table.put(&1, &row).unwrap();

@@ -99,6 +99,16 @@ pub const OPTIONS: &[OptionInfo] = &[
             choice("deco", "Deco"),
             choice("mediterranean", "Mediterranean"),
             choice("prairie", "Prairie"),
+            Choice {
+                value: "casa-mexicana",
+                label: "Casa Mexicana",
+                variant: "CasaMexicana",
+            },
+            Choice {
+                value: "patio-espanol",
+                label: "Patio Español",
+                variant: "PatioEspanol",
+            },
         ],
     },
     OptionInfo {
@@ -775,7 +785,7 @@ impl ThemeSpec {
         let mut chain = match &self.base {
             Base::Preset(p) => {
                 types.push("Preset");
-                format!("Theme::preset(Preset::{})", title_case(p.name()))
+                format!("Theme::preset(Preset::{p:?})")
             }
             Base::Seed(s) => format!("Theme::seeded({s})"),
             Base::Name(n) => format!("Theme::seeded_str({n:?})"),
@@ -1220,6 +1230,10 @@ mod tests {
             assert_eq!(
                 spec.theme(),
                 Theme::preset(Preset::Slate).palette_preset(preset)
+            );
+            assert!(
+                spec.rust()
+                    .contains(&format!(".palette_preset(Preset::{preset:?})"))
             );
         }
     }

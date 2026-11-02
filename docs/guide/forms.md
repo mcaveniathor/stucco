@@ -197,6 +197,77 @@ Initial messages are readable without JavaScript; announcements of initial
 content depend on the browser and assistive technology. Both layers mark their
 responses `private, no-store` to prevent shared caches leaking tokens or feedback.
 
+## Single-submit forms
+
+A double tap, a retried request or the back button can send the same form twice. `SingleSubmit`, in `stucco-tower`'s optional `single-submit` feature (or the `stucco` facade's), issues a token with each rendered form so that form takes effect once. Reloading after `SeeOther` does not repost, but a second tap can land before the redirect arrives, so a redirect alone does not cover this.
+
+```rust
+use axum::extract::State;
+use stucco::prelude::*;
+use stucco::server::{
+    CsrfToken, Flash, FlashLevel, RequestContext, SeeOther, SingleSubmit, Submission,
+};
+
+// Build one `SingleSubmit::new(key)` at startup and keep it in the app's state.
+async fn new_chore(
+    page: PageCx,
+    cx: RequestContext,
+    State(forms): State<SingleSubmit>,
+) -> Document {
+    let csrf = cx.get::<CsrfToken>().expect("CsrfLayer installed");
+    let token = forms.issue("chores:new").expect("random source available");
+    page.title("New chore").main(
+        Form::post("/chores")
+            .csrf(csrf.as_str())
+            .single_submit(token.as_str())
+            .child(Button::new("Add chore").submit()),
+    )
+}
+
+async fn create(
+    State(forms): State<SingleSubmit>,
+    Submission(form): Submission,
+) -> axum::response::Response {
+    match forms.verify("chores:new", form.submit_token()) {
+        Ok(key) => {
+            // In one transaction: if `key.id()` is recorded, answer as the first
+            // submission did; otherwise apply the effect and record the id.
+            let _ = (key.id(), key.expires_at());
+            SeeOther::new("/chores").into_response()
+        }
+        // Too old or not ours: show the form again with a new token.
+        Err(_) => SeeOther::new("/chores/new")
+            .flash(Flash::new(FlashLevel::Warning, "That form expired. Try again."))
+            .into_response(),
+    }
+}
+```
+
+The token carries its expiry and a random id, signed with your `SecretKey` for the `scope` you pass. Tokens last an hour unless you set `.lifetime(duration)`. Include what the form acts on and who it was shown to in the scope, such as `"complete:7:member-12"`, so a token cannot move to another form or account. It works without JavaScript and adds no cookie. `Submission` keeps the token out of the form's values, and `FormState::submit_token` reads it. A missing or repeated field gives `None`, which `verify` rejects.
+
+`verify` holds no state and does not spend a token, because the check that matters has to happen in the transaction that applies the effect. Otherwise a crash between the two can lose the submission or apply it twice. Keep each record until `expires_at`. An expired token no longer verifies, so older records can be deleted.
+
+On redb, `stucco_redb::SubmitLedger` (feature `submit-ledger`) keeps those records and stores the first outcome for the repeat to answer with:
+
+```rust
+use stucco_redb::{PostcardCodec, Store, StoreError, SubmitLedger, U64Key};
+
+let store = Store::open("orders.redb")?;
+let orders = store.table::<u64, String, _, _>("orders", U64Key, PostcardCodec::default())?;
+let submits = SubmitLedger::<u64>::open(&store, "order_submits")?;
+
+let order = store.write(|tx| {
+    if let Some(first) = submits.replay(tx, key.id(), now)? {
+        return Ok::<_, StoreError>(first); // a repeat: nothing changes
+    }
+    let (id, _) = tx.create(&orders, |id| format!("order {id}"))?;
+    submits.record(tx, key.id(), key.expires_at(), id)?;
+    Ok(id)
+})?;
+```
+
+Call `purge_expired` on a timer. The ledger accepts any key, so a key of your own with a short expiry, such as a member and a chore for 60 seconds, also absorbs repeats that come from two separate renderings of a form.
+
 ## Revision conflicts
 
 When an atomic save rejects a stale revision, record the failure on the submitted
