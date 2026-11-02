@@ -288,6 +288,57 @@ pub(crate) fn create_row<V, KC: Codec<u64>, VC: Codec<V>>(
     Ok((id, revision))
 }
 
+/// Reads records through an already opened record table and index. See
+/// [`ReadTx::index_range`].
+fn range_rows<'r, V, KC, VC: Codec<V>>(
+    data: &impl ReadableTable<&'static [u8], &'static [u8]>,
+    order: &impl ReadableTable<&'static [u8], &'static [u8]>,
+    parts: &Parts<'_, V, KC, VC>,
+    range: impl RangeBounds<&'r [u8]>,
+    direction: Direction,
+    limit: usize,
+) -> Result<Vec<V>, StoreError> {
+    // [0, 1] sorts after a field's terminator and before an escaped zero
+    // byte, so it steps past every key whose indexed value equals `field`.
+    let past = |field: &[u8]| [escaped(field).as_slice(), &[0, 1]].concat();
+    let lower = match range.start_bound() {
+        Bound::Included(field) => Bound::Included(escaped(field)),
+        Bound::Excluded(field) => Bound::Included(past(field)),
+        Bound::Unbounded => Bound::Unbounded,
+    };
+    let upper = match range.end_bound() {
+        Bound::Included(field) => Bound::Excluded(past(field)),
+        Bound::Excluded(field) => Bound::Excluded(escaped(field)),
+        Bound::Unbounded => Bound::Unbounded,
+    };
+    if let (Bound::Included(lower), Bound::Excluded(upper)) = (&lower, &upper)
+        && lower >= upper
+    {
+        return Ok(Vec::new());
+    }
+    let mut entries = order
+        .range::<&[u8]>((
+            lower.as_ref().map(Vec::as_slice),
+            upper.as_ref().map(Vec::as_slice),
+        ))
+        .map_err(StoreError::new)?;
+    let mut rows = Vec::new();
+    while rows.len() < limit {
+        let entry = match direction {
+            Direction::Asc => entries.next(),
+            Direction::Desc => entries.next_back(),
+        };
+        let Some(entry) = entry else { break };
+        let (_, key) = entry.map_err(StoreError::new)?;
+        let value = data
+            .get(key.value())
+            .map_err(StoreError::new)?
+            .ok_or_else(|| StoreError::invalid("index points to missing record"))?;
+        rows.push(parts.values.decode(value.value())?);
+    }
+    Ok(rows)
+}
+
 /// A `u64`-keyed [`Table`] or [`IndexTable`] that can allocate ids with
 /// [`WriteTx::create`]. This trait is sealed.
 pub trait Creatable<V>: Handle<u64, V> {}
@@ -406,6 +457,31 @@ impl WriteTx {
             .open_table(bytes(parts.table))
             .map_err(StoreError::new)?;
         get_row_with_revision(&data, &parts, key)
+    }
+
+    /// Reads up to `limit` records from a range of an index, including this
+    /// transaction's own writes. See [`ReadTx::index_range`].
+    pub fn index_range<'r, K, V, KC: KeyCodec<K>, VC: Codec<V>>(
+        &self,
+        index: &IndexTable<K, V, KC, VC>,
+        range: impl RangeBounds<&'r [u8]>,
+        direction: Direction,
+        limit: usize,
+    ) -> Result<Vec<V>, StoreError> {
+        self.live()?;
+        let parts = index.parts();
+        same_store(&self.db, &parts)?;
+        let name = parts
+            .index
+            .as_ref()
+            .expect("an IndexTable always has an index")
+            .name;
+        let data = self
+            .tx
+            .open_table(bytes(parts.table))
+            .map_err(StoreError::new)?;
+        let order = self.tx.open_table(bytes(name)).map_err(StoreError::new)?;
+        range_rows(&data, &order, &parts, range, direction, limit)
     }
 
     /// Replaces the value with `change(current)` if its revision is still
@@ -542,44 +618,6 @@ impl ReadTx {
             .open_table(bytes(parts.table))
             .map_err(StoreError::new)?;
         let order = self.tx.open_table(bytes(name)).map_err(StoreError::new)?;
-        // [0, 1] sorts after a field's terminator and before an escaped zero
-        // byte, so it steps past every key whose indexed value equals `field`.
-        let past = |field: &[u8]| [escaped(field).as_slice(), &[0, 1]].concat();
-        let lower = match range.start_bound() {
-            Bound::Included(field) => Bound::Included(escaped(field)),
-            Bound::Excluded(field) => Bound::Included(past(field)),
-            Bound::Unbounded => Bound::Unbounded,
-        };
-        let upper = match range.end_bound() {
-            Bound::Included(field) => Bound::Excluded(past(field)),
-            Bound::Excluded(field) => Bound::Excluded(escaped(field)),
-            Bound::Unbounded => Bound::Unbounded,
-        };
-        if let (Bound::Included(lower), Bound::Excluded(upper)) = (&lower, &upper)
-            && lower >= upper
-        {
-            return Ok(Vec::new());
-        }
-        let mut entries = order
-            .range::<&[u8]>((
-                lower.as_ref().map(Vec::as_slice),
-                upper.as_ref().map(Vec::as_slice),
-            ))
-            .map_err(StoreError::new)?;
-        let mut rows = Vec::new();
-        while rows.len() < limit {
-            let entry = match direction {
-                Direction::Asc => entries.next(),
-                Direction::Desc => entries.next_back(),
-            };
-            let Some(entry) = entry else { break };
-            let (_, key) = entry.map_err(StoreError::new)?;
-            let value = data
-                .get(key.value())
-                .map_err(StoreError::new)?
-                .ok_or_else(|| StoreError::invalid("index points to missing record"))?;
-            rows.push(parts.values.decode(value.value())?);
-        }
-        Ok(rows)
+        range_rows(&data, &order, &parts, range, direction, limit)
     }
 }

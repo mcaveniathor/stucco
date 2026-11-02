@@ -110,6 +110,21 @@ fn index_range_follows_updates_and_removals() {
     );
 }
 #[test]
+fn index_range_in_a_write_transaction_sees_its_own_writes() {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, table) = scoped(&dir);
+    table.put(&1, &(1, vec![5])).unwrap();
+    let (from, to) = (1_u64.to_be_bytes(), 2_u64.to_be_bytes());
+    let seen = store
+        .write(|tx| {
+            tx.put(&table, &2, &(1, vec![6]))?;
+            tx.remove(&table, &1)?;
+            tx.index_range(&table, from.as_slice()..to.as_slice(), Direction::Asc, 10)
+        })
+        .unwrap();
+    assert_eq!(seen, [(1, vec![6])]);
+}
+#[test]
 fn index_range_rejects_a_handle_from_another_store() {
     let dir = tempfile::tempdir().unwrap();
     let (_, table) = scoped(&dir);
