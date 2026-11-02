@@ -16,6 +16,9 @@ release from 0.5 because the public preset enum and catalog grow.
 - Keep the independently versioned Leptos 0.1.0-alpha.2 preview on published
   0.5.2 style dependencies. Its package consumer and the full-stack example
   use that same theme type while the stable workspace prepares 0.6.0.
+- `stucco-redb`: add `ReadTx::index_range`, which reads a limited number of
+  records from a byte range of a secondary index in either direction, so one
+  tenant's rows can be read without filtering every record.
 
 ## stucco-leptos 0.1.0-alpha.2 — 2026-10-28
 

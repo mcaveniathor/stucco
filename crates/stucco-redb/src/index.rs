@@ -163,14 +163,21 @@ impl<K, V, KC: KeyCodec<K>, VC: Codec<V>> IndexTable<K, V, KC, VC> {
 pub(crate) fn compound(sort: &[u8], key: &[u8]) -> Vec<u8> {
     let mut out = Vec::new();
     for field in [sort, key] {
-        for b in field {
-            if *b == 0 {
-                out.extend_from_slice(&[0, 255]);
-            } else {
-                out.push(*b);
-            }
-        }
+        out.extend(escaped(field));
         out.extend_from_slice(&[0, 0]);
+    }
+    out
+}
+/// The bytes of `field` inside a compound key, before its terminator. Sorts
+/// before every compound key whose indexed value is `field` or greater.
+pub(crate) fn escaped(field: &[u8]) -> Vec<u8> {
+    let mut out = Vec::with_capacity(field.len());
+    for b in field {
+        if *b == 0 {
+            out.extend_from_slice(&[0, 255]);
+        } else {
+            out.push(*b);
+        }
     }
     out
 }

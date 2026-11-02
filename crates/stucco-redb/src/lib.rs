@@ -37,6 +37,8 @@
 //! `Store::read` gives one snapshot across tables. `WriteTx` offers `get`,
 //! `get_with_revision`, `put`, `remove`, `update_if`, `remove_if` and `create`
 //! for any `Table` or `IndexTable`; an `IndexTable` keeps its index in step.
+//! `ReadTx::index_range` reads a bounded byte range of one index without
+//! visiting the records outside it, for example everything in one tenant.
 //! With the tokio feature, `AsyncStore` runs the same closures on the blocking
 //! pool, one permit per transaction, sharing its budget with `AsyncTable`.
 //!

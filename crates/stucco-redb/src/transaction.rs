@@ -1,9 +1,13 @@
 //! Multi-table transactions: [`Store::write`](crate::Store::write) and
 //! [`Store::read`](crate::Store::read) hand a closure one redb transaction.
-use crate::index::compound;
+use crate::index::{compound, escaped};
 use crate::{Codec, IndexTable, KeyCodec, Revision, StoreError, Table, U64Key};
 use redb::ReadableTable;
-use std::sync::Arc;
+use std::{
+    ops::{Bound, RangeBounds},
+    sync::Arc,
+};
+use stucco_core::Direction;
 
 mod sealed {
     use crate::Codec;
@@ -490,5 +494,92 @@ impl ReadTx {
             .open_table(bytes(parts.table))
             .map_err(StoreError::new)?;
         get_row_with_revision(&data, &parts, key)
+    }
+
+    /// Reads up to `limit` records whose indexed value falls in `range`, in
+    /// index order (ties by primary key), reversed for [`Direction::Desc`].
+    ///
+    /// Only the records returned are visited, so this is the bounded read for
+    /// "everything in this scope": project a fixed-width scope first, then
+    /// the sort value, and range over the scope's bytes. Indexed values
+    /// compare as bytes, so encode integers big-endian.
+    ///
+    /// ```no_run
+    /// use stucco_core::Direction;
+    /// use stucco_redb::{PostcardCodec, Store, StoreError, U64Key};
+    /// #[derive(serde::Serialize, serde::Deserialize)]
+    /// struct Chore { household: u64, due_day: u32 }
+    ///
+    /// let store = Store::open("home.redb")?;
+    /// let chores = store
+    ///     .table::<u64, Chore, _, _>("chores", U64Key, PostcardCodec::default())?
+    ///     .index("household_due", |c| {
+    ///         [c.household.to_be_bytes().as_slice(), &c.due_day.to_be_bytes()].concat()
+    ///     })?;
+    /// let household = 7_u64;
+    /// let (from, to) = (household.to_be_bytes(), (household + 1).to_be_bytes());
+    /// let soonest = store.read(|tx| {
+    ///     tx.index_range(&chores, from.as_slice()..to.as_slice(), Direction::Asc, 20)
+    /// })?;
+    /// # Ok::<(), StoreError>(())
+    /// ```
+    pub fn index_range<'r, K, V, KC: KeyCodec<K>, VC: Codec<V>>(
+        &self,
+        index: &IndexTable<K, V, KC, VC>,
+        range: impl RangeBounds<&'r [u8]>,
+        direction: Direction,
+        limit: usize,
+    ) -> Result<Vec<V>, StoreError> {
+        let parts = index.parts();
+        same_store(&self.db, &parts)?;
+        let name = parts
+            .index
+            .as_ref()
+            .expect("an IndexTable always has an index")
+            .name;
+        let data = self
+            .tx
+            .open_table(bytes(parts.table))
+            .map_err(StoreError::new)?;
+        let order = self.tx.open_table(bytes(name)).map_err(StoreError::new)?;
+        // [0, 1] sorts after a field's terminator and before an escaped zero
+        // byte, so it steps past every key whose indexed value equals `field`.
+        let past = |field: &[u8]| [escaped(field).as_slice(), &[0, 1]].concat();
+        let lower = match range.start_bound() {
+            Bound::Included(field) => Bound::Included(escaped(field)),
+            Bound::Excluded(field) => Bound::Included(past(field)),
+            Bound::Unbounded => Bound::Unbounded,
+        };
+        let upper = match range.end_bound() {
+            Bound::Included(field) => Bound::Excluded(past(field)),
+            Bound::Excluded(field) => Bound::Excluded(escaped(field)),
+            Bound::Unbounded => Bound::Unbounded,
+        };
+        if let (Bound::Included(lower), Bound::Excluded(upper)) = (&lower, &upper)
+            && lower >= upper
+        {
+            return Ok(Vec::new());
+        }
+        let mut entries = order
+            .range::<&[u8]>((
+                lower.as_ref().map(Vec::as_slice),
+                upper.as_ref().map(Vec::as_slice),
+            ))
+            .map_err(StoreError::new)?;
+        let mut rows = Vec::new();
+        while rows.len() < limit {
+            let entry = match direction {
+                Direction::Asc => entries.next(),
+                Direction::Desc => entries.next_back(),
+            };
+            let Some(entry) = entry else { break };
+            let (_, key) = entry.map_err(StoreError::new)?;
+            let value = data
+                .get(key.value())
+                .map_err(StoreError::new)?
+                .ok_or_else(|| StoreError::invalid("index points to missing record"))?;
+            rows.push(parts.values.decode(value.value())?);
+        }
+        Ok(rows)
     }
 }

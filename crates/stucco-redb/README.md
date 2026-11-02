@@ -112,6 +112,10 @@ match saved {
   `Ok::<_, StoreError>(..)` so the compiler can choose it.
 - Do not call `Store::write` or a single-table write from inside the closure
   on the same thread: redb allows one writer, so it would wait forever.
+- `ReadTx::index_range` reads up to a limit of records whose indexed value falls
+  in a byte range, in either direction, visiting only the records it returns.
+  Project a fixed-width scope first (`tenant.to_be_bytes()`, then a sort value)
+  and range over the scope to read one tenant without filtering every row.
 - `AsyncStore::new(store)` (or `AsyncTable::store()`) is the async form. A
   transaction runs whole on the blocking pool under one permit, so the write
   lock is never held across an `.await`, and the permits are shared with every
